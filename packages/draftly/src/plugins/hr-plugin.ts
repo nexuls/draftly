@@ -1,8 +1,8 @@
 import { Decoration } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 
 /**
  * Line decoration for horizontal rule lines
@@ -71,7 +71,6 @@ export class HRPlugin extends DecorationPlugin {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   override renderToHTML(node: SyntaxNode, _children: string): string | null {
     if (node.name !== "HorizontalRule") {
       return null;

@@ -1,7 +1,7 @@
-import { SyntaxNode } from "@lezer/common";
-import { Highlighter } from "@lezer/highlight";
-import { ThemeEnum } from "../editor/utils";
-import { PreviewContext } from "./types";
+import type { SyntaxNode } from "@lezer/common";
+import type { Highlighter } from "@lezer/highlight";
+import type { ThemeEnum } from "../editor/utils";
+import type { PreviewContext } from "./types";
 import DOMPurify from "dompurify";
 
 /**
@@ -11,7 +11,7 @@ export function createPreviewContext(
   doc: string,
   theme: ThemeEnum,
   renderChildren: (node: SyntaxNode) => Promise<string>,
-  sanitizeHtml: boolean = true,
+  sanitizeHtml = true,
   syntaxHighlighters: readonly Highlighter[] = []
 ): PreviewContext {
   return {

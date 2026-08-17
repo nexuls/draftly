@@ -1,8 +1,8 @@
-import { Decoration, EditorView, WidgetType } from "@codemirror/view";
+import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme, ThemeEnum } from "../editor";
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, BlockParser, Line, BlockContext } from "@lezer/markdown";
 import mermaid from "mermaid";
@@ -23,7 +23,7 @@ let mermaidCounter = 0;
 async function renderMermaid(
   definition: string,
   options: Record<string, string> = {},
-  defaultTheme: string = "default"
+  defaultTheme = "default"
 ): Promise<{ svg: string; error: string | null }> {
   try {
     const id = `draftly-mermaid-${mermaidCounter++}`;
@@ -60,7 +60,7 @@ function parseAttributes(fenceLine: string): Record<string, string> {
   const attributes: Record<string, string> = {};
   // Match key="value" or key='value'
   const regex = /(\w+)=["']([^"']*)["']/g;
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = regex.exec(fenceLine)) !== null && match[1] && match[2]) {
     attributes[match[1]] = match[2];
   }

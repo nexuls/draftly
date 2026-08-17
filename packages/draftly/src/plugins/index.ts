@@ -15,7 +15,7 @@ export { HRPlugin } from "./hr-plugin";
 export { EmojiPlugin } from "./emoji-plugin";
 
 // Plugin collections
-import { DraftlyPlugin } from "../editor/plugin";
+import type { DraftlyPlugin } from "../editor/plugin";
 import { ParagraphPlugin } from "./paragraph-plugin";
 import { HeadingPlugin } from "./heading-plugin";
 import { InlinePlugin } from "./inline-plugin";

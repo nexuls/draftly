@@ -1,5 +1,5 @@
 import { ThemeEnum } from "../editor/utils";
-import { GenerateCSSConfig } from "./types";
+import type { GenerateCSSConfig } from "./types";
 import { generateSyntaxThemeCSS } from "./syntax-theme";
 
 /**

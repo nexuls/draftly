@@ -1,9 +1,9 @@
-import { Decoration, EditorView, KeyBinding, WidgetType } from "@codemirror/view";
+import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
-import { Range } from "@codemirror/state";
-import { SyntaxNode } from "@lezer/common";
+import type { Range } from "@codemirror/state";
+import type { SyntaxNode } from "@lezer/common";
 
 // ============================================================================
 // CSS Classes

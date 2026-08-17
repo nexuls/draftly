@@ -1,6 +1,6 @@
 import { ThemeEnum } from "../editor/utils";
 import { PreviewRenderer } from "./renderer";
-import { PreviewConfig } from "./types";
+import type { PreviewConfig } from "./types";
 
 /**
  * Render markdown to semantic HTML

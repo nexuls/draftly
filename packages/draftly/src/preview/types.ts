@@ -1,5 +1,5 @@
-import { SyntaxNode } from "@lezer/common";
-import { ThemeEnum } from "../editor/utils";
+import type { SyntaxNode } from "@lezer/common";
+import type { ThemeEnum } from "../editor/utils";
 
 export type SyntaxThemeInput =
   | import("@codemirror/language").HighlightStyle

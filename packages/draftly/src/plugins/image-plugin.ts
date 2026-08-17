@@ -1,8 +1,8 @@
-import { Decoration, EditorView, KeyBinding, WidgetType } from "@codemirror/view";
+import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 
 /**
  * Mark decorations for image syntax elements
@@ -197,7 +197,7 @@ export class ImagePlugin extends DecorationPlugin {
 
     // Find image pattern in line that contains the selection
     const imageRegex = /!\[([^\]]*)\]\(([^)]*)\)/g;
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = imageRegex.exec(lineText)) !== null) {
       const matchFrom = lineStart + match.index;
       const matchTo = matchFrom + match[0].length;
@@ -345,7 +345,7 @@ export class ImagePlugin extends DecorationPlugin {
       html += `<figcaption class="cm-draftly-image-caption">${ctx.sanitize(parsed.title)}</figcaption>`;
     }
 
-    html += `</figure>`;
+    html += "</figure>";
     return html;
   }
 }

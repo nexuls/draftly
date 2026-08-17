@@ -1,14 +1,14 @@
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { MarkdownConfig } from "@lezer/markdown";
+import type { MarkdownConfig } from "@lezer/markdown";
 import { languages } from "@codemirror/language-data";
 
-import { DraftlyPlugin } from "../editor/plugin";
+import type { DraftlyPlugin } from "../editor/plugin";
 import { ThemeEnum } from "../editor/utils";
 import { createPreviewContext } from "./context";
 import { defaultRenderers, escapeHtml } from "./default-renderers";
 import { resolveSyntaxHighlighters } from "./syntax-theme";
-import { NodeRendererMap, PreviewContext } from "./types";
+import type { NodeRendererMap, PreviewContext } from "./types";
 
 /**
  * Renderer class that walks the syntax tree and produces HTML
@@ -29,7 +29,7 @@ export class PreviewRenderer {
     plugins: DraftlyPlugin[] = [],
     markdown: MarkdownConfig[],
     theme: ThemeEnum = ThemeEnum.AUTO,
-    sanitize: boolean = true,
+    sanitize = true,
     syntaxTheme?: import("./types").SyntaxThemeInput | import("./types").SyntaxThemeInput[]
   ) {
     this.doc = doc;

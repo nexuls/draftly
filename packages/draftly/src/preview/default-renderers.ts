@@ -1,4 +1,4 @@
-import { NodeRenderer, NodeRendererMap } from "./types";
+import type { NodeRenderer, NodeRendererMap } from "./types";
 
 /**
  * Escape HTML special characters

@@ -1,10 +1,10 @@
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { Extension, Facet, Range, RangeSetBuilder } from "@codemirror/state";
+import { type Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { type Extension, Facet, type Range, RangeSetBuilder } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import { cursorInRange, selectionOverlapsRange, ThemeEnum } from "./utils";
 import { draftlyBaseTheme } from "./theme";
-import { DecorationContext, DraftlyPlugin } from "./plugin";
-import { DraftlyNode } from "./draftly";
+import type { DecorationContext, DraftlyPlugin } from "./plugin";
+import type { DraftlyNode } from "./draftly";
 
 /**
  * Facet to register plugins with the view plugin
@@ -174,7 +174,7 @@ const draftlyEditorClass = EditorView.editorAttributes.of({ class: "cm-draftly" 
  */
 export function createDraftlyViewExtension(
   theme: ThemeEnum = ThemeEnum.AUTO,
-  baseStyles: boolean = true,
+  baseStyles = true,
   plugins: DraftlyPlugin[] = [],
   onNodesChange?: (nodes: DraftlyNode[]) => void
 ): Extension[] {

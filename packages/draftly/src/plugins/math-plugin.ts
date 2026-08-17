@@ -1,9 +1,9 @@
-import { Decoration, EditorView, WidgetType } from "@codemirror/view";
-import { Extension } from "@codemirror/state";
+import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
+import type { Extension } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, InlineParser, BlockParser, Line, BlockContext } from "@lezer/markdown";
 import katex from "katex";
@@ -288,7 +288,7 @@ export class MathPlugin extends DecorationPlugin {
    * with single dollars (selected -> $selected$).
    */
   override getExtensions(): Extension[] {
-    return [createWrapSelectionInputHandler({ "$": "$" })];
+    return [createWrapSelectionInputHandler({ $: "$" })];
   }
 
   /**

@@ -1,9 +1,9 @@
-import { Decoration, EditorView, KeyBinding, ViewUpdate } from "@codemirror/view";
-import { Extension, Range } from "@codemirror/state";
-import { MarkdownConfig } from "@lezer/markdown";
-import { SyntaxNode } from "@lezer/common";
-import { DraftlyConfig } from "./draftly";
-import { createTheme, ThemeEnum, ThemeStyle } from "./utils";
+import type { Decoration, EditorView, KeyBinding, ViewUpdate } from "@codemirror/view";
+import type { Extension, Range } from "@codemirror/state";
+import type { MarkdownConfig } from "@lezer/markdown";
+import type { SyntaxNode } from "@lezer/common";
+import type { DraftlyConfig } from "./draftly";
+import { createTheme, type ThemeEnum, type ThemeStyle } from "./utils";
 import { StyleModule } from "style-mod";
 
 /**

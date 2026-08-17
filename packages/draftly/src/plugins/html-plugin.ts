@@ -1,6 +1,6 @@
 import { Decoration, WidgetType } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import DOMPurify from "dompurify";
 import { createTheme } from "../editor";
 

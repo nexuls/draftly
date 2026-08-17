@@ -1,11 +1,11 @@
-import { Annotation, EditorState, Extension, Prec, Range, RangeSet } from "@codemirror/state";
+import { Annotation, type EditorState, type Extension, Prec, type Range, RangeSet } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
-import { BlockWrapper, Decoration, EditorView, KeyBinding, WidgetType, keymap } from "@codemirror/view";
-import { SyntaxNode } from "@lezer/common";
-import { MarkdownConfig, Table } from "@lezer/markdown";
+import { BlockWrapper, Decoration, EditorView, type KeyBinding, WidgetType, keymap } from "@codemirror/view";
+import type { SyntaxNode } from "@lezer/common";
+import { type MarkdownConfig, Table } from "@lezer/markdown";
 import { createTheme } from "../editor";
-import { DraftlyConfig } from "../editor/draftly";
-import { DecorationContext, DecorationPlugin, PluginContext } from "../editor/plugin";
+import type { DraftlyConfig } from "../editor/draftly";
+import { type DecorationContext, DecorationPlugin, type PluginContext } from "../editor/plugin";
 import { ThemeEnum } from "../editor/utils";
 import { PreviewRenderer } from "../preview/renderer";
 

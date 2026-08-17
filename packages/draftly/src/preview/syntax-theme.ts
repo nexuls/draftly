@@ -1,4 +1,4 @@
-import { classHighlighter, Highlighter } from "@lezer/highlight";
+import { classHighlighter, type Highlighter } from "@lezer/highlight";
 import type { SyntaxThemeInput } from "./types";
 
 type HighlightSpec = {
@@ -37,13 +37,12 @@ export function generateSyntaxThemeCSS(
 
   if (!cssChunks.length) return "";
 
-  return Array.from(new Set(cssChunks))
-    .join("\n");
+  return Array.from(new Set(cssChunks)).join("\n");
 }
 
 export function resolveSyntaxHighlighters(
   syntaxTheme: SyntaxThemeInput | SyntaxThemeInput[] | undefined,
-  includeLegacyClassHighlighter: boolean = true
+  includeLegacyClassHighlighter = true
 ): readonly Highlighter[] {
   const resolved: Highlighter[] = [];
   if (includeLegacyClassHighlighter) {
@@ -60,7 +59,9 @@ export function resolveSyntaxHighlighters(
   return Array.from(new Set(resolved));
 }
 
-function extractRuntimeHighlightStyles(input: SyntaxThemeInput | SyntaxThemeInput[] | undefined): RuntimeHighlightStyle[] {
+function extractRuntimeHighlightStyles(
+  input: SyntaxThemeInput | SyntaxThemeInput[] | undefined
+): RuntimeHighlightStyle[] {
   if (!input) return [];
 
   const values = Array.isArray(input) ? input : [input];

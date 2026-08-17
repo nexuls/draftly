@@ -1,4 +1,4 @@
-import { EditorSelection, Extension } from "@codemirror/state";
+import { EditorSelection, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
 /**
@@ -33,7 +33,9 @@ export function createWrapSelectionInputHandler(markersByInput: WrapSelectionMar
       }))
       .reverse();
 
-    const nextRanges = ranges.map((range) => EditorSelection.range(range.from + marker.length, range.to + marker.length));
+    const nextRanges = ranges.map((range) =>
+      EditorSelection.range(range.from + marker.length, range.to + marker.length)
+    );
 
     view.dispatch({
       changes,

@@ -13,12 +13,12 @@ export { generateSyntaxThemeCSS } from "./syntax-theme";
 
 // Types
 export type {
-	PreviewConfig,
-	PreviewContext,
-	GenerateCSSConfig,
-	SyntaxThemeInput,
-	NodeRenderer,
-	NodeRendererMap,
+  PreviewConfig,
+  PreviewContext,
+  GenerateCSSConfig,
+  SyntaxThemeInput,
+  NodeRenderer,
+  NodeRendererMap,
 } from "./types";
 
 // Utilities

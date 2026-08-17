@@ -1,10 +1,10 @@
-import { Decoration, EditorView, KeyBinding, WidgetType } from "@codemirror/view";
-import { Extension } from "@codemirror/state";
+import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
+import type { Extension } from "@codemirror/state";
 import { LanguageDescription, syntaxTree } from "@codemirror/language";
-import { DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { toggleMarkdownStyle } from "../editor";
-import { Parser, SyntaxNode } from "@lezer/common";
-import { Highlighter, highlightCode } from "@lezer/highlight";
+import type { Parser, SyntaxNode } from "@lezer/common";
+import { type Highlighter, highlightCode } from "@lezer/highlight";
 import { languages } from "@codemirror/language-data";
 import { createWrapSelectionInputHandler } from "../lib";
 import { codePluginTheme as theme } from "./code-plugin.theme";
@@ -380,9 +380,7 @@ export class CodePlugin extends DecorationPlugin {
     if (firstTokenMatch && firstTokenMatch[1]) {
       const firstToken = firstTokenMatch[1];
       const normalizedToken = firstToken.toLowerCase();
-      const isLineNumberDirective = /^(?:line-numbers|linenumbers|showlinenumbers)(?:\{\d+\})?$/.test(
-        normalizedToken
-      );
+      const isLineNumberDirective = /^(?:line-numbers|linenumbers|showlinenumbers)(?:\{\d+\})?$/.test(normalizedToken);
       const isKnownDirective =
         isLineNumberDirective ||
         normalizedToken === "copy" ||
@@ -397,7 +395,7 @@ export class CodePlugin extends DecorationPlugin {
     }
 
     // Extract quoted values (title="..." caption="...")
-    let quotedMatch;
+    let quotedMatch: RegExpExecArray | null;
     while ((quotedMatch = QUOTED_INFO_PATTERN.exec(remaining)) !== null) {
       const key = quotedMatch[1]?.toLowerCase();
       const value = quotedMatch[2];
@@ -416,7 +414,7 @@ export class CodePlugin extends DecorationPlugin {
     const lineNumbersMatch = remaining.match(/\b(?:line-numbers|lineNumbers|showLineNumbers)(?:\{(\d+)\})?/i);
     if (lineNumbersMatch) {
       if (lineNumbersMatch[1]) {
-        props.showLineNumbers = parseInt(lineNumbersMatch[1], 10);
+        props.showLineNumbers = Number.parseInt(lineNumbersMatch[1], 10);
       } else {
         props.showLineNumbers = true;
       }
@@ -447,7 +445,7 @@ export class CodePlugin extends DecorationPlugin {
     }
 
     // Extract text/regex highlights /pattern/ or /pattern/3-5 or /pattern/3,5
-    let textMatch;
+    let textMatch: RegExpExecArray | null;
     const highlightText: TextHighlight[] = [];
 
     while ((textMatch = TEXT_HIGHLIGHT_PATTERN.exec(remaining)) !== null) {
@@ -627,14 +625,7 @@ export class CodePlugin extends DecorationPlugin {
       }
 
       if (!isFenceLine && infoProps.diff) {
-        this.decorateDiffLine(
-          line,
-          codeLineIndex,
-          diffStates,
-          cursorInRange,
-          !infoProps.showLineNumbers,
-          decorations
-        );
+        this.decorateDiffLine(line, codeLineIndex, diffStates, cursorInRange, !infoProps.showLineNumbers, decorations);
       }
 
       if (!isFenceLine && infoProps.highlightLines) {
@@ -835,7 +826,7 @@ export class CodePlugin extends DecorationPlugin {
         } else if (props.language) {
           html += `<span class="cm-draftly-code-header-lang">${this.escapeHtml(props.language)}</span>`;
         }
-        html += `</div>`;
+        html += "</div>";
         if (props.copy !== false) {
           html += `<div class="cm-draftly-code-header-right">`;
           // Encode code as base64 to safely store in data attribute (preserves newlines and special chars)
@@ -843,10 +834,10 @@ export class CodePlugin extends DecorationPlugin {
             typeof btoa !== "undefined" ? btoa(encodeURIComponent(code)) : Buffer.from(code).toString("base64");
           html += `<button class="cm-draftly-code-copy-btn" type="button" title="Copy code" data-code="${encodedCode}" data-encoded="true">`;
           html += `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-          html += `</button>`;
-          html += `</div>`;
+          html += "</button>";
+          html += "</div>";
         }
-        html += `</div>`;
+        html += "</div>";
       }
 
       // Calculate line number info
@@ -864,16 +855,10 @@ export class CodePlugin extends DecorationPlugin {
         : [];
       const lineNumWidth = String(Math.max(...previewLineNumbers, startLineNum)).length;
       const previewOldLineNumWidth = String(
-        Math.max(
-          ...previewDiffLineNumbers.map((numbers) => numbers.oldLine ?? 0),
-          startLineNum
-        )
+        Math.max(...previewDiffLineNumbers.map((numbers) => numbers.oldLine ?? 0), startLineNum)
       ).length;
       const previewNewLineNumWidth = String(
-        Math.max(
-          ...previewDiffLineNumbers.map((numbers) => numbers.newLine ?? 0),
-          startLineNum
-        )
+        Math.max(...previewDiffLineNumbers.map((numbers) => numbers.newLine ?? 0), startLineNum)
       ).length;
       const previewContentLines = props.diff ? diffStates.map((state) => state.content) : codeLines;
       const highlightedLines = await this.highlightCodeLines(
@@ -886,7 +871,7 @@ export class CodePlugin extends DecorationPlugin {
       const hasHeader = showHeader ? " cm-draftly-code-block-has-header" : "";
       const hasCaption = props.caption ? " cm-draftly-code-block-has-caption" : "";
       html += `<pre class="cm-draftly-code-block${hasHeader}${hasCaption}"${props.language ? ` data-lang="${this.escapeAttribute(props.language)}"` : ""}>`;
-      html += `<code>`;
+      html += "<code>";
 
       // Process each line
       codeLines.forEach((line, index) => {
@@ -945,7 +930,7 @@ export class CodePlugin extends DecorationPlugin {
         html += `<span ${lineAttrs.join(" ")}>${lineContent || " "}</span>`;
       });
 
-      html += `</code></pre>`;
+      html += "</code></pre>";
 
       // Caption
       if (props.caption) {
@@ -953,7 +938,7 @@ export class CodePlugin extends DecorationPlugin {
       }
 
       // Close wrapper container
-      html += `</div>`;
+      html += "</div>";
 
       return html;
     }
@@ -975,8 +960,8 @@ export class CodePlugin extends DecorationPlugin {
       const rangeMatch = trimmed.match(/^(\d+)-(\d+)$/);
 
       if (rangeMatch && rangeMatch[1] && rangeMatch[2]) {
-        const start = parseInt(rangeMatch[1], 10);
-        const end = parseInt(rangeMatch[2], 10);
+        const start = Number.parseInt(rangeMatch[1], 10);
+        const end = Number.parseInt(rangeMatch[2], 10);
         for (let i = start; i <= end; i++) {
           result.push(i);
         }
@@ -984,7 +969,7 @@ export class CodePlugin extends DecorationPlugin {
       }
 
       if (/^\d+$/.test(trimmed)) {
-        result.push(parseInt(trimmed, 10));
+        result.push(Number.parseInt(trimmed, 10));
       }
     }
 

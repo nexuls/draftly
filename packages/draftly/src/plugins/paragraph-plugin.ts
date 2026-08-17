@@ -1,4 +1,4 @@
-import { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 import { DraftlyPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
 

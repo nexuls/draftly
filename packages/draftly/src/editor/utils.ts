@@ -1,5 +1,5 @@
-import { EditorView } from "@codemirror/view";
-import { StyleSpec } from "style-mod";
+import type { EditorView } from "@codemirror/view";
+import type { StyleSpec } from "style-mod";
 
 /**
  * Deep merge two objects

@@ -1,8 +1,8 @@
-import { Extension, Prec } from "@codemirror/state";
-import { EditorView, highlightActiveLine, KeyBinding, keymap } from "@codemirror/view";
+import { type Extension, Prec } from "@codemirror/state";
+import { EditorView, highlightActiveLine, type KeyBinding, keymap } from "@codemirror/view";
 import { markdown, markdownKeymap, markdownLanguage } from "@codemirror/lang-markdown";
 import type { MarkdownConfig } from "@lezer/markdown";
-import { DraftlyPlugin, PluginContext } from "./plugin";
+import type { DraftlyPlugin, PluginContext } from "./plugin";
 import { createDraftlyViewExtension } from "./view-plugin";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { indentOnInput } from "@codemirror/language";
