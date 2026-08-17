@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Content } from "./types";
+import type React from "react";
+import { useState } from "react";
+import type { Content } from "./types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Plus, FileText, Pencil, Trash2 } from "lucide-react";

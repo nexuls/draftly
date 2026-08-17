@@ -11,19 +11,19 @@ import Footer from "./footer";
 import Header from "./header";
 import Devbar from "./devbar";
 import Sidebar from "./sidebar";
-import { Content } from "./types";
+import type { Content } from "./types";
 import CreateContentDialog from "./create-content-dialog";
 
 import whatIsDraftly from "../data/md/what-id-draftly";
 import walkthrough from "../data/md/walkthrough";
 
-import CodeMirror, { EditorView, Extension, ReactCodeMirrorRef } from "@uiw/react-codemirror";
+import CodeMirror, { EditorView, type Extension, type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { allPlugins } from "draftly/src";
 import { generateCSS, preview } from "draftly/src";
-import { draftly, DraftlyNode, DraftlyPlugin, ThemeEnum } from "draftly/src";
+import { draftly, type DraftlyNode, type DraftlyPlugin, ThemeEnum } from "draftly/src";
 
 // Plugin configuration - dynamic based on allPlugins
 export type PluginConfig = Record<string, boolean>;
@@ -164,8 +164,8 @@ export default function Page() {
     }
 
     if (storedCurrent && !isOutdated) {
-      const parsedCurrent = parseInt(storedCurrent, 10);
-      if (!isNaN(parsedCurrent)) {
+      const parsedCurrent = Number.parseInt(storedCurrent, 10);
+      if (!Number.isNaN(parsedCurrent)) {
         setCurrentContent(parsedCurrent);
       }
     }
@@ -205,6 +205,7 @@ export default function Page() {
     };
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: recompute only when the selected content's text changes, not on every `contents` identity change
   const counts = useMemo(() => {
     if (currentContent === -1) return { words: 0, lines: 0, char: 0 };
     const content = contents[currentContent];
@@ -212,8 +213,6 @@ export default function Page() {
     const lines = content!.content.split("\n").length;
     const char = content!.content.length;
     return { words, lines, char };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentContent, contents[currentContent]?.content]);
 
   function handleContentChange(id: string, content: string) {
@@ -324,7 +323,7 @@ export default function Page() {
   );
 
   useEffect(() => {
-    (async function () {
+    (async () => {
       if (currentContent === -1 || !["view", "output"].includes(mode)) return;
       const start = performance.now();
 
@@ -411,9 +410,12 @@ export default function Page() {
 
         {/* Editor */}
         <div
-          className={cn("flex-1 h-full mx-2 border rounded-lg overflow-hidden flex items-center justify-center dark:bg-[#0d1117]", {
-            "ml-0 max-xl:ml-2": sidebarOpen,
-          })}
+          className={cn(
+            "flex-1 h-full mx-2 border rounded-lg overflow-hidden flex items-center justify-center dark:bg-[#0d1117]",
+            {
+              "ml-0 max-xl:ml-2": sidebarOpen,
+            }
+          )}
         >
           {currentContent !== -1 ? (
             mode === "view" ? (
@@ -505,7 +507,13 @@ export default function Page() {
             }
           )}
         >
-          <Devbar nodes={nodes} setShowNodes={setShowNodes} config={config} setConfig={setConfig} outputTime={outputTime} />
+          <Devbar
+            nodes={nodes}
+            setShowNodes={setShowNodes}
+            config={config}
+            setConfig={setConfig}
+            outputTime={outputTime}
+          />
         </div>
       </main>
 

@@ -1,9 +1,9 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@workspace/ui/components/accordion";
 import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
-import { allPlugins, DraftlyNode } from "draftly/src";
+import { allPlugins, type DraftlyNode } from "draftly/src";
 import React from "react";
-import { PlaygroundConfig } from "./page";
+import type { PlaygroundConfig } from "./page";
 
 type Props = {
   setShowNodes: (show: boolean) => void;
@@ -64,9 +64,7 @@ export default function Devbar({ setShowNodes, nodes, config, setConfig, outputT
       </div>
 
       {outputTime !== null && (
-        <div className="text-xs text-muted-foreground p-2 border-b">
-          Output generated in {outputTime?.toFixed(2)}ms
-        </div>
+        <div className="text-xs text-muted-foreground p-2 border-b">Output generated in {outputTime?.toFixed(2)}ms</div>
       )}
 
       <div className="flex-1 overflow-y-auto min-h-0">

@@ -10,7 +10,7 @@ import {
   PanelLeftOpenIcon,
   ScanTextIcon,
 } from "lucide-react";
-import React, { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import type { SaveStatus } from "./page";
 import { ThemeSwitcher } from "@/components/providers";
 import {
@@ -75,7 +75,7 @@ export default function Header({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              {(function () {
+              {(() => {
                 const Icon = modes.find((option) => option.value === mode)?.icon;
                 if (!Icon) return null;
                 return <Icon className="size-4" />;
