@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-18 · commit `eae4434`
+> Last updated: 2026-08-18 · commit `b6ecb96`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -32,6 +32,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-008` | [Replace ESLint + Prettier with Biome](./completed/C-008-biome-migration.md)                          | 2026-08-18           |
 | `C-007` | [Agent artifact system](./completed/C-007-agent-artifact-system.md)                                   | 2026-08-18           |
 | `C-006` | [Vendored agent skills](./completed/C-006-agent-skills.md)                                            | `eae4434`            |
 | `C-005` | [Table plugin reimagined (v2.0.0)](./completed/C-005-table-plugin-v2.md)                              | `226f388`…`e5dc598`  |

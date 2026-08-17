@@ -1,0 +1,22 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "root": false,
+  "files": {
+    "includes": ["**", "!**/.next", "!**/out", "!**/build", "!next-env.d.ts"]
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "next": "recommended",
+      "react": "recommended"
+    },
+    "rules": {
+      "correctness": {
+        "useExhaustiveDependencies": "warn"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
+      }
+    }
+  }
+}

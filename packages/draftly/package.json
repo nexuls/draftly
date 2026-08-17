@@ -15,16 +15,17 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@turbo/gen": "^2.7.6",
     "@types/dompurify": "^3.2.0",
     "@types/node": "^25.0.10",
-    "@workspace/eslint-config": "workspace:*",
+    "@workspace/biome-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^9.39.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

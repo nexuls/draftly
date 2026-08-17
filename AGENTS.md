@@ -119,7 +119,8 @@ Follow the existing style in `editor/plugin.ts` and `editor/draftly.ts`.
   - Types: `feat`, `fix`, `refactor`, `docs`, `chore`
   - Scopes: `draftly`, `web`, `ui`, or omit for repo-wide
   - Examples: `feat(draftly): Emoji Plugin`, `fix(draftly): Ignore tailing non-table line`
-- Branch off `master`; do not commit or push unless asked.
+- Do commit as you go. Do not stage a large change and commit it all at once.
+- Branch off `master`; do not push unless asked.
 - Add a changeset (`bun changeset`) for any user-facing library change.
 
 ### 6. Keep artifacts current
@@ -144,9 +145,14 @@ There is **no test suite** (tracked as T-001). Verification is manual:
 ```bash
 bun dev                                      # playground with hot-reloaded library
 cd packages/draftly && bun run typecheck     # tsc --noEmit
-bun run lint
-bun run format                               # prettier; printWidth is 120
+bun run lint                                 # biome check — read-only, fails on errors
+bun run check:fix                            # biome check --write — lint fixes + format
 ```
+
+Lint and format are **Biome**, not ESLint/Prettier. `lineWidth` is 120. Shared presets live
+in `packages/biome-config`; each workspace's `biome.json` extends `base` plus its framework
+layer. Suppress with `// biome-ignore lint/<group>/<rule>: <reason>` — the reason is
+mandatory, and the comment goes above the line the diagnostic anchors to.
 
 For a library change, work through the 8-step playground checklist in
 [`artifacts/architecture/web-playground.md`](artifacts/architecture/web-playground.md).
@@ -220,7 +226,8 @@ CodeMirror internals.
 
 ## Boundaries
 
-- **Do not** commit, push, publish, or release unless asked.
+- **Do** commit as you go. Do not stage a large change and commit it all at once.
+- **Do not** push, publish, or release unless asked.
 - **Do not** change the public API surface without flagging it — `draftly` is published
   and consumers depend on it.
 - **Do not** add a runtime dependency to `packages/draftly` without asking; bundle size is

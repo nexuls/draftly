@@ -1,6 +1,6 @@
 # Repository Map
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-08-18 · commit `b6ecb96`
 > Update this file whenever a directory is added, removed, or its purpose changes.
 
 ## At a glance
@@ -16,7 +16,7 @@ draftly/
 ├── packages/
 │   ├── draftly/              # ⭐ The published library (npm: `draftly`)
 │   ├── ui/                   # @workspace/ui — shadcn/ui component library (private)
-│   ├── eslint-config/        # @workspace/eslint-config (private)
+│   ├── biome-config/         # @workspace/biome-config — shared Biome presets (private)
 │   └── typescript-config/    # @workspace/typescript-config (private)
 ├── artifacts/                # ⭐ Agent knowledge base (this directory)
 ├── .agents/skills/           # Vendored agent skills (codemirror, turborepo)
@@ -120,7 +120,7 @@ apps/web/
 | Package                      | Name                           | Purpose                                                  |
 | ---------------------------- | ------------------------------ | -------------------------------------------------------- |
 | `packages/ui`                | `@workspace/ui`                | ~60 shadcn/ui components, Tailwind v4, consumed by `web` |
-| `packages/eslint-config`     | `@workspace/eslint-config`     | `base.js`, `next.js`, `react-internal.js` presets        |
+| `packages/biome-config`      | `@workspace/biome-config`      | `base.json`, `next.json`, `react-internal.json` presets  |
 | `packages/typescript-config` | `@workspace/typescript-config` | `base.json`, `nextjs.json`, `react-library.json`         |
 
 ---
@@ -129,11 +129,10 @@ apps/web/
 
 | File                  | Role                                                                                                          |
 | --------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `turbo.json`          | Tasks: `build` (`^build`, outputs `dist/**`, `.next/**`), `lint`, `check-types`, `dev` (persistent, uncached) |
-| `package.json`        | Bun 1.3.5 as `packageManager`; Node >= 20; scripts `build`/`dev`/`lint`/`format`/`changeset`/`release`        |
+| `turbo.json`          | Tasks: `build` (`^build`, outputs `dist/**`, `.next/**`), `lint`, `lint:fix`, `format`, `check-types`, `dev` |
+| `package.json`        | Bun 1.3.5 as `packageManager`; Node >= 20; scripts `build`/`dev`/`lint`/`format`/`check`/`changeset`/`release` |
 | `.changeset/`         | Release flow — `baseBranch: master`, `access: public`, auto-commit on                                         |
-| `.prettierrc`         | 2 spaces, double quotes, semicolons, **printWidth 120**, `trailingComma: es5`, LF                             |
-| `.eslintrc.js`        | Root-only config; `apps/**` and `packages/**` use their own flat configs                                      |
+| `biome.json`          | **`root: true`** — lint + format. 2 spaces, double quotes, semicolons, **lineWidth 120**, ES5 trailing commas, LF |
 | `pnpm-workspace.yaml` | Present for tooling compatibility; **Bun is the actual package manager**                                      |
 | `skills-lock.json`    | Pins the vendored `.agents/skills` (codemirror, turborepo) by hash                                            |
 | `CONTRIBUTING.md`     | Human contributor guide — keep in sync with `AGENTS.md`                                                       |

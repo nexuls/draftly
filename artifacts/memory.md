@@ -40,6 +40,9 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   Preserving this is what keeps the library tree-shakeable.
 - The `apps/web` playground imports `draftly/src` (raw TypeScript), so library edits
   hot-reload. It is the only verification surface — **there is no test suite.**
+- **Lint and format are Biome, not ESLint/Prettier** (migrated 2026-08-18). One binary for
+  both. Shared presets in `packages/biome-config`; per-workspace `biome.json` extends
+  `base` **plus** its framework layer — `base` is not implied by the others.
 
 ### Traps that have cost time
 
@@ -70,6 +73,27 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `@codemirror/language` upgrade can silently drop preview syntax colours with no type
   error. Re-test preview code blocks after any CodeMirror bump.
 
+### Biome facts worth not re-deriving
+
+- Biome 2.x allows **exactly one** config with `"root": true` in a repo. Every workspace
+  config must set `"root": false` or Biome errors out.
+- `"rules": { "recommended": true }` is **deprecated** in 2.5.x — the current spelling is
+  `"preset": "recommended"`. `bunx biome migrate --write` converts it.
+- Ignore patterns must **not** carry a trailing `/**` (`"!**/dist"`, not `"!**/dist/**"`).
+  The old form is flagged by `suspicious/useBiomeIgnoreFolder`.
+- `css.parser.tailwindDirectives: true` is required or `packages/ui/src/styles/globals.css`
+  fails to parse on `@source`. Likewise `json.parser.allowComments` +
+  `allowTrailingCommas` for the `tsconfig`-style files in `packages/typescript-config`.
+- **`organizeImports` is deliberately off.** Import order in `packages/draftly` is
+  load-bearing in places (CodeMirror extension/facet precedence). Do not turn it on.
+- A `// biome-ignore` comment must sit directly above the line the diagnostic *anchors* to.
+  For `useExhaustiveDependencies` that is the `useMemo`/`useEffect` call, **not** the
+  dependency array — putting it above the array yields `suppressions/unused`.
+- The old ESLint setup used `eslint-plugin-only-warn`, so `bun run lint` could never fail.
+  Biome errors do block. Newly-gained a11y coverage and ~60 pre-existing stylistic findings
+  are pinned to `warn` in `base.json` so the migration landed green; they are a burn-down
+  backlog, not permanent policy.
+
 ### Developer's stated preferences
 
 Captured 2026-08-18 at project setup. See [Session 2026-08-18](#session-2026-08-18--artifact-system-bootstrap).
@@ -96,6 +120,8 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 4   | `turbo.json` declares a `check-types` task but the packages define `typecheck`. Nothing connects them, so `turbo run check-types` matches nothing. Which name wins? | `turbo.json` vs `packages/*/package.json`                                                                               | 2026-08-18 |
 | 5   | Should a test runner be introduced, and if so `bun test` or Vitest? The pure layers (`editor/utils.ts`, table text utilities) are trivially testable.               | No test infrastructure exists anywhere in the repo.                                                                     | 2026-08-18 |
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
+| 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins and newly-gained a11y findings in `packages/ui`'s vendored shadcn components. Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
+| 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
 
 ---
 

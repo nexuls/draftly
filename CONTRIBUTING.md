@@ -66,11 +66,18 @@ bun run build
 ### Lint & Format
 
 ```bash
-# Lint all packages
+# Lint all packages (read-only; fails on errors)
 bun run lint
 
-# Format code with Prettier
+# Apply Biome's safe lint fixes across all packages
+bun run lint:fix
+
+# Format code with Biome
 bun run format
+
+# Lint + format the whole repo in one pass, from the root
+bun run check          # report only
+bun run check:fix      # write fixes
 ```
 
 ---
@@ -168,8 +175,12 @@ Follow the prompts to describe your changes. This creates a file in `.changeset/
 
 ### Code Style
 
-- We use **Prettier** for formatting – run `bun run format` before committing.
-- We use **ESLint** for linting – run `bun run lint` to check for issues.
+- We use **[Biome](https://biomejs.dev)** for both linting and formatting – run `bun run check:fix`
+  before committing.
+- Shared configuration lives in `packages/biome-config`; each workspace has a small `biome.json`
+  that extends it. See that package's README for the layer breakdown.
+- Formatting matches the repository's previous Prettier settings: 2 spaces, double quotes,
+  semicolons, `printWidth`/`lineWidth` 120, ES5 trailing commas, LF.
 
 ### Plugins
 

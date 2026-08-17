@@ -1,0 +1,5 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "root": false,
+  "extends": ["@workspace/biome-config/base", "@workspace/biome-config/react-internal"]
+}

@@ -1,6 +1,6 @@
 # Build & Tooling
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-08-18 · commit `b6ecb96`
 
 ---
 
@@ -13,8 +13,7 @@
 | Library bundler | **tsup 8.5**           | esbuild-based; emits ESM + CJS + `.d.ts`             |
 | App framework   | **Next.js 16**         | App Router, Turbopack dev                            |
 | Language        | **TypeScript 5.7/5.9** | Root pins 5.7.3; `packages/draftly` uses ^5.9.3      |
-| Formatting      | **Prettier 3.7**       | `.prettierrc` at root                                |
-| Linting         | **ESLint 9**           | Flat config per package                              |
+| Lint + format   | **Biome 2.5.8**        | One tool for both; `biome.json` per workspace        |
 | Releases        | **Changesets**         | `baseBranch: master`, auto-commit on                 |
 
 > `pnpm-workspace.yaml` exists for tooling that reads it, but **Bun is the package
@@ -32,8 +31,11 @@ bun install                 # install everything
 
 bun dev                     # turbo run dev — web (Turbopack) + draftly (tsup --watch)
 bun run build               # turbo run build — respects ^build dependency order
-bun run lint                # turbo run lint
-bun run format              # prettier --write "**/*.{ts,tsx,md}"
+bun run lint                # turbo run lint      — biome check, read-only, fails on errors
+bun run lint:fix            # turbo run lint:fix  — biome check --write (safe fixes)
+bun run format              # turbo run format    — biome format --write
+bun run check               # biome check across the whole repo, from the root
+bun run check:fix           # biome check --write across the whole repo
 
 # Type checking is per-package (no root turbo task wired to it yet)
 cd packages/draftly && bun run typecheck
@@ -51,10 +53,17 @@ bun run release             # build draftly, then changeset publish
 | ------------- | -------------- | ----------------------------------- | ------------------ |
 | `build`       | `^build`       | `.next/**` (minus cache), `dist/**` | yes                |
 | `lint`        | `^lint`        | —                                   | yes                |
+| `lint:fix`    | —              | —                                   | **no** (writes)    |
+| `format`      | —              | —                                   | **no** (writes)    |
 | `check-types` | `^check-types` | —                                   | yes                |
 | `dev`         | —              | —                                   | **no**, persistent |
 
-`build` includes `.env*` in its `inputs` so env changes bust the cache.
+`build` includes `.env*` in its `inputs` so env changes bust the cache. `lint` adds
+`biome.json` and `../../biome.json` to its `inputs`, so editing either the workspace config
+or the root config invalidates the cached lint result.
+
+`lint:fix` and `format` are `cache: false` — they mutate the working tree, and a cache hit
+would skip work that was meant to happen.
 
 > **Known gap:** the packages define a `typecheck` script, but `turbo.json` declares
 > `check-types`. Nothing wires them together, so `turbo run check-types` finds no tasks.
@@ -113,33 +122,69 @@ bypasses the tested build output.
 
 ---
 
-## Code style
+## Code style — Biome
 
-`.prettierrc`, applied to all `.ts`/`.tsx`/`.md`:
+**Biome replaced ESLint + Prettier.** One binary does linting and formatting; there is no
+`.prettierrc`, no `eslint.config.js`, and no `@workspace/eslint-config` package any more.
 
-```json
-{
-  "semi": true,
-  "singleQuote": false,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "printWidth": 120,
-  "bracketSpacing": true,
-  "arrowParens": "always",
-  "endOfLine": "lf"
-}
-```
+### Config layout
 
-**`printWidth` is 120**, not 80 — the plugin sources rely on it. Run `bun run format`
+`biome.json` at the root carries `"root": true` — Biome 2.x permits exactly one root config
+per repository. Every workspace has a small `biome.json` with `"root": false` that extends
+shared presets from `packages/biome-config`:
+
+| Workspace          | Extends                        |
+| ------------------ | ------------------------------ |
+| `packages/draftly` | `base`                         |
+| `packages/ui`      | `base` + `react-internal`      |
+| `apps/web`         | `base` + `next-js`             |
+
+`base` is **not** implied by `react-internal` or `next-js`; a workspace lists both.
+The root config duplicates `base`'s formatter settings rather than extending it, because a
+root config cannot depend on a workspace package that may not be installed yet.
+
+### Formatter settings
+
+Deliberately identical to the previous Prettier config, so the migration did not rewrite
+every file: 2-space indent, LF, **lineWidth 120**, double quotes, semicolons always, ES5
+trailing commas, always-parenthesised arrow params.
+
+**`lineWidth` is 120**, not 80 — the plugin sources rely on it. Run `bun run check:fix`
 before committing rather than hand-wrapping.
 
-### ESLint
+### Parser options that are not defaults
 
-- Root `.eslintrc.js` covers root-level files only (`ignorePatterns: ["apps/**", "packages/**"]`).
-- Each package has its own flat `eslint.config.js` extending `@workspace/eslint-config`
-  (`base.js`, `next.js`, or `react-internal.js`).
-- `packages/draftly` and `packages/ui` keep a separate `tsconfig.lint.json` for
-  type-aware rules without slowing the main build.
+- `css.parser.tailwindDirectives: true` — `packages/ui/src/styles/globals.css` uses
+  `@source`, which Biome rejects as a parse error otherwise.
+- `json.parser.allowComments` / `allowTrailingCommas` — the `tsconfig`-style files in
+  `packages/typescript-config` are JSONC.
+
+### Severity policy
+
+`recommended` is on, with deliberate downgrades in `packages/biome-config/base.json`:
+
+| Rule(s)                                                                  | Level | Why |
+| ------------------------------------------------------------------------ | ----- | --- |
+| All six firing `a11y` rules                                              | warn  | The old ESLint setup had **no** a11y plugin, so every one of these is newly-gained coverage. They are a burn-down backlog, not a reason to fail CI on day one. |
+| `noNonNullAssertion`, `useTemplate`, `useSingleVarDeclarator`, `useOptionalChain`, `noUselessConstructor`, `noAssignInExpressions` | warn | Stylistic; ~60 pre-existing occurrences across the plugins. |
+| `noArrayIndexKey`, `noDocumentCookie`, `noUnusedPrivateClassMembers`     | warn  | Only fire in the playground and vendored shadcn components. |
+| `security/noDangerouslySetInnerHtml`                                     | off   | Draftly's preview pipeline exists to produce HTML strings; the playground renders them. Sanitising is `sanitize()`'s job, not the linter's. |
+| `correctness/noInvalidPositionAtImportRule`                              | off   | Tailwind v4 puts `@import "tw-animate-css"` after `@source`, which is CSS-spec-invalid but correct here. |
+
+The previous ESLint config used `eslint-plugin-only-warn`, which downgraded **everything** to
+a warning — so `bun run lint` could never fail. Biome's posture is stricter: errors block,
+warnings do not. `bun run lint` is currently green with 91 warnings outstanding.
+
+`assist.actions.source.organizeImports` is **off** on purpose. Import order in
+`packages/draftly` is load-bearing in places (CodeMirror extension and facet precedence), so
+reordering is a reviewed change, not an automatic one.
+
+### Suppressions
+
+Biome's inline suppression is `// biome-ignore lint/<group>/<rule>: <reason>` and the reason
+is **mandatory**. It must sit directly above the line the diagnostic anchors to — for a hook
+rule like `useExhaustiveDependencies` that is the `useMemo`/`useEffect` call itself, not the
+dependency array. A misplaced suppression is reported as `suppressions/unused`.
 
 ---
 
