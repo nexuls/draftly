@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "codemirror": {
+      "source": "solanabettercall/skills",
+      "sourceType": "github",
+      "skillPath": "skills/codemirror/SKILL.md",
+      "computedHash": "691f68166f4881f7607780b3ffc251a3eb2281a2366fc46aa575d4308ac1586e"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "89af426ed2e1a7fc8baafa755002b1983d05432bcb44cc0daff0bbacf2873d30"
+    }
+  }
+}
