@@ -28,12 +28,19 @@ no-sanitizer fallback should escape rather than pass through.
 | ID      | Task                                                                                     | Priority | Status   | Blocked on                    |
 | ------- | ----------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------- |
 | `T-013` | [Stop building the debug node tree eagerly](./ongoing/T-013-lazy-node-tree.md)           | Medium   | Proposed | API decision (see task)         |
-| `T-015` | [Memoize KaTeX / Mermaid / emoji renders](./ongoing/T-015-memoize-expensive-renders.md)  | Medium   | Proposed | Re-measure — C-016/C-017 landed |
+| `T-015` | [Share in-flight Mermaid renders](./ongoing/T-015-memoize-expensive-renders.md)          | Low      | Proposed | —                               |
 
 **T-011 and T-012 have both landed** (C-016, C-017): 39.2 ms → 0.40 ms per decoration
 build on a 5,000-line document. Its one open acceptance criterion is the playground
-checklist, which needs a browser. T-015's premise should be re-measured before starting: it
-assumed widgets re-render constantly, and after C-017 they no longer do.
+checklist, which needs a browser.
+
+**T-015 was re-measured and mostly dropped.** Its premise did not survive C-016 and C-017:
+`emoji.emojify` costs 0.36 µs, so even 100 visible shortcodes add 0.036 ms to a 0.40 ms
+decoration build, and `renderMath` no longer runs per keystroke now that widgets are
+reused. Both caches are dropped as not worth the code, along with the proposed `lib/lru.ts`.
+The task is rescoped to the one part that was never a caching argument — two mermaid
+widgets with the same definition should share one in-flight render. Left unimplemented
+because its failure modes cannot be checked without a browser.
 
 ### Lifecycle & memory
 

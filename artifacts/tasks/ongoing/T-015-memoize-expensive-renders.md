@@ -1,9 +1,14 @@
-# T-015 — Memoize expensive pure renders (KaTeX, Mermaid, emoji)
+# T-015 — Share in-flight Mermaid renders
 
-**Status:** Proposed
-**Priority:** Medium
+**Status:** Proposed (rescoped 2026-08-18 after measurement)
+**Priority:** Low
 **Created:** 2026-08-18
 **Blocked on:** —
+
+> **Rescoped.** This was "memoize KaTeX, Mermaid and emoji". Step 5 said to measure before
+> writing the cache; the measurement is in Notes below and it killed two of the three
+> cases. The emoji and math halves are **dropped as not worth the code**. What survives is
+> the mermaid promise-sharing in step 3, which was never really a caching argument.
 
 ## Problem
 
@@ -54,12 +59,14 @@ harmless in itself, but a decent proxy for how much redundant rendering is happe
 
 ## Acceptance
 
-- [ ] Repeated renders of identical input hit the cache
-- [ ] Cache size stays bounded on a document with many distinct formulae
+- [x] Measured improvement recorded in Notes, or the task is dropped with that finding —
+      **measured; the emoji and math cases are dropped.**
 - [ ] Concurrent mermaid renders of the same definition share one in-flight promise
-- [ ] A failed mermaid render is retried rather than cached as a permanent failure
-- [ ] Editing a formula still updates it immediately (no stale cache hit)
-- [ ] Measured improvement recorded in Notes, or the task is dropped with that finding
+- [ ] A failed mermaid render is retried rather than left cached as a permanent failure
+- [ ] Editing a diagram still updates it immediately (no stale hit)
+
+Dropped from the original list, with the numbers that killed them: a bounded LRU in
+`lib/`, caching `emoji.emojify`, and caching `renderMath`.
 
 ## Notes
 
@@ -69,3 +76,33 @@ harmless in itself, but a decent proxy for how much redundant rendering is happe
   target for T-001.
 - Dropping this task with a recorded "measured, not worth it" is a perfectly good outcome
   and more useful than a speculative cache.
+- **2026-08-18 — measured, and two thirds of the task died.** Node 24, this machine, warmed,
+  against the installed `node-emoji` and `katex`:
+
+  | Call                        | Cost        |
+  | --------------------------- | ----------- |
+  | `emoji.emojify(shortcode)`  | 0.00036 ms  |
+  | `katex.renderToString(f)`   | 0.109 ms    |
+
+  - **Emoji — dropped.** This was framed as the worst-shaped case because it runs inside
+    the decoration walk on every keystroke. After C-016 that walk is viewport-scoped, so
+    the multiplier is emoji *on screen*, not in the document. Even at an absurd 100 visible
+    shortcodes it adds **0.036 ms** to a decoration build that C-016 measured at 0.40 ms —
+    under 10% at a density no real document has. A cache here would cost more in code than
+    it saves in time.
+  - **Math — dropped.** `renderMath` is called from `toDOM`. After C-017 widgets are reused
+    across edits, so it no longer runs per keystroke; it runs when a widget is genuinely
+    new, i.e. on scroll re-entry. Five formulae re-entering the viewport is **0.54 ms**,
+    once, well inside a frame. The original estimate was inflated precisely by the T-012
+    bug that C-017 fixed.
+  - **`mermaidCounter` is already bounded.** The task cites it growing unboundedly; it now
+    wraps at `MERMAID_ID_WINDOW`. That observation is stale.
+  - **Mermaid — survives, but not as a cache.** Not benchmarked: `mermaid.render` needs a
+    DOM, and there is no browser here. The remaining argument is de-duplication, not
+    memoization — two widgets with the same definition should share one in-flight render
+    rather than starting two. That is worth doing on its own terms, and is why the task is
+    rescoped rather than closed.
+- **Not implemented, deliberately.** The mermaid change is async cache logic whose failure
+  modes (a stale diagram, a permanently-cached error) are exactly what cannot be checked
+  without rendering one. Shipping it unverified would trade a measured non-problem for an
+  unmeasured risk.

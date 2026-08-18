@@ -139,6 +139,13 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   be bundled at all (C-025). The fix is a *generated* `.ts` module — `bun run
   generate:katex-css` — because a plain string constant is the only form both resolvers
   agree on. `**/*.generated.ts` is excluded from Biome in `biome-config/base.json`.
+- **Measure before caching — C-016 and C-017 already removed most of the redundancy.**
+  T-015 proposed memoizing `emoji.emojify`, `renderMath` and `renderMermaid`. Measured:
+  `emojify` is 0.36 µs, so 100 *visible* shortcodes add 0.036 ms to a 0.40 ms decoration
+  build; and `renderMath` runs from `toDOM`, which since C-017 fires on scroll re-entry
+  rather than per keystroke. Both caches were dropped. The general lesson is that
+  per-keystroke cost estimates written before C-016/C-017 are inflated by exactly those two
+  bugs — re-derive them rather than trusting the task file.
 - **KaTeX's `@font-face` URLs are relative and have never resolved.** The inlined stylesheet
   references `fonts/KaTeX_*`, which resolve against the *page* URL once injected into
   `<head>`, not against the package. Consumers get KaTeX's layout with fallback glyphs
