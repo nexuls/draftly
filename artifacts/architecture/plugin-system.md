@@ -206,7 +206,12 @@ const theme = createTheme({
    goes through `ctx.sanitize()`. Conflating them is what produced C-011 —
    `href="${ctx.sanitize(url)}"` let a quote in the URL open a new attribute, because
    DOMPurify parses fragments and a bare string is not one.
-9. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
+9. **`WidgetType.eq()` compares content, never `from`/`to`.** Positions shift on any edit
+   above the widget, so comparing them means `eq` never reports equality and CodeMirror
+   rebuilds the DOM on every keystroke — re-running KaTeX, mermaid and image loads. A
+   handler that needs a range calls `resolveWidgetRange(view, dom, [nodeName])` from
+   `draftly/lib`, which reads it from the live DOM at event time.
+10. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
    a `src`, or `window.open` — on **both** surfaces. Setting a DOM property protects
    against injection but not against `javascript:`. Pass `{ allowDataImages: true }` only
    for an image `src`.

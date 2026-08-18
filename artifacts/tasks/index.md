@@ -27,14 +27,13 @@ no-sanitizer fallback should escape rather than pass through.
 
 | ID      | Task                                                                                     | Priority | Status   | Blocked on                    |
 | ------- | ----------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------- |
-| `T-012` | [Drop positions from widget `eq()`](./ongoing/T-012-widget-eq-positions.md)              | High     | Proposed | —                               |
 | `T-013` | [Stop building the debug node tree eagerly](./ongoing/T-013-lazy-node-tree.md)           | Medium   | Proposed | API decision (see task)         |
-| `T-015` | [Memoize KaTeX / Mermaid / emoji renders](./ongoing/T-015-memoize-expensive-renders.md)  | Medium   | Proposed | Re-measure after T-011, T-012   |
+| `T-015` | [Memoize KaTeX / Mermaid / emoji renders](./ongoing/T-015-memoize-expensive-renders.md)  | Medium   | Proposed | Re-measure — C-016/C-017 landed |
 
-**T-011 was the headline item and has landed** (C-016): 39.2 ms → 0.40 ms per decoration
+**T-011 and T-012 have both landed** (C-016, C-017): 39.2 ms → 0.40 ms per decoration
 build on a 5,000-line document. Its one open acceptance criterion is the playground
-checklist, which needs a browser. T-012 and T-015 are now worth doing — until C-016 they
-looked like no-ops because everything was rebuilt anyway.
+checklist, which needs a browser. T-015's premise should be re-measured before starting: it
+assumed widgets re-render constantly, and after C-017 they no longer do.
 
 ### Lifecycle & memory
 
@@ -84,11 +83,10 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 If the developer wants a single sequence rather than a set of groups:
 
-1. `T-012` — widget reuse, now that C-016 makes it visible
-2. `T-016` → `T-017` → `T-018` — lifecycle, in that order
-3. `T-020` — bundle size, coordinated with T-017 if both land
-4. `T-021` — small, independent, low risk
-5. everything else, re-prioritised once the above is known
+1. `T-016` → `T-017` → `T-018` — lifecycle, in that order
+2. `T-020` — bundle size, coordinated with T-017 if both land
+3. `T-021` — small, independent, low risk
+4. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
 hard to verify by eye in the playground, and the pure layers they touch are the testable

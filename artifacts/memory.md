@@ -82,10 +82,13 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
 - **A paired inline HTML tag split by the viewport edge loses its preview widget** and
   renders as an orphan-tag mark instead. Known and accepted (C-016); cosmetic, and it
   self-corrects on the next viewport update.
-- **`WidgetType.eq()` must compare content, never document positions.** Six widgets compare
-  `from`/`to`, which shift on any edit above them, so the widget is never reused — KaTeX
-  and Mermaid re-render on every keystroke. `TaskCheckboxWidget` shows the correct pattern:
-  content-only `eq`, position resolved at event time via `view.posAtDOM()`. See T-012.
+- **`WidgetType.eq()` must compare content, never document positions.** Positions shift on
+  any edit above them, so a position-comparing `eq` never reports equality and the widget
+  is rebuilt every keystroke. Fixed for all six offenders in C-017. Handlers that need a
+  range call `resolveWidgetRange(view, dom, [nodeName])` from `draftly/lib`, which resolves
+  it from the live DOM — it tries **both** sides of `posAtDOM`, because Draftly places
+  widgets as both a `replace` over the construct (position = start) and a `widget` with
+  `side: 1` at its end (position = end).
 - **There is no teardown path anywhere.** `grep -rn "destroy" packages/draftly/src` returns
   nothing — no view-plugin `destroy()`, no widget `destroy()`, no `onViewDestroy`, and
   `onUnregister` is declared but never called. The table plugin's pending-view fields

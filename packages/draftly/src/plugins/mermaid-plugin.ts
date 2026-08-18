@@ -1,6 +1,7 @@
 import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme, ThemeEnum } from "../editor";
+import { resolveWidgetRange, shallowEqualRecord } from "../lib/widget-position";
 import type { SyntaxNode } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, BlockParser, Line, BlockContext } from "@lezer/markdown";
@@ -92,13 +93,19 @@ class MermaidBlockWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every diagram below an edit re-ran an async
+   * mermaid.render() on every keystroke, flashing "Rendering diagram…" as it went. The handlers resolve the range from the live DOM instead.
+   */
   override eq(other: MermaidBlockWidget): boolean {
     return (
       other.definition === this.definition &&
-      JSON.stringify(other.attributes) === JSON.stringify(this.attributes) &&
       other.defaultTheme === this.defaultTheme &&
-      other.from === this.from &&
-      other.to === this.to
+      shallowEqualRecord(other.attributes, this.attributes)
     );
   }
 
@@ -125,8 +132,9 @@ class MermaidBlockWidget extends WidgetType {
     div.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const range = resolveWidgetRange(view, div, ["MermaidBlock"]) ?? { from: this.from, to: this.to };
       view.dispatch({
-        selection: { anchor: this.from, head: this.to },
+        selection: { anchor: range.from, head: range.to },
         scrollIntoView: true,
       });
       view.focus();

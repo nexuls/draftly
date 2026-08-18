@@ -3,6 +3,7 @@ import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
 import { safeUrl } from "../lib/safe-url";
 import { escapeHtml } from "../lib/escape-html";
+import { resolveWidgetRange } from "../lib/widget-position";
 import type { SyntaxNode } from "@lezer/common";
 
 /**
@@ -48,8 +49,17 @@ class LinkTooltipWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every link below an edit was rebuilt on every keystroke. The
+   * click handler resolves the range from the live DOM instead, which is also more
+   * correct: the snapshot went stale the moment anything above it changed.
+   */
   override eq(other: LinkTooltipWidget): boolean {
-    return other.url === this.url && other.from === this.from && other.to === this.to;
+    return other.url === this.url;
   }
 
   toDOM(view: EditorView) {
@@ -86,8 +96,9 @@ class LinkTooltipWidget extends WidgetType {
         // Regular click: select raw markdown
         e.preventDefault();
         e.stopPropagation();
+        const range = resolveWidgetRange(view, wrapper, ["Link"]) ?? { from: this.from, to: this.to };
         view.dispatch({
-          selection: { anchor: this.from, head: this.to },
+          selection: { anchor: range.from, head: range.to },
           scrollIntoView: true,
         });
         view.focus();
@@ -342,14 +353,17 @@ class LinkTextWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every link below an edit was rebuilt on every keystroke. The
+   * click handler resolves the range from the live DOM instead, which is also more
+   * correct: the snapshot went stale the moment anything above it changed.
+   */
   override eq(other: LinkTextWidget): boolean {
-    return (
-      other.text === this.text &&
-      other.url === this.url &&
-      other.from === this.from &&
-      other.to === this.to &&
-      other.title === this.title
-    );
+    return other.text === this.text && other.url === this.url && other.title === this.title;
   }
 
   toDOM(view: EditorView) {
@@ -391,8 +405,9 @@ class LinkTextWidget extends WidgetType {
         // Regular click: select raw markdown
         e.preventDefault();
         e.stopPropagation();
+        const range = resolveWidgetRange(view, span, ["Link"]) ?? { from: this.from, to: this.to };
         view.dispatch({
-          selection: { anchor: this.from, head: this.to },
+          selection: { anchor: range.from, head: range.to },
           scrollIntoView: true,
         });
         view.focus();

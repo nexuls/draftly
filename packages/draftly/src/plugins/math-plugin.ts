@@ -2,6 +2,7 @@ import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
+import { resolveWidgetRange } from "../lib/widget-position";
 import type { SyntaxNode } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, InlineParser, BlockParser, Line, BlockContext } from "@lezer/markdown";
@@ -70,8 +71,16 @@ class InlineMathWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every formula below an edit was torn down and re-rendered
+   * through KaTeX on every keystroke. The handlers resolve the range from the live DOM instead.
+   */
   override eq(other: InlineMathWidget): boolean {
-    return other.latex === this.latex && other.from === this.from && other.to === this.to;
+    return other.latex === this.latex;
   }
 
   toDOM(view: EditorView) {
@@ -92,8 +101,9 @@ class InlineMathWidget extends WidgetType {
     span.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const range = resolveWidgetRange(view, span, ["InlineMath"]) ?? { from: this.from, to: this.to };
       view.dispatch({
-        selection: { anchor: this.from, head: this.to },
+        selection: { anchor: range.from, head: range.to },
         scrollIntoView: true,
       });
       view.focus();
@@ -119,8 +129,16 @@ class MathBlockWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every block formula below an edit re-rendered through
+   * KaTeX on every keystroke. The handlers resolve the range from the live DOM instead.
+   */
   override eq(other: MathBlockWidget): boolean {
-    return other.latex === this.latex && other.from === this.from && other.to === this.to;
+    return other.latex === this.latex;
   }
 
   toDOM(view: EditorView) {
@@ -141,8 +159,9 @@ class MathBlockWidget extends WidgetType {
     div.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const range = resolveWidgetRange(view, div, ["MathBlock"]) ?? { from: this.from, to: this.to };
       view.dispatch({
-        selection: { anchor: this.from, head: this.to },
+        selection: { anchor: range.from, head: range.to },
         scrollIntoView: true,
       });
       view.focus();

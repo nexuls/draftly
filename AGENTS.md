@@ -179,6 +179,8 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
   swap the `catch` for a `console.error` when a decoration does not appear.
 - **`Decoration.replace` must never span a newline.** Clamp to `line.to`. Canonical
   example: `heading-plugin.ts:104`.
+- **A widget's `eq()` must compare content only.** Comparing `from`/`to` means it is never
+  reused; use `resolveWidgetRange()` when a handler needs the range.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
   `schedule*` deferred pattern from `table-plugin.ts`, and annotate self-dispatches.
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer only.
@@ -214,15 +216,18 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
    (`someDecoration.spec.class`) rather than retyping them. This is the mechanism that
    enforces parity.
 6. Guard every hiding decoration with `ctx.selectionOverlapsRange(from, to)`.
-7. **Escape attribute values, sanitize fragments, and run URLs through `safeUrl()`.**
+7. **A widget's `eq()` compares content, never `from`/`to`** — positions shift on any edit
+   above it, so the widget would be rebuilt every keystroke. Resolve the range at event
+   time with `resolveWidgetRange()` from `draftly/lib`.
+8. **Escape attribute values, sanitize fragments, and run URLs through `safeUrl()`.**
    `ctx.sanitize()` is for a blob of HTML that stays markup; anything going into a quoted
    attribute or rendered as text gets `escapeHtml` from `draftly/lib`. Apply `safeUrl()`
    on both surfaces, not just preview.
-8. Put the theme at the bottom of the file via `createTheme()`.
-9. Register in `plugins/index.ts` — named export **and** `essentialPlugins`.
-10. Add a row to `artifacts/architecture/plugins-catalog.md`.
-11. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
-12. Verify both surfaces in the playground.
+9. Put the theme at the bottom of the file via `createTheme()`.
+10. Register in `plugins/index.ts` — named export **and** `essentialPlugins`.
+11. Add a row to `artifacts/architecture/plugins-catalog.md`.
+12. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
+13. Verify both surfaces in the playground.
 
 ### Change the editor core
 

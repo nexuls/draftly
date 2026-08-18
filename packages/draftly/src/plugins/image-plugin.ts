@@ -3,6 +3,7 @@ import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
 import { safeUrl } from "../lib/safe-url";
 import { escapeHtml } from "../lib/escape-html";
+import { resolveWidgetRange } from "../lib/widget-position";
 import type { SyntaxNode } from "@lezer/common";
 
 /**
@@ -52,14 +53,16 @@ class ImageWidget extends WidgetType {
     super();
   }
 
+  /**
+   * Compares **content only**.
+   *
+   * `eq()` answers "can CodeMirror keep the DOM it already built?". Document positions
+   * shift on any edit earlier in the document, so including them made the answer
+   * permanently no -- every <img> below an edit was destroyed and re-created,
+   * causing flicker and, depending on cache headers, a re-fetch. The handlers resolve the range from the live DOM instead.
+   */
   override eq(other: ImageWidget): boolean {
-    return (
-      other.url === this.url &&
-      other.alt === this.alt &&
-      other.from === this.from &&
-      other.to === this.to &&
-      other.title === this.title
-    );
+    return other.url === this.url && other.alt === this.alt && other.title === this.title;
   }
 
   toDOM(view: EditorView) {
@@ -76,8 +79,9 @@ class ImageWidget extends WidgetType {
     figure.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const range = resolveWidgetRange(view, figure, ["Image"]) ?? { from: this.from, to: this.to };
       view.dispatch({
-        selection: { anchor: this.from, head: this.to },
+        selection: { anchor: range.from, head: range.to },
         scrollIntoView: true,
       });
       view.focus();
