@@ -10,6 +10,24 @@
  * @packageDocumentation
  */
 
+/** The five characters that change meaning in HTML text or a quoted attribute value. */
+const HTML_ENTITIES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+/**
+ * Matcher for {@link HTML_ENTITIES}.
+ *
+ * Used only with `.replace()`. Never call `.test()` on it: a `/g` regex carries
+ * `lastIndex` between calls, so a "does this need escaping?" fast path would silently
+ * start matching from the wrong offset on the next invocation.
+ */
+const HTML_ESCAPE_PATTERN = /[&<>"']/g;
+
 /**
  * Escape the five characters that change meaning inside HTML text or a quoted
  * attribute value.
@@ -28,10 +46,7 @@
  * ```
  */
 export function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  // Single pass with a lookup. Chaining five `.replace` calls built four intermediate
+  // strings per invocation, and this runs for every text gap in the document.
+  return text.replace(HTML_ESCAPE_PATTERN, (char) => HTML_ENTITIES[char] as string);
 }

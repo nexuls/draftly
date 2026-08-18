@@ -102,10 +102,11 @@ Before C-014 they were in the order the consumer passed them, which is only invi
 because no two built-ins share a `requiredNodes` entry — verified, 52 node names, zero
 overlaps. A consumer adding a plugin to override a built-in is exactly the case that broke.
 
-Note the cost in step 1: `renderChildren` is awaited **before** the plugin is consulted,
-once per candidate plugin. A plugin that returns `null` has already paid for a full
-subtree render. This is why plugins should decline via `requiredNodes` (never registering
-for the node) rather than via a `null` return where possible.
+Children are rendered **at most once per node** and only if something asks for them
+(C-015). A plugin that takes `_children` for a node it always claims — `LinkPlugin`,
+`ImagePlugin`, `CodePlugin`, `TablePlugin` — never pays for the subtree at all. Declining
+via `null` still costs one subtree render, so declining via `requiredNodes` remains
+cheaper where the choice exists.
 
 Step 4 **escapes** the leaf node's text (since C-012). It is a safety net, not a
 pass-through: `defaultRenderers` holds only `Document`, so most node types reach this
@@ -168,6 +169,20 @@ clothes, and `[x](" onmouseover="alert(1))` walked straight through it (C-011).
 reach it without importing the preview pipeline. `lib/safe-url.ts` covers the other half
 — DOMPurify would strip `javascript:` off an anchor element, but it never sees one, only
 the URL string. Both surfaces call the same guard.
+
+### Parser caching
+
+The parser is built once and reused across `preview()` calls whose resolved extension set
+is element-wise identical — a single-entry module-level cache. `preview()` constructs a
+fresh `PreviewRenderer` per call, and building the language support pulls in the whole
+`@codemirror/language-data` registry, so in a debounced live preview this ran on every
+keystroke.
+
+What makes the comparison possible: `getMarkdownConfig()` returns a fresh object literal
+on every call, so `editor/markdown-cache.ts` memoizes it per plugin instance. Without that
+memo the extension array would never compare equal and the cache would never hit.
+
+---
 
 ### ⚠️ `sanitize()` is a no-op on the server
 

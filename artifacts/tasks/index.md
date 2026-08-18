@@ -30,7 +30,6 @@ no-sanitizer fallback should escape rather than pass through.
 | `T-011` | [Scope decorations to the viewport](./ongoing/T-011-viewport-scoped-decorations.md)      | High     | Proposed | —                               |
 | `T-012` | [Drop positions from widget `eq()`](./ongoing/T-012-widget-eq-positions.md)              | High     | Proposed | Sequence after T-011            |
 | `T-013` | [Stop building the debug node tree eagerly](./ongoing/T-013-lazy-node-tree.md)           | Medium   | Proposed | API decision (see task)         |
-| `T-014` | [Redundant work in the preview renderer](./ongoing/T-014-preview-renderer-redundant-work.md) | Medium   | Proposed | —                               |
 | `T-015` | [Memoize KaTeX / Mermaid / emoji renders](./ongoing/T-015-memoize-expensive-renders.md)  | Medium   | Proposed | Re-measure after T-011, T-012   |
 
 **T-011 is the headline item.** No plugin scopes its tree walk to `view.visibleRanges`, so
@@ -88,7 +87,7 @@ If the developer wants a single sequence rather than a set of groups:
 1. `T-011` → `T-012` — the O(document)-per-keystroke problem
 2. `T-016` → `T-017` → `T-018` — lifecycle, in that order
 3. `T-020` — bundle size, coordinated with T-017 if both land
-4. `T-014`, `T-021` — small, independent, low risk
+4. `T-021` — small, independent, low risk
 5. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
@@ -104,6 +103,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-015` | [Redundant work in the preview renderer](./completed/C-015-preview-renderer-redundant-work.md)        | 2026-08-18           |
 | `C-014` | [Preview dispatch ignores `decorationPriority`](./completed/C-014-preview-dispatch-priority.md)       | 2026-08-18           |
 | `C-013` | [Make server-side sanitization honest](./completed/C-013-server-side-sanitization.md)                 | 2026-08-18           |
 | `C-012` | [Preview emits raw HTML for unhandled nodes](./completed/C-012-preview-raw-leaf-output.md)            | 2026-08-18           |
