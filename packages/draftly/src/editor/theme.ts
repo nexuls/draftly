@@ -33,6 +33,10 @@ const lightTokens: Record<string, string> = {
   "--draftly-color-border": "var(--color-border, #d7dee7)",
   "--draftly-color-surface": "var(--color-background, #ffffff)",
   "--draftly-color-surface-raised": "var(--color-background, #ffffff)",
+  "--draftly-surface-code": "rgba(0, 0, 0, 0.03)",
+  "--draftly-surface-code-inline": "rgba(0, 0, 0, 0.05)",
+  "--draftly-surface-code-header": "rgba(0, 0, 0, 0.06)",
+  "--draftly-surface-code-caption": "rgba(0, 0, 0, 0.06)",
   "--draftly-surface-header": "rgba(15, 23, 42, 0.04)",
   "--draftly-surface-stripe": "rgba(15, 23, 42, 0.02)",
   "--draftly-surface-hover": "rgba(15, 23, 42, 0.05)",
@@ -40,12 +44,11 @@ const lightTokens: Record<string, string> = {
   "--draftly-color-tooltip-fg": "#ffffff",
   "--draftly-shadow-popover": "0 10px 24px rgba(15, 23, 42, 0.12)",
 
-  // Foreground-on-background tints, subtlest first. Used for code block
-  // backgrounds, table zebra striping, hover states and similar chrome.
+  // Generic foreground-on-background tints, for chrome that has no more
+  // specific surface role. Most components do — see the `--draftly-surface-*`
+  // tokens — because their light and dark values are not symmetric.
   "--draftly-tint-1": "rgba(0, 0, 0, 0.02)",
   "--draftly-tint-2": "rgba(0, 0, 0, 0.03)",
-  "--draftly-tint-3": "rgba(0, 0, 0, 0.05)",
-  "--draftly-tint-4": "rgba(0, 0, 0, 0.06)",
   "--draftly-tint-5": "rgba(0, 0, 0, 0.1)",
 
   // Diff and highlight accents. `-line` values are the translucent row washes,
@@ -79,6 +82,10 @@ const darkTokens: Record<string, string> = {
   "--draftly-color-border": "var(--color-border, #30363d)",
   "--draftly-color-surface": "var(--color-background, #0d1117)",
   "--draftly-color-surface-raised": "var(--color-background, #161b22)",
+  "--draftly-surface-code": "rgba(255, 255, 255, 0.05)",
+  "--draftly-surface-code-inline": "rgba(255, 255, 255, 0.1)",
+  "--draftly-surface-code-header": "rgba(255, 255, 255, 0.08)",
+  "--draftly-surface-code-caption": "rgba(255, 255, 255, 0.05)",
   "--draftly-surface-header": "rgba(255, 255, 255, 0.05)",
   "--draftly-surface-stripe": "rgba(255, 255, 255, 0.025)",
   "--draftly-surface-hover": "rgba(255, 255, 255, 0.08)",
@@ -88,8 +95,6 @@ const darkTokens: Record<string, string> = {
 
   "--draftly-tint-1": "rgba(255, 255, 255, 0.02)",
   "--draftly-tint-2": "rgba(255, 255, 255, 0.03)",
-  "--draftly-tint-3": "rgba(255, 255, 255, 0.05)",
-  "--draftly-tint-4": "rgba(255, 255, 255, 0.08)",
   "--draftly-tint-5": "rgba(255, 255, 255, 0.1)",
 
   "--draftly-color-add-text": "#4ade80",

@@ -401,15 +401,15 @@ export class HTMLPlugin extends DecorationPlugin {
 const theme = createTheme({
   default: {
     ".cm-draftly-html-tag": {
-      color: "#6a737d",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      color: "var(--draftly-color-muted)",
+      fontFamily: "var(--draftly-font-mono)",
       fontSize: "0.85em",
     },
 
     ".cm-draftly-html-comment": {
-      color: "#6a737d",
+      color: "var(--draftly-color-muted)",
       fontStyle: "italic",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      fontFamily: "var(--draftly-font-mono)",
       fontSize: "0.85em",
       opacity: 0.5,
     },
