@@ -114,6 +114,22 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `pnpm install` or `npm install` creates a conflicting lockfile.
 - **CodeMirror packages must stay external/peer.** Two copies of `@codemirror/state` in
   one bundle breaks facet identity and fails in confusing ways.
+- **No plugin may contain a literal colour.** Everything resolves through a `--draftly-*`
+  token declared in `editor/theme.ts`, with a host variable read first
+  (`var(--color-primary, #0366d6)`). A `dark` layer inside a plugin means a token is
+  missing. See [`architecture/theming.md`](./architecture/theming.md#design-tokens).
+- **A dark override written at lower specificity than its default silently never applies.**
+  Four of `code-plugin.theme.ts`'s dark rules were dead this way for who knows how long,
+  and nothing surfaces it — the CSS is valid, it just loses. This is the strongest argument
+  for the token layer: the value flips in one place instead of being re-declared.
+- **`renderToHTML` must never emit a class the editor uses for *line* layout.** `ListPlugin`
+  tagged preview `<ul>`s with `cm-draftly-list-line-ul`, so they inherited `display: flex`
+  and a `padding-left` computed from a `--depth` property that only exists per editor line.
+  Preview classes are separate on purpose.
+- **`scripts/theme-snapshot.ts` proves a style refactor is inert.** It dumps the resolved
+  preview CSS per theme with `var()` references inlined and fallbacks collapsed, so a
+  before/after diff shows real rendered differences rather than token indirection. Use it
+  for anything touching themes — there is still no test suite.
 - **`preview/syntax-theme.ts` depends on undocumented CodeMirror internals.** A
   `@codemirror/language` upgrade can silently drop preview syntax colours with no type
   error. Re-test preview code blocks after any CodeMirror bump.
@@ -172,11 +188,56 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 11  | ~~With `sanitize: false`, should `HTMLPlugin` emit raw HTML or escape it?~~ **Answered provisionally in C-012: honour the flag literally** — raw HTML with `sanitize: false`, sanitized with the default `true`. Confirm or overturn. | `plugins/html-plugin.ts`; C-012 | 2026-08-18 |
 | 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |
 | 14  | With `sanitize: true` and no DOM and no `sanitizer`, preview passes HTML through (now with a warning). Should it instead **escape** the HTML, so the default is safe everywhere? That is a behaviour change for existing SSR consumers, whose HTML blocks would start rendering as visible source. | `preview/context.ts`; C-013 | 2026-08-18 |
+| 15  | `codemirror-lang-latex` is **AGPL-3.0-or-later** and `draftly` is MIT. Taking it as a dependency — even lazily imported — would push copyleft terms onto every consumer, so `MathPlugin` accepts an injected parser instead. Confirm that injection is the intended long-term shape, or is a differently-licensed LaTeX parser worth vendoring? | `plugins/math-plugin.ts`; the fork this came from is an app, where the licence question does not arise the same way. | 2026-08-18 |
+| 16  | Plugin themes emit their editor-only rules into preview CSS and vice versa — e.g. `.cm-draftly-list-line-ul`'s flex layout is in the generated preview stylesheet, matching nothing. Split each plugin theme into editor/preview/shared halves, as `editor/theme.ts` now does? | `editor/plugin.ts` `getPreviewStyles`; noticed while fixing the list-class leak. | 2026-08-18 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---
 
 ## Session log
+
+### Session 2026-08-18 — migrating the logits fork
+
+Implemented [`tasks/logits-migration-plan.md`](./tasks/logits-migration-plan.md). Nine
+workstreams landed; the plan's own reject list held up on contact.
+
+**What the comparison actually showed.** The fork's diff is 2,170 lines and most of it is
+an 80-column reformat — its `biome.json` sets `lineWidth: 80`, this repo's sets 120. Every
+identifier the big "AGENT standard" commit appeared to add already existed here; they only
+showed as additions because their signatures wrapped. Checking that before planning saved
+re-applying a 1,600-line no-op.
+
+**Where the fork was solving the right problem the wrong way.** Three of its changes had to
+be rebuilt rather than ported, and the reasons generalise:
+
+- Its design-token layer mapped straight onto its app's shadcn variables, which would leave
+  the published package unstyled anywhere else. Tokens here read the host variable *and*
+  carry a literal fallback.
+- Its preview base-style sharing hardcoded `.draftly-preview`, breaking any custom
+  `wrapperClass`, and wrapped preview output in `div.cm-content` so the editor's selectors
+  would match — leaking a CodeMirror-internal class into static HTML. Rewriting the
+  selectors instead leaves `preview()` output alone.
+- Its list-indentation fix moved a `--depth` expression into the preview rules. `--depth`
+  is never set in preview, so it changed the constant and not the behaviour. The actual bug
+  was that preview lists carried editor *line* classes at all.
+
+**Verification, without a browser or a test suite.** `scripts/theme-snapshot.ts` was written
+before touching any theme: it resolves every `var()` back to the literal it stands for, so
+a before/after diff shows rendered differences rather than token indirection. Every plugin
+conversion was checked against it, and every surviving difference was classified by hand —
+which is how the four dead dark-mode rules in `code-plugin.theme.ts` were found. That
+harness caught one real regression I introduced (a substitution pattern that silently
+missed the mermaid error block while its dark layer was being deleted).
+
+**A licensing finding that changed a decision.** The developer approved lazy-loading
+`codemirror-lang-latex` on bundle-size grounds. It is AGPL-3.0-or-later; `draftly` is MIT.
+Approving a size tradeoff is not approving a copyleft dependency for every consumer, so
+`MathPlugin` takes an injected parser instead and the package list is unchanged. Logged as
+open question 15.
+
+**Not migrated:** the fork's formatting churn, its app-specific token values, and assorted
+cosmetic tweaks (heading weights, content padding, dimmed paragraph text) that read as
+choices for its own product rather than library defaults.
 
 ### Session 2026-08-18 — implementing the audit backlog
 

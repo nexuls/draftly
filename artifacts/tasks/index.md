@@ -97,11 +97,13 @@ ones — an argument for answering memory Q5 before starting rather than after.
 
 | Plan                                                              | Priority | Status   | Blocked on                |
 | ----------------------------------------------------------------- | -------- | -------- | ------------------------- |
-| [Migrate the `logits` fork's improvements](./logits-migration-plan.md) | High | Proposed | 5 developer decisions |
+| [Migrate the `logits` fork's improvements](./logits-migration-plan.md) | High | **Complete** | — |
 
-The vendored copy in `/home/nexul/projects/logits` diverged on 2026-03-30 and gained a
-design-token theming layer, LaTeX math highlighting, shortcut metadata, and four bug fixes.
-Most of its 2,170-line diff is an 80-column reformat and is explicitly out of scope.
+All nine workstreams landed (`38df166`…`5b9fac7`). The design-token layer, shared base
+styles, documented shortcuts, paragraph spacing and five bug fixes are in; the fork's
+80-column reformat and app-specific values were rejected as planned. Two findings are now
+open questions 15 (the LaTeX parser's AGPL licence) and 16 (plugin themes emit each
+surface's rules to both).
 
 ---
 
