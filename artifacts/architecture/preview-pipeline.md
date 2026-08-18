@@ -17,7 +17,7 @@ output that is visually identical to the live editor.
 | `context.ts`           | 41  | Builds the `PreviewContext` handed to plugins               |
 | `css-generator.ts`     | 64  | `generateCSS()` — base + syntax + per-plugin styles         |
 | `syntax-theme.ts`      | 110 | Extracts `tok-*` rules out of CodeMirror `HighlightStyle`s  |
-| `default-renderers.ts` | 29  | Fallback renderers + `escapeHtml`                           |
+| `default-renderers.ts` | 23  | Fallback renderers; re-exports `escapeHtml` from `lib/`     |
 | `types.ts`             | 86  | Public types                                                |
 
 ---
@@ -142,6 +142,22 @@ interface PreviewContext {
 arbitrary subtrees — used by container plugins (blockquote, list) that need to control
 the wrapper element but not the contents.
 
+### ⚠️ Escaping and sanitizing are not interchangeable
+
+The rule, in one line: **attribute values and text get `escapeHtml`; HTML fragments get
+`ctx.sanitize()`.**
+
+`DOMPurify.sanitize()` parses an HTML *fragment* and removes what is dangerous in it.
+Handed a bare string with no tags — a URL, a title, an alt text — it has nothing to parse
+and returns the string essentially unchanged, double quotes included. So
+`href="${ctx.sanitize(url)}"` is not protection; it is a no-op wearing protection's
+clothes, and `[x](" onmouseover="alert(1))` walked straight through it (C-011).
+
+`escapeHtml` now lives in `lib/escape-html.ts` and is re-exported here, so plugins can
+reach it without importing the preview pipeline. `lib/safe-url.ts` covers the other half
+— DOMPurify would strip `javascript:` off an anchor element, but it never sees one, only
+the URL string. Both surfaces call the same guard.
+
 ### ⚠️ `sanitize()` is a no-op on the server
 
 ```ts
@@ -229,7 +245,8 @@ for objects shaped like a `HighlightStyle`, then:
 
 Currently near-empty by design: only `Document` (renders children) is registered.
 Everything else is a plugin's responsibility, and unmatched nodes fall through to the
-recurse-or-slice fallback. `escapeHtml` lives here and is the module's main export in
-practice.
+recurse-or-slice fallback. `escapeHtml` is **re-exported** from here — it moved to
+`lib/escape-html.ts` in C-011 so plugins could use it without depending on the preview
+pipeline — and the re-export keeps the public `draftly/preview` entry point unchanged.
 
 Add a default renderer only for structural nodes that no plugin should own.

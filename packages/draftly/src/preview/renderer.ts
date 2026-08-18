@@ -6,7 +6,8 @@ import { languages } from "@codemirror/language-data";
 import type { DraftlyPlugin } from "../editor/plugin";
 import { ThemeEnum } from "../editor/utils";
 import { createPreviewContext } from "./context";
-import { defaultRenderers, escapeHtml } from "./default-renderers";
+import { defaultRenderers } from "./default-renderers";
+import { escapeHtml } from "../lib/escape-html";
 import { resolveSyntaxHighlighters } from "./syntax-theme";
 import type { NodeRendererMap, PreviewContext } from "./types";
 

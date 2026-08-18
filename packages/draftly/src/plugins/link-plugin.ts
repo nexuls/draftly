@@ -2,6 +2,8 @@ import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codem
 import { syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
+import { safeUrl } from "../lib/safe-url";
+import { escapeHtml } from "../lib/escape-html";
 import type { SyntaxNode } from "@lezer/common";
 
 /**
@@ -77,7 +79,10 @@ class LinkTooltipWidget extends WidgetType {
         // Ctrl+Click: open in new tab
         e.preventDefault();
         e.stopPropagation();
-        window.open(this.url, "_blank", "noopener,noreferrer");
+        const target = safeUrl(this.url);
+        if (target) {
+          window.open(target, "_blank", "noopener,noreferrer");
+        }
       } else {
         // Regular click: select raw markdown
         e.preventDefault();
@@ -312,9 +317,13 @@ export class LinkPlugin extends DecorationPlugin {
     const parsed = parseLinkMarkdown(content);
     if (!parsed) return null;
 
-    const textContent = ctx.sanitize(parsed.text);
-    const urlAttr = ctx.sanitize(parsed.url);
-    const titleAttr = parsed.title ? ` title="${ctx.sanitize(parsed.title)}"` : "";
+    // Attribute values are *text*, so they are escaped, not sanitized. DOMPurify
+    // sanitizes an HTML fragment; handed a bare string it returns it essentially
+    // unchanged -- quotes included -- which is how `[x](" onmouseover="alert(1))`
+    // used to inject an attribute here.
+    const textContent = escapeHtml(parsed.text);
+    const urlAttr = escapeHtml(safeUrl(parsed.url));
+    const titleAttr = parsed.title ? ` title="${escapeHtml(parsed.title)}"` : "";
 
     return `<a class="cm-draftly-link" href="${urlAttr}"${titleAttr} target="_blank" rel="noopener noreferrer">${textContent}</a>`;
   }
@@ -375,7 +384,10 @@ class LinkTextWidget extends WidgetType {
         // Ctrl+Click: open in new tab
         e.preventDefault();
         e.stopPropagation();
-        window.open(this.url, "_blank", "noopener,noreferrer");
+        const target = safeUrl(this.url);
+        if (target) {
+          window.open(target, "_blank", "noopener,noreferrer");
+        }
       } else {
         // Regular click: select raw markdown
         e.preventDefault();

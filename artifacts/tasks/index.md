@@ -17,7 +17,6 @@ by theme rather than by ID, because within each group the sequencing matters.
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
 | `T-010` | [Preview emits raw HTML for unhandled nodes](./ongoing/T-010-preview-raw-leaf-output.md)    | High     | Proposed | —                                                       |
-| `T-009` | [Escape attribute values in `renderToHTML`](./ongoing/T-009-preview-attribute-escaping.md)  | High     | Proposed | —                                                       |
 | `T-003` | [Make server-side sanitization honest](./ongoing/T-003-server-side-sanitization.md)         | High     | Proposed | Sequence after T-010                                    |
 | `T-023` | [Preview dispatch ignores `decorationPriority`](./ongoing/T-023-preview-dispatch-priority.md) | Medium   | Proposed | —                                                       |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
@@ -87,7 +86,7 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 If the developer wants a single sequence rather than a set of groups:
 
-1. `T-010` → `T-009` → `T-003` — close the sanitization hole
+1. `T-010` → `T-003` — close the sanitization hole (`T-009` shipped as `C-011`)
 2. `T-011` → `T-012` — the O(document)-per-keystroke problem
 3. `T-016` → `T-017` → `T-018` — lifecycle, in that order
 4. `T-020` — bundle size, coordinated with T-017 if both land
@@ -107,6 +106,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-011` | [Escape attribute values in `renderToHTML`](./completed/C-011-preview-attribute-escaping.md)          | 2026-08-18           |
 | `C-010` | [Theme rebuild grows the stylesheet](./completed/C-010-theme-stylesheet-growth.md)                     | 2026-08-18           |
 | `C-009` | [Harden `createTheme` / `deepMerge`](./completed/C-009-theme-utils-hardening.md)                       | 2026-08-18           |
 | `C-008` | [Replace ESLint + Prettier with Biome](./completed/C-008-biome-migration.md)                          | 2026-08-18           |

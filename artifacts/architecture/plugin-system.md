@@ -192,6 +192,16 @@ const theme = createTheme({
    `*-plugin.theme.ts` when it dominates the file (precedent: `code-plugin.theme.ts`).
 7. **Register in `plugins/index.ts`** — both the named export and the
    `essentialPlugins` array.
+8. **Escape attribute values; sanitize fragments.** These are different operations and
+   `ctx.sanitize()` only does the second one. An attribute value or a run of text goes
+   through `escapeHtml` from `draftly/lib`; a blob of HTML that is *meant* to stay markup
+   goes through `ctx.sanitize()`. Conflating them is what produced C-011 —
+   `href="${ctx.sanitize(url)}"` let a quote in the URL open a new attribute, because
+   DOMPurify parses fragments and a bare string is not one.
+9. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
+   a `src`, or `window.open` — on **both** surfaces. Setting a DOM property protects
+   against injection but not against `javascript:`. Pass `{ allowDataImages: true }` only
+   for an image `src`.
 
 ### Choosing `decorationPriority`
 

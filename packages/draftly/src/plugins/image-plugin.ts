@@ -2,6 +2,8 @@ import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codem
 import { syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
+import { safeUrl } from "../lib/safe-url";
+import { escapeHtml } from "../lib/escape-html";
 import type { SyntaxNode } from "@lezer/common";
 
 /**
@@ -85,7 +87,7 @@ class ImageWidget extends WidgetType {
     // Create image element with accessibility attributes
     const img = document.createElement("img");
     img.className = "cm-draftly-image";
-    img.src = this.url;
+    img.src = safeUrl(this.url, { allowDataImages: true });
     img.alt = this.alt;
     img.setAttribute("loading", "lazy");
     img.setAttribute("decoding", "async");
@@ -334,15 +336,19 @@ export class ImagePlugin extends DecorationPlugin {
     const parsed = parseImageMarkdown(content);
     if (!parsed) return null;
 
-    const altAttr = ctx.sanitize(parsed.alt);
-    const titleAttr = parsed.title ? ` title="${ctx.sanitize(parsed.title)}"` : "";
-    const ariaLabel = parsed.title ? ` aria-label="${ctx.sanitize(parsed.title)}"` : "";
+    // Escape, do not sanitize -- see the note in LinkPlugin.renderToHTML. `data:`
+    // image URLs are allowed here and only here; they are a real markdown idiom
+    // for an `<img src>` and meaningless for a navigation target.
+    const altAttr = escapeHtml(parsed.alt);
+    const srcAttr = escapeHtml(safeUrl(parsed.url, { allowDataImages: true }));
+    const titleAttr = parsed.title ? ` title="${escapeHtml(parsed.title)}"` : "";
+    const ariaLabel = parsed.title ? ` aria-label="${escapeHtml(parsed.title)}"` : "";
 
     let html = `<figure class="cm-draftly-image-figure" role="figure"${ariaLabel}>`;
-    html += `<img class="cm-draftly-image" src="${ctx.sanitize(parsed.url)}" alt="${altAttr}"${titleAttr} loading="lazy" decoding="async" />`;
+    html += `<img class="cm-draftly-image" src="${srcAttr}" alt="${altAttr}"${titleAttr} loading="lazy" decoding="async" />`;
 
     if (parsed.title) {
-      html += `<figcaption class="cm-draftly-image-caption">${ctx.sanitize(parsed.title)}</figcaption>`;
+      html += `<figcaption class="cm-draftly-image-caption">${escapeHtml(parsed.title)}</figcaption>`;
     }
 
     html += "</figure>";

@@ -120,7 +120,7 @@ Follow the existing style in `editor/plugin.ts` and `editor/draftly.ts`.
   - Scopes: `draftly`, `web`, `ui`, or omit for repo-wide
   - Examples: `feat(draftly): Emoji Plugin`, `fix(draftly): Ignore tailing non-table line`
 - Do commit as you go. Do not stage a large change and commit it all at once.
-- Branch off `master`; do not push unless asked.
+- Do Not branch off master unless told; do not push unless asked.
 - Add a changeset (`bun changeset`) for any user-facing library change.
 
 ### 6. Keep artifacts current
@@ -180,6 +180,9 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer only.
 - **`sanitize()` is a no-op on the server.** DOMPurify needs a DOM; `sanitize: true` gives
   no SSR protection.
+- **`ctx.sanitize()` does nothing useful for an attribute value.** It parses an HTML
+  *fragment*; a bare string is not one, so it comes back unchanged — quotes included.
+  Escape attributes with `escapeHtml`; sanitize only real fragments.
 - **`wrapperClass` must match** between `preview()` and `generateCSS()`, or output is unstyled.
 - **Bun only.** `pnpm install` or `npm install` creates a conflicting lockfile.
 - **CodeMirror packages stay external/peer.** Two copies of `@codemirror/state` breaks
@@ -202,11 +205,15 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
    (`someDecoration.spec.class`) rather than retyping them. This is the mechanism that
    enforces parity.
 6. Guard every hiding decoration with `ctx.selectionOverlapsRange(from, to)`.
-7. Put the theme at the bottom of the file via `createTheme()`.
-8. Register in `plugins/index.ts` — named export **and** `essentialPlugins`.
-9. Add a row to `artifacts/architecture/plugins-catalog.md`.
-10. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
-11. Verify both surfaces in the playground.
+7. **Escape attribute values, sanitize fragments, and run URLs through `safeUrl()`.**
+   `ctx.sanitize()` is for a blob of HTML that stays markup; anything going into a quoted
+   attribute or rendered as text gets `escapeHtml` from `draftly/lib`. Apply `safeUrl()`
+   on both surfaces, not just preview.
+8. Put the theme at the bottom of the file via `createTheme()`.
+9. Register in `plugins/index.ts` — named export **and** `essentialPlugins`.
+10. Add a row to `artifacts/architecture/plugins-catalog.md`.
+11. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
+12. Verify both surfaces in the playground.
 
 ### Change the editor core
 

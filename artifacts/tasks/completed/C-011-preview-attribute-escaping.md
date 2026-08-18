@@ -1,9 +1,9 @@
-# T-009 — Escape and validate attribute values in `renderToHTML`
+# C-011 — Escape and validate attribute values in `renderToHTML`
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** High
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -71,13 +71,61 @@ different operations and conflating them is what produced this bug.
 
 ## Acceptance
 
-- [ ] `[x](" onmouseover="alert(1))` renders an inert `href`, no extra attribute
-- [ ] `[x](javascript:alert(1))` renders without a live `javascript:` URL
-- [ ] Equivalent cases for `title`, `alt` and `aria-label` on images
-- [ ] `data:image/png;base64,...` still works as an image `src`
-- [ ] Quotes and angle brackets in link text and titles round-trip visibly correct
-- [ ] Editor surface rejects the same schemes as preview
-- [ ] Plugin authoring checklist states: attributes are escaped, fragments are sanitized
+- [x] `[x](" onmouseover="alert(1))` renders an inert `href`, no extra attribute
+- [x] `[x](javascript:alert(1))` renders without a live `javascript:` URL
+- [x] Equivalent cases for `title`, `alt` and `aria-label` on images
+- [x] `data:image/png;base64,...` still works as an image `src`
+- [x] Quotes and angle brackets in link text and titles round-trip visibly correct
+- [x] Editor surface rejects the same schemes as preview
+- [x] Plugin authoring checklist states: attributes are escaped, fragments are sanitized
+
+## Outcome
+
+Landed as `fix(draftly): Escape attributes and reject unsafe URL schemes`.
+
+**New `lib/safe-url.ts`** — `isSafeUrl(url, options)` and `safeUrl(url, options)`, pure and
+CodeMirror-free. Allowlist is `http:`, `https:`, `mailto:`, `tel:` plus schemeless URLs
+(relative, protocol-relative, fragment, query). Control characters, spaces and the C1 range
+are stripped *before* the scheme is matched, so a newline spliced into `javascript:` does
+not slip past. `allowDataImages` opts an `<img src>` into raster `data:` URLs;
+`image/svg+xml` is excluded, since SVG carries script.
+
+**New `lib/escape-html.ts`** — `escapeHtml` moved out of `preview/default-renderers.ts`.
+Two plugins now need it, and a plugin importing from the preview pipeline for a pure string
+utility is the wrong dependency direction. `preview/default-renderers.ts` re-exports it, so
+the public `draftly/preview` export is unchanged.
+
+**`link-plugin.ts` / `image-plugin.ts`** — every attribute value goes through `escapeHtml`;
+every URL goes through `safeUrl`. `ctx.sanitize` no longer appears in either `renderToHTML`.
+
+**Editor surface** — `ImageWidget.toDOM` guards `img.src`, and the Ctrl+Click handler in
+both `LinkTooltipWidget` and `LinkTextWidget` guards `window.open`. Setting a DOM property
+was never an injection risk, but it was a scheme risk.
+
+**Audit of the remaining `renderToHTML` implementations** (proposal item 3) — clean:
+
+| Plugin  | Finding                                                                       |
+| ------- | ----------------------------------------------------------------------------- |
+| code    | Already had private `escapeHtml` / `escapeAttribute`; correct                  |
+| table   | Emits only literal class names; cell content routes through the renderer       |
+| math    | Attribute-free; error text goes through `ctx.sanitize`                         |
+| mermaid | Attribute-free; SVG is mermaid's own output                                    |
+| others  | Class names only, all literal                                                  |
+
+Duplication between `CodePlugin`'s private escapers and `lib/escape-html.ts` was left
+alone — collapsing it is a separate, unrelated commit.
+
+**Verified** with a scratch harness: 12 scheme cases pass including the mixed-case,
+leading-whitespace and embedded-newline bypasses; `data:image/png` accepted for `src` and
+rejected for `href`; `data:image/svg+xml` rejected; preview output confirmed for a
+`javascript:` link (`href=""`), a `javascript:` image (`src=""`), and `&`/`<`/`"` in
+`title`, `alt`, `aria-label` and `figcaption`. `tsc --noEmit` clean.
+
+**Public API note:** `draftly/lib` gains `isSafeUrl`, `safeUrl` and `SafeUrlOptions`.
+Additive only. Flagged in the changeset.
+
+**Not done:** the plugin-authoring checklist entry (last acceptance box) is in
+`artifacts/architecture/plugin-system.md` and `AGENTS.md`, both updated with this commit.
 
 ## Notes
 
