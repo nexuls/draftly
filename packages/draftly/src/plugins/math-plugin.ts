@@ -490,7 +490,7 @@ export class MathPlugin extends DecorationPlugin {
 const theme = createTheme({
   default: {
     ".cm-draftly-math-block": {
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      fontFamily: "var(--draftly-font-mono)",
     },
 
     ".cm-draftly-math-block br": {
@@ -499,13 +499,13 @@ const theme = createTheme({
 
     // Math markers ($ $$)
     ".cm-draftly-math-marker": {
-      color: "#6a737d",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      color: "var(--draftly-color-muted)",
+      fontFamily: "var(--draftly-font-mono)",
     },
 
     // Inline math styling when editing
     ".cm-draftly-math-inline": {
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      fontFamily: "var(--draftly-font-mono)",
       fontSize: "0.9em",
     },
 
@@ -536,7 +536,7 @@ const theme = createTheme({
       justifyContent: "center",
       alignItems: "center",
       padding: "1em 0",
-      backgroundColor: "rgba(0, 0, 0, 0.02)",
+      backgroundColor: "var(--draftly-tint-1)",
       borderRadius: "4px",
       overflow: "auto",
     },
@@ -545,27 +545,12 @@ const theme = createTheme({
     ".cm-draftly-math-error": {
       display: "inline-block",
       padding: "0.25em 0.5em",
-      backgroundColor: "rgba(255, 0, 0, 0.1)",
-      color: "#d73a49",
+      backgroundColor: "var(--draftly-color-error-surface)",
+      color: "var(--draftly-color-danger)",
       borderRadius: "4px",
       fontSize: "0.875em",
       fontStyle: "italic",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
-    },
-  },
-
-  dark: {
-    ".cm-draftly-math-marker": {
-      color: "#8b949e",
-    },
-
-    ".cm-draftly-math-rendered-block": {
-      backgroundColor: "rgba(255, 255, 255, 0.02)",
-    },
-
-    ".cm-draftly-math-error": {
-      backgroundColor: "rgba(255, 0, 0, 0.15)",
-      color: "#f85149",
+      fontFamily: "var(--draftly-font-mono)",
     },
   },
 });

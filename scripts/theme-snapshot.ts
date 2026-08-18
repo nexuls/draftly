@@ -40,9 +40,27 @@ function expand(css: string, tokens: Map<string, string>): string {
   return out;
 }
 
+/**
+ * Collapse any surviving `var(--x, fallback)` to its fallback.
+ *
+ * Tokens read a host variable before their literal value, so after expansion the
+ * text differs even where the rendered colour does not. Resolving to the fallback
+ * models a page that defines none of them — which is the case the snapshot is
+ * asserting has not changed.
+ */
+function collapseFallbacks(css: string): string {
+  let out = css;
+  for (let pass = 0; pass < 5; pass++) {
+    const next = out.replace(/var\(\s*--[\w-]+\s*,\s*([^()]*?)\s*\)/g, "$1");
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
 /** Drop the token declarations themselves and normalise whitespace for diffing. */
 function normalise(css: string): string {
-  return css
+  return collapseFallbacks(css)
     .replace(/--draftly-[\w-]+:\s*[^;}]+;?/g, "")
     .split("\n")
     .map((line) => line.replace(/\s+/g, " ").replace(/\s*([{};:,])\s*/g, "$1").trim())

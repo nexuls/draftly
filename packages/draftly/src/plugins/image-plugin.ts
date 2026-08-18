@@ -374,19 +374,19 @@ const theme = createTheme({
 
     // Image markers (! [ ] ( ))
     ".cm-draftly-image-marker": {
-      color: "#6a737d",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      color: "var(--draftly-color-muted)",
+      fontFamily: "var(--draftly-font-mono)",
     },
 
     // Alt text
     ".cm-draftly-image-alt": {
-      color: "#22863a",
+      color: "var(--draftly-color-success)",
       fontStyle: "italic",
     },
 
     // URL
     ".cm-draftly-image-url": {
-      color: "#0366d6",
+      color: "var(--draftly-color-link)",
       textDecoration: "underline",
     },
 
@@ -417,7 +417,7 @@ const theme = createTheme({
       display: "block",
       width: "100%",
       fontSize: "0.875em",
-      color: "#6a737d",
+      color: "var(--draftly-color-muted)",
       marginTop: "0.5em",
       textAlign: "center",
       fontStyle: "italic",
@@ -427,34 +427,11 @@ const theme = createTheme({
     ".cm-draftly-image-error": {
       display: "inline-block",
       padding: "0.5em 1em",
-      backgroundColor: "rgba(255, 0, 0, 0.1)",
-      color: "#d73a49",
+      backgroundColor: "var(--draftly-color-error-surface)",
+      color: "var(--draftly-color-danger)",
       borderRadius: "4px",
       fontSize: "0.875em",
       fontStyle: "italic",
-    },
-  },
-
-  dark: {
-    ".cm-draftly-image-marker": {
-      color: "#8b949e",
-    },
-
-    ".cm-draftly-image-alt": {
-      color: "#7ee787",
-    },
-
-    ".cm-draftly-image-url": {
-      color: "#58a6ff",
-    },
-
-    ".cm-draftly-image-caption": {
-      color: "#8b949e",
-    },
-
-    ".cm-draftly-image-error": {
-      backgroundColor: "rgba(255, 0, 0, 0.15)",
-      color: "#f85149",
     },
   },
 });

@@ -436,18 +436,18 @@ const theme = createTheme({
   default: {
     // Link text
     ".cm-draftly-link-text": {
-      color: "#0366d6",
+      color: "var(--draftly-color-link)",
     },
 
     // Link markers ([ ] ( ))
     ".cm-draftly-link-marker": {
-      color: "#6a737d",
-      fontFamily: "var(--font-jetbrains-mono, monospace)",
+      color: "var(--draftly-color-muted)",
+      fontFamily: "var(--draftly-font-mono)",
     },
 
     // URL in raw markdown
     ".cm-draftly-link-url": {
-      color: "#6a737d",
+      color: "var(--draftly-color-muted)",
       fontStyle: "italic",
     },
 
@@ -458,24 +458,24 @@ const theme = createTheme({
 
     // Styled link when cursor is not in range
     ".cm-draftly-link-styled": {
-      color: "#0366d6",
+      color: "var(--draftly-color-link)",
       textDecoration: "underline",
       position: "relative",
       cursor: "pointer",
     },
 
     ".cm-draftly-link-styled:hover": {
-      color: "#0056b3",
+      color: "var(--draftly-color-link-hover)",
     },
 
     // Preview link styling
     ".cm-draftly-link": {
-      color: "#0366d6",
+      color: "var(--draftly-color-link)",
       textDecoration: "underline",
     },
 
     ".cm-draftly-link:hover": {
-      color: "#0056b3",
+      color: "var(--draftly-color-link-hover)",
     },
 
     // Tooltip styling
@@ -485,8 +485,8 @@ const theme = createTheme({
       bottom: "100%",
       left: "50%",
       transform: "translateX(-50%)",
-      backgroundColor: "#24292e",
-      color: "#ffffff",
+      backgroundColor: "var(--draftly-color-tooltip-bg)",
+      color: "var(--draftly-color-tooltip-fg)",
       padding: "4px 8px",
       borderRadius: "4px",
       fontSize: "12px",
@@ -501,41 +501,6 @@ const theme = createTheme({
 
     ".cm-draftly-link-tooltip-visible": {
       display: "block",
-    },
-  },
-
-  dark: {
-    ".cm-draftly-link-text": {
-      color: "#58a6ff",
-    },
-
-    ".cm-draftly-link-marker": {
-      color: "#8b949e",
-    },
-
-    ".cm-draftly-link-url": {
-      color: "#8b949e",
-    },
-
-    ".cm-draftly-link-styled": {
-      color: "#58a6ff",
-    },
-
-    ".cm-draftly-link-styled:hover": {
-      color: "#79c0ff",
-    },
-
-    ".cm-draftly-link": {
-      color: "#58a6ff",
-    },
-
-    ".cm-draftly-link:hover": {
-      color: "#79c0ff",
-    },
-
-    ".cm-draftly-link-tooltip": {
-      backgroundColor: "#30363d",
-      color: "#c9d1d9",
     },
   },
 });
