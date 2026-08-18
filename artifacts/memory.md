@@ -178,6 +178,51 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 
 ## Session log
 
+### Session 2026-08-18 — implementing the audit backlog
+
+**Goal:** the developer asked to implement the ongoing tasks and commit accordingly.
+
+**Done:** 16 tasks shipped as 16 commits, `C-009`-`C-024`. In the order they landed:
+theme purity and `deepMerge` hardening; theme memoization; attribute escaping and URL
+scheme guards; the preview leaf-fallback and `HTMLPlugin`; server-side sanitization;
+preview dispatch priority; preview renderer redundancy; **viewport-scoped decorations**;
+widget `eq()`; the teardown lifecycle; widget async guards; decoration error reporting;
+grapheme-aware table widths; widget accessibility; the playground preview race; and
+tree-shakeability.
+
+**Left untouched, deliberately:** every task whose _Blocked on_ column names a developer
+decision — `T-001`, `T-002`, `T-005`, `T-006`, `T-007`, `T-013`, `T-017`, `T-024`,
+`T-026`. Also `T-015`, whose premise needs re-measuring now that C-016 and C-017 have
+landed, and `T-020` step 4, which is a breaking export change.
+
+**Learned** — the durable items are promoted above. Three worth naming here:
+
+- **The two big performance findings were the same finding.** Viewport scoping (C-016,
+  39.2 ms → 0.40 ms) and widget `eq()` (C-017) both came from nothing in the core
+  establishing a contract, so 14 plugins independently did the maximum possible work.
+  Both were fixed in the core — `ctx.iterateVisible`, `resolveWidgetRange` — rather than
+  14 times over, which is also what stops the next plugin repeating them.
+- **DOMPurify cannot sanitize a lone HTML tag.** It balances the fragment it is handed, so
+  the parser's per-tag `HTMLTag` nodes cannot be passed through it directly. This
+  invalidated the approach T-010 proposed and forced the balanced-probe design in C-012.
+- **Verification without a browser has a hard ceiling.** Analytical substitutes worked
+  better than expected — a sliding-window walk proved C-016 loses no decorations, and
+  before/after widget comparison proved C-017 — but the playground checklist, the heap
+  snapshot, and screen-reader testing are all still outstanding and are recorded as
+  unchecked acceptance boxes rather than quietly claimed.
+
+**Decisions:** two open questions were answered provisionally rather than left blocking,
+both flagged for the developer — Q11 (`sanitize: false` honours the flag literally, C-012)
+and the decorative-versus-control classification for widgets (C-022). New open question
+14 was added, on whether server-side sanitization should escape rather than pass through.
+
+**New tasks:** `T-027` (a `?raw` CSS import that makes `dist/` unbundlable for
+`MathPlugin` consumers — found by bundling, not by reading) and `T-028` (T-020's deferred
+breaking half).
+
+**Left open:** the nine developer-blocked tasks, plus the browser verification listed
+above.
+
 ### Session 2026-08-18 — full-codebase audit
 
 **Goal:** Analyse the whole codebase for hidden bugs, memory leaks, and performance, UX and
