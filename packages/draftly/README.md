@@ -194,10 +194,31 @@ function ArticlePreview() {
 | -------------- | ------------------ | ------------------- | ------------------------------------- |
 | `plugins`      | `DraftlyPlugin[]`  | `[]`                | Plugins for rendering.                |
 | `theme`        | `ThemeEnum`        | `ThemeEnum.AUTO`    | Theme mode.                           |
-| `sanitize`     | `boolean`          | `true`              | Sanitize HTML output (via DOMPurify). |
+| `sanitize`     | `boolean`          | `true`              | Sanitize HTML output. **Browser only** — see below. |
+| `sanitizer`    | `(html) => string` | `undefined`         | Sanitizer to use instead of the bundled DOMPurify. Required for SSR. |
 | `wrapperClass` | `string`           | `"draftly-preview"` | CSS class for the wrapper element.    |
 | `wrapperTag`   | `string`           | `"article"`         | HTML tag for the wrapper element.     |
 | `markdown`     | `MarkdownConfig[]` | `[]`                | Additional parser extensions.         |
+
+> [!WARNING]
+> **`sanitize: true` does nothing outside a browser.** It is implemented with DOMPurify,
+> which needs a DOM, so during SSR or static generation the option is a no-op and any HTML
+> in the markdown is emitted **unsanitized**. Draftly warns on the console when this
+> happens, but if you render untrusted markdown on a server you must pass your own
+> sanitizer:
+>
+> ```ts
+> import DOMPurify from "isomorphic-dompurify";
+>
+> preview(markdown, {
+>   plugins: allPlugins,
+>   sanitizer: (html) => DOMPurify.sanitize(html),
+> });
+> ```
+>
+> Draftly does not bundle `jsdom` — it is heavy, and every browser consumer would pay for
+> it. Sanitizing at the application layer works equally well.
+
 
 #### CSS Configuration (`GenerateCSSConfig`)
 

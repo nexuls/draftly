@@ -16,13 +16,13 @@ by theme rather than by ID, because within each group the sequencing matters.
 
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
-| `T-003` | [Make server-side sanitization honest](./ongoing/T-003-server-side-sanitization.md)         | High     | Proposed | —                                                       |
 | `T-023` | [Preview dispatch ignores `decorationPriority`](./ongoing/T-023-preview-dispatch-priority.md) | Medium   | Proposed | —                                                       |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
 
-**T-009, T-010 and T-003 are one story.** `sanitize: true` guaranteed nothing on either
-surface. `T-009` (C-011) and `T-010` (C-012) have landed, which closes the client side;
-`T-003` is what remains, and until it lands the promise still fails on the server.
+**T-009, T-010 and T-003 were one story, and all three have landed** (C-011, C-012,
+C-013). `sanitize: true` now means something in the browser. On the server it means
+something only if you also pass `sanitizer` — see open question 14 for whether the
+no-sanitizer fallback should escape rather than pass through.
 
 ### Performance
 
@@ -86,12 +86,11 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 If the developer wants a single sequence rather than a set of groups:
 
-1. `T-003` — the last of the sanitization story (`T-009`/`T-010` shipped as `C-011`/`C-012`)
-2. `T-011` → `T-012` — the O(document)-per-keystroke problem
-3. `T-016` → `T-017` → `T-018` — lifecycle, in that order
-4. `T-020` — bundle size, coordinated with T-017 if both land
-5. `T-014`, `T-021` — small, independent, low risk (`T-025`/`T-019` shipped as `C-009`/`C-010`)
-6. everything else, re-prioritised once the above is known
+1. `T-011` → `T-012` — the O(document)-per-keystroke problem
+2. `T-016` → `T-017` → `T-018` — lifecycle, in that order
+3. `T-020` — bundle size, coordinated with T-017 if both land
+4. `T-014`, `T-021` — small, independent, low risk
+5. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
 hard to verify by eye in the playground, and the pure layers they touch are the testable
@@ -106,6 +105,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-013` | [Make server-side sanitization honest](./completed/C-013-server-side-sanitization.md)                 | 2026-08-18           |
 | `C-012` | [Preview emits raw HTML for unhandled nodes](./completed/C-012-preview-raw-leaf-output.md)            | 2026-08-18           |
 | `C-011` | [Escape attribute values in `renderToHTML`](./completed/C-011-preview-attribute-escaping.md)          | 2026-08-18           |
 | `C-010` | [Theme rebuild grows the stylesheet](./completed/C-010-theme-stylesheet-growth.md)                     | 2026-08-18           |

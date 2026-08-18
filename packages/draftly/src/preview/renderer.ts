@@ -32,7 +32,8 @@ export class PreviewRenderer {
     markdown: MarkdownConfig[],
     theme: ThemeEnum = ThemeEnum.AUTO,
     sanitize = true,
-    syntaxTheme?: import("./types").SyntaxThemeInput | import("./types").SyntaxThemeInput[]
+    syntaxTheme?: import("./types").SyntaxThemeInput | import("./types").SyntaxThemeInput[],
+    sanitizer?: (html: string) => string
   ) {
     this.doc = doc;
     this.theme = theme;
@@ -45,7 +46,14 @@ export class PreviewRenderer {
     const syntaxHighlighters = resolveSyntaxHighlighters(this.syntaxTheme, true);
 
     // Create context with reference to renderChildren
-    this.ctx = createPreviewContext(doc, theme, this.renderChildren.bind(this), sanitize, syntaxHighlighters);
+    this.ctx = createPreviewContext(
+      doc,
+      theme,
+      this.renderChildren.bind(this),
+      sanitize,
+      syntaxHighlighters,
+      sanitizer
+    );
 
     // Build node-to-plugin map for O(1) lookup
     this.nodeToPlugins = this.buildNodePluginMap();

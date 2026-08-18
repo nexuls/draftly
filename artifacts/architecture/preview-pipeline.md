@@ -42,7 +42,8 @@ the result in `<article class="draftly-preview">`. All real work is in the rende
 | `markdown`     | `[]`                | Extra parser configs, prepended to plugin ones |
 | `wrapperClass` | `"draftly-preview"` | Must match `generateCSS`'s `wrapperClass`      |
 | `wrapperTag`   | `"article"`         | `article \| div \| section`                    |
-| `sanitize`     | `true`              | Browser-only — see the caveat below            |
+| `sanitize`     | `true`              | Browser-only unless `sanitizer` is given       |
+| `sanitizer`    | `undefined`         | Consumer-supplied; required for SSR            |
 | `theme`        | `AUTO`              |                                                |
 | `syntaxTheme`  | `undefined`         | A CodeMirror theme/`HighlightStyle` for code   |
 
@@ -53,7 +54,7 @@ the result in `<article class="draftly-preview">`. All real work is in the rende
 ### Construction
 
 ```ts
-new PreviewRenderer(doc, plugins, markdownConfigs, theme, sanitize, syntaxTheme);
+new PreviewRenderer(doc, plugins, markdownConfigs, theme, sanitize, syntaxTheme, sanitizer);
 ```
 
 Two things are precomputed in the constructor:
@@ -164,21 +165,30 @@ the URL string. Both surfaces call the same guard.
 
 ### ⚠️ `sanitize()` is a no-op on the server
 
-```ts
-sanitize(html) {
-  if (!sanitizeHtml) return html;
-  if (typeof window !== "undefined") return DOMPurify.sanitize(html);
-  return html;   // ← server-side: returned unchanged
-}
+Resolution order, in `preview/context.ts`:
+
+```
+sanitize: false        → return html unchanged (the consumer opted out)
+config.sanitizer given → sanitizer(html)         (works everywhere)
+a DOM is present       → DOMPurify.sanitize(html)
+otherwise              → warn once, return html unchanged
 ```
 
-DOMPurify requires a DOM. In Node there is none, so **`sanitize: true` provides no
-protection during SSR or static generation** despite the option reading as safe.
+DOMPurify requires a DOM, so in Node there is nothing it can do. **`sanitize: true`
+provides no protection during SSR or static generation** — the option reads as safe and
+is not.
 
-Consumers rendering untrusted markdown server-side must either install
-`isomorphic-dompurify` and sanitize at the application layer, or render on the client.
-This should be stated far more loudly in the README than it currently is — tracked in
-[../tasks/ongoing/](../tasks/ongoing/).
+Since C-013 that failure is loud rather than silent: a single `console.warn` per process
+names the risk and the remedy. The remedy is `PreviewConfig.sanitizer`, which takes a
+consumer-supplied function (`isomorphic-dompurify`, or DOMPurify with jsdom) and is used
+in preference to the bundled one on every surface, browser included.
+
+Draftly deliberately does **not** bundle jsdom. It is heavy, and forcing it on every
+browser consumer to serve the server-rendering subset is the wrong trade.
+
+The pass-through behaviour when no sanitizer is supplied is unchanged — escaping instead
+would break working SSR setups, and changing that default is the developer's call. It is
+open question 14 in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 ---
 

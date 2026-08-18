@@ -58,10 +58,11 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   throws otherwise. Canonical clamp: `heading-plugin.ts:104`.
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer
   only. The name over-promises.
-- **`sanitize: true` guarantees nothing *on the server*.** It used to guarantee nothing
-  anywhere; C-011 and C-012 fixed the client side. What remains: `ctx.sanitize()` is still
-  opt-in per plugin rather than a pass over the finished document, and it still **no-ops
-  outside a browser**, so SSR and static generation get no protection at all. See T-003.
+- **`sanitize: true` still guarantees nothing *on the server* unless `sanitizer` is
+  passed.** C-011 and C-012 fixed the client side; C-013 added `PreviewConfig.sanitizer`
+  and a one-per-process `console.warn`, but the no-sanitizer fallback still passes HTML
+  through. `ctx.sanitize()` also remains opt-in per plugin rather than a pass over the
+  finished document.
 - **Escaping and sanitizing are different operations.** `ctx.sanitize()` parses an HTML
   *fragment*; handed a bare string — a URL, a title, an alt text — it returns it unchanged,
   quotes included. Attribute values and text get `escapeHtml` (`lib/escape-html.ts`); only
@@ -154,6 +155,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
 | 11  | ~~With `sanitize: false`, should `HTMLPlugin` emit raw HTML or escape it?~~ **Answered provisionally in C-012: honour the flag literally** — raw HTML with `sanitize: false`, sanitized with the default `true`. Confirm or overturn. | `plugins/html-plugin.ts`; C-012 | 2026-08-18 |
 | 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |
+| 14  | With `sanitize: true` and no DOM and no `sanitizer`, preview passes HTML through (now with a warning). Should it instead **escape** the HTML, so the default is safe everywhere? That is a behaviour change for existing SSR consumers, whose HTML blocks would start rendering as visible source. | `preview/context.ts`; C-013 | 2026-08-18 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---

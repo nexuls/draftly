@@ -1,4 +1,5 @@
 import { ThemeEnum } from "../editor/utils";
+import { escapeHtml } from "../lib/escape-html";
 import { PreviewRenderer } from "./renderer";
 import type { PreviewConfig } from "./types";
 
@@ -27,15 +28,16 @@ export async function preview(markdown: string, config: PreviewConfig = {}): Pro
     wrapperClass = "draftly-preview",
     wrapperTag = "article",
     sanitize = true,
+    sanitizer,
     theme = ThemeEnum.AUTO,
     syntaxTheme,
   } = config;
 
   // Create renderer and generate HTML
-  const renderer = new PreviewRenderer(markdown, plugins, markdownConfig, theme, sanitize, syntaxTheme);
+  const renderer = new PreviewRenderer(markdown, plugins, markdownConfig, theme, sanitize, syntaxTheme, sanitizer);
   const content = await renderer.render();
 
   // Wrap in container
-  const classAttr = wrapperClass ? ` class="${wrapperClass}"` : "";
+  const classAttr = wrapperClass ? ` class="${escapeHtml(wrapperClass)}"` : "";
   return `<${wrapperTag}${classAttr}>\n${content}</${wrapperTag}>`;
 }
