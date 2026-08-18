@@ -130,6 +130,20 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   preview CSS per theme with `var()` references inlined and fallbacks collapsed, so a
   before/after diff shows real rendered differences rather than token indirection. Use it
   for anything touching themes — there is still no test suite.
+- **No bundler-specific import syntax may appear in `src/`.** `packages/draftly` is
+  consumed through *two* entry points with different resolvers: `dist/` (bundled by
+  whatever the consumer uses) and `./src` (raw TypeScript, which is how `apps/web`
+  imports it). A specifier that only one of them understands breaks the other silently.
+  KaTeX's stylesheet was imported with Vite's `?raw` suffix; tsup's `.css: "text"` loader
+  never applied to it, so `dist/` shipped an unresolvable import and `MathPlugin` could not
+  be bundled at all (C-025). The fix is a *generated* `.ts` module — `bun run
+  generate:katex-css` — because a plain string constant is the only form both resolvers
+  agree on. `**/*.generated.ts` is excluded from Biome in `biome-config/base.json`.
+- **KaTeX's `@font-face` URLs are relative and have never resolved.** The inlined stylesheet
+  references `fonts/KaTeX_*`, which resolve against the *page* URL once injected into
+  `<head>`, not against the package. Consumers get KaTeX's layout with fallback glyphs
+  unless they serve those files themselves. Pre-existing, orthogonal to C-025, open
+  question 17.
 - **`preview/syntax-theme.ts` depends on undocumented CodeMirror internals.** A
   `@codemirror/language` upgrade can silently drop preview syntax colours with no type
   error. Re-test preview code blocks after any CodeMirror bump.
@@ -190,6 +204,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 14  | With `sanitize: true` and no DOM and no `sanitizer`, preview passes HTML through (now with a warning). Should it instead **escape** the HTML, so the default is safe everywhere? That is a behaviour change for existing SSR consumers, whose HTML blocks would start rendering as visible source. | `preview/context.ts`; C-013 | 2026-08-18 |
 | 15  | `codemirror-lang-latex` is **AGPL-3.0-or-later** and `draftly` is MIT. Taking it as a dependency — even lazily imported — would push copyleft terms onto every consumer, so `MathPlugin` accepts an injected parser instead. Confirm that injection is the intended long-term shape, or is a differently-licensed LaTeX parser worth vendoring? | `plugins/math-plugin.ts`; the fork this came from is an app, where the licence question does not arise the same way. | 2026-08-18 |
 | 16  | Plugin themes emit their editor-only rules into preview CSS and vice versa — e.g. `.cm-draftly-list-line-ul`'s flex layout is in the generated preview stylesheet, matching nothing. Split each plugin theme into editor/preview/shared halves, as `editor/theme.ts` now does? | `editor/plugin.ts` `getPreviewStyles`; noticed while fixing the list-class leak. | 2026-08-18 |
+| 17  | KaTeX's bundled CSS references its fonts relatively (`url(fonts/KaTeX_AMS-Regular.woff2)`), so injecting it as a `<style>` element resolves them against the consumer's page URL and they 404. Ship the fonts, base64-inline them (~1 MB), or document that consumers must import `katex/dist/katex.min.css` themselves — which is option 1 of C-025 after all? | `plugins/math-plugin.ts`, `plugins/katex-css.generated.ts`; C-025 | 2026-08-18 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---

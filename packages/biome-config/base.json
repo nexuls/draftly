@@ -8,7 +8,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/.next", "!**/build", "!**/.turbo", "!.agents", "!**/next-env.d.ts"]
+    "includes": ["**", "!**/dist", "!**/.next", "!**/build", "!**/.turbo", "!.agents", "!**/next-env.d.ts", "!**/*.generated.ts"]
   },
   "css": {
     "parser": {

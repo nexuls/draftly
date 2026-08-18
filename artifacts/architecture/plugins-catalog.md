@@ -111,7 +111,7 @@ which the contract guarantees by having both call `getMarkdownConfig()`.
 
 | Plugin    | Dependency   | Weight     | Notes                                      |
 | --------- | ------------ | ---------- | ------------------------------------------ |
-| `math`    | `katex`      | large      | Also needs KaTeX's own CSS in the host app |
+| `math`    | `katex`      | large      | Injects KaTeX's CSS itself (`katex-css.generated.ts`); the host must still serve KaTeX's **fonts** — see memory Q17 |
 | `mermaid` | `mermaid`    | very large | Async render; dominates bundle size        |
 | `html`    | `dompurify`  | medium     | Browser-only effectiveness                 |
 | `emoji`   | `node-emoji` | small      |                                            |

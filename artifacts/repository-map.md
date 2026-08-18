@@ -54,6 +54,7 @@ packages/draftly/
 │   │   ├── html-plugin.ts
 │   │   ├── image-plugin.ts
 │   │   ├── math-plugin.ts          # KaTeX
+│   │   ├── katex-css.generated.ts  # KaTeX stylesheet as a string — generated, do not edit
 │   │   ├── mermaid-plugin.ts       # Mermaid diagrams
 │   │   ├── code-plugin.ts          # Fenced/inline code (~1.4k LOC)
 │   │   ├── code-plugin.theme.ts    # Code plugin styles, split out for readability
@@ -72,6 +73,9 @@ packages/draftly/
 │   └── lib/                        # Standalone, framework-agnostic helpers
 │       ├── index.ts                # Barrel for `draftly/lib`
 │       └── input-handler.ts        # createWrapSelectionInputHandler
+├── scripts/
+│   ├── theme-snapshot.ts           # Dumps resolved preview CSS per theme, for style diffs
+│   └── generate-katex-css.ts       # Emits plugins/katex-css.generated.ts from node_modules
 ├── tsup.config.ts                  # 5 entry points, CM packages marked external
 ├── package.json                    # Subpath exports: ., /editor, /plugins, /preview, /lib, /src
 └── README.md                       # Public-facing docs (npm landing page)

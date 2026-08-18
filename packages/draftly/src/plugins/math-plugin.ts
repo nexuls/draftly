@@ -8,8 +8,7 @@ import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, InlineParser, BlockParser, Line, BlockContext } from "@lezer/markdown";
 import katex from "katex";
 import { createWrapSelectionInputHandler } from "../lib";
-// @ts-expect-error - raw import for CSS as string
-import katexCss from "katex/dist/katex.min.css?raw";
+import { katexCss } from "./katex-css.generated";
 
 /**
  * Options for {@link MathPlugin}.

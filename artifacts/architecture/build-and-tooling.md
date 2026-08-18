@@ -1,6 +1,6 @@
 # Build & Tooling
 
-> Last verified: 2026-08-18 · commit `b6ecb96`
+> Last verified: 2026-08-18 · commit `4181c2f`
 
 ---
 
@@ -93,14 +93,29 @@ identity). Bundling them would break every consumer who also uses CodeMirror dir
 Runtime deps that _are_ bundled: `katex`, `mermaid`, `dompurify`, `node-emoji`,
 `style-mod`, `zod`.
 
-### CSS-as-text loader
+### Third-party CSS as a string
 
-```ts
-options.loader = { ...options.loader, ".css": "text" };
-```
+`MathPlugin` injects KaTeX's stylesheet into the document, so it needs it as a JavaScript
+string. It gets one from a **generated module**, `plugins/katex-css.generated.ts`, produced
+by `bun run generate:katex-css` and committed.
 
-Lets plugins `import` a CSS file and receive its contents as a string (used for injecting
-third-party stylesheets like KaTeX's into generated preview CSS).
+The generator exists because the package is consumed through two entry points with
+different resolvers — bundled `dist/`, and raw TypeScript via `./src`, which is how
+`apps/web` imports it. Any bundler-specific specifier satisfies one and breaks the other:
+
+- a `?raw` suffix (Vite's convention) is what the source used to carry. tsup's
+  `esbuildOptions` set `loader[".css"] = "text"`, but that keys off the `.css` extension
+  and the specifier ended in `?raw`, so it never applied — `dist/` shipped an unresolvable
+  `import katexCss from 'katex/dist/katex.min.css?raw'` and `MathPlugin` could not be
+  bundled by anything that does not implement `?raw` (C-025).
+- a bare `.css` import would fix `dist/` via that loader, but Next.js resolves it in
+  `apps/web` as a stylesheet side effect rather than as text, breaking the playground.
+
+A generated `export const katexCss = "…"` is bundler-agnostic by construction, so the
+`esbuildOptions` block is gone and no `.css` import remains in `src/`. Re-run the generator
+after bumping `katex`; the KaTeX version is written into the generated file's doc comment
+so drift shows up in review. `**/*.generated.ts` is excluded from Biome in
+`biome-config/base.json` — generated output is not formatted or linted.
 
 ---
 

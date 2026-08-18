@@ -20,11 +20,4 @@ export default defineConfig({
     "@lezer/common",
     "@lezer/highlight",
   ],
-  esbuildOptions(options) {
-    // Handle ?raw imports - load CSS as text
-    options.loader = {
-      ...options.loader,
-      ".css": "text",
-    };
-  },
 });

@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-18 · commit `0bba9ce`
+> Last updated: 2026-08-18 · commit `4181c2f`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -16,7 +16,6 @@ by theme rather than by ID, because within each group the sequencing matters.
 
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
-| `T-027` | [`dist/` has an unresolvable `?raw` CSS import](./ongoing/T-027-katex-raw-css-import.md)     | High     | Proposed | —                                                       |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
 
 **T-009, T-010 and T-003 were one story, and all three have landed** (C-011, C-012,
@@ -58,7 +57,10 @@ mermaid or KaTeX. Its fourth step became **T-028**, which is a breaking export c
 still overlaps T-017 — both change `plugins/index.ts`. If both are approved, coordinate
 into one API change and one changeset.
 
-**T-027** came out of C-024's bundle analysis and is in the correctness table above.
+**T-027 has landed** as **C-025** — the KaTeX stylesheet is now a generated TypeScript
+constant, so no bundler-specific specifier reaches `dist/`. It surfaced open question 17
+(KaTeX's font URLs are relative and have never resolved for consumers), which is a
+separate defect.
 
 ### UX & accessibility
 
@@ -86,7 +88,7 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 If the developer wants a single sequence rather than a set of groups:
 
 1. `T-017` — the rest of the lifecycle work; needs an API decision
-2. `T-027` — the packaging bug C-024 surfaced; then `T-028`, coordinated with T-017
+2. `T-028` — the breaking half of the bundle work, coordinated with T-017
 3. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
@@ -114,6 +116,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-025` | [`dist/` has an unresolvable `?raw` CSS import](./completed/C-025-katex-raw-css-import.md) | 2026-08-18           |
 | `C-015` | [Redundant work in the preview renderer](./completed/C-015-preview-renderer-redundant-work.md)        | 2026-08-18           |
 | `C-014` | [Preview dispatch ignores `decorationPriority`](./completed/C-014-preview-dispatch-priority.md)       | 2026-08-18           |
 | `C-013` | [Make server-side sanitization honest](./completed/C-013-server-side-sanitization.md)                 | 2026-08-18           |
