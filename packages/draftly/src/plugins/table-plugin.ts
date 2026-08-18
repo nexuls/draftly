@@ -5,7 +5,12 @@ import type { SyntaxNode } from "@lezer/common";
 import { type MarkdownConfig, Table } from "@lezer/markdown";
 import { createTheme } from "../editor";
 import type { DraftlyConfig } from "../editor/draftly";
-import { type DecorationContext, DecorationPlugin, type PluginContext } from "../editor/plugin";
+import {
+  type DecorationContext,
+  DecorationPlugin,
+  type DescribedKeyBinding,
+  type PluginContext,
+} from "../editor/plugin";
 import { ThemeEnum } from "../editor/utils";
 import { PreviewRenderer } from "../preview/renderer";
 import { displayWidth } from "../lib/display-width";
@@ -795,29 +800,141 @@ export class TablePlugin extends DecorationPlugin {
     ];
   }
 
-  /** Provides the table-specific keyboard shortcuts and navigation. */
-  override getKeymap(): KeyBinding[] {
+  /**
+   * Nothing to register here: the table's bindings rebind keys the editor already
+   * uses, so they go in at `Prec.highest()` via {@link buildTableKeymap} and each
+   * one declines unless the cursor is actually in a table.
+   */
+  override getKeymap(): DescribedKeyBinding[] {
     return [];
   }
 
+  /**
+   * Documented separately from {@link getKeymap} because these bindings are
+   * registered through the precedence-wrapped extension rather than the plugin
+   * keymap, and a user still needs to be able to discover them.
+   *
+   * @returns The table shortcuts, all scoped to being inside a table
+   */
+  override getShortcuts(): DescribedKeyBinding[] {
+    return this.buildTableKeymap();
+  }
+
   /** Builds the high-priority key bindings used inside tables. */
-  private buildTableKeymap(): KeyBinding[] {
+  private buildTableKeymap(): DescribedKeyBinding[] {
+    const context = "Inside a table";
+
     return [
-      { key: "Mod-Shift-t", run: (view) => this.insertTable(view), preventDefault: true },
-      { key: "Mod-Alt-ArrowDown", run: (view) => this.addRow(view), preventDefault: true },
-      { key: "Mod-Alt-ArrowRight", run: (view) => this.addColumn(view), preventDefault: true },
-      { key: "Mod-Alt-Backspace", run: (view) => this.removeRow(view), preventDefault: true },
-      { key: "Mod-Alt-Delete", run: (view) => this.removeColumn(view), preventDefault: true },
-      { key: "Tab", run: (view) => this.handleTab(view, false) },
-      { key: "Shift-Tab", run: (view) => this.handleTab(view, true) },
-      { key: "ArrowLeft", run: (view) => this.handleArrowHorizontal(view, false) },
-      { key: "ArrowRight", run: (view) => this.handleArrowHorizontal(view, true) },
-      { key: "ArrowUp", run: (view) => this.handleArrowVertical(view, false) },
-      { key: "ArrowDown", run: (view) => this.handleArrowVertical(view, true) },
-      { key: "Enter", run: (view) => this.handleEnter(view) },
-      { key: "Shift-Enter", run: (view) => this.insertBreakTag(view), preventDefault: true },
-      { key: "Backspace", run: (view) => this.handleBreakDeletion(view, false) },
-      { key: "Delete", run: (view) => this.handleBreakDeletion(view, true) },
+      {
+        name: "Insert table",
+        description: "Insert a new markdown table at the cursor",
+        key: "Mod-Shift-t",
+        run: (view) => this.insertTable(view),
+        preventDefault: true,
+      },
+      {
+        name: "Add row",
+        description: "Append a row below the current one",
+        context,
+        key: "Mod-Alt-ArrowDown",
+        run: (view) => this.addRow(view),
+        preventDefault: true,
+      },
+      {
+        name: "Add column",
+        description: "Append a column to the right of the current one",
+        context,
+        key: "Mod-Alt-ArrowRight",
+        run: (view) => this.addColumn(view),
+        preventDefault: true,
+      },
+      {
+        name: "Delete row",
+        description: "Remove the row containing the cursor",
+        context,
+        key: "Mod-Alt-Backspace",
+        run: (view) => this.removeRow(view),
+        preventDefault: true,
+      },
+      {
+        name: "Delete column",
+        description: "Remove the column containing the cursor",
+        context,
+        key: "Mod-Alt-Delete",
+        run: (view) => this.removeColumn(view),
+        preventDefault: true,
+      },
+      {
+        name: "Next cell",
+        description: "Move to the next cell, wrapping to the following row",
+        context,
+        key: "Tab",
+        run: (view) => this.handleTab(view, false),
+      },
+      {
+        name: "Previous cell",
+        description: "Move to the previous cell, wrapping to the preceding row",
+        context,
+        key: "Shift-Tab",
+        run: (view) => this.handleTab(view, true),
+      },
+      {
+        name: "Cell left",
+        description: "Move to the cell on the left once the cursor reaches the cell edge",
+        context,
+        key: "ArrowLeft",
+        run: (view) => this.handleArrowHorizontal(view, false),
+      },
+      {
+        name: "Cell right",
+        description: "Move to the cell on the right once the cursor reaches the cell edge",
+        context,
+        key: "ArrowRight",
+        run: (view) => this.handleArrowHorizontal(view, true),
+      },
+      {
+        name: "Cell above",
+        description: "Move to the cell in the row above, keeping the column",
+        context,
+        key: "ArrowUp",
+        run: (view) => this.handleArrowVertical(view, false),
+      },
+      {
+        name: "Cell below",
+        description: "Move to the cell in the row below, keeping the column",
+        context,
+        key: "ArrowDown",
+        run: (view) => this.handleArrowVertical(view, true),
+      },
+      {
+        name: "New row",
+        description: "Add a row below and move into it",
+        context,
+        key: "Enter",
+        run: (view) => this.handleEnter(view),
+      },
+      {
+        name: "Line break in cell",
+        description: "Insert a line break inside the current cell",
+        context,
+        key: "Shift-Enter",
+        run: (view) => this.insertBreakTag(view),
+        preventDefault: true,
+      },
+      {
+        name: "Delete backwards",
+        description: "Remove the line break before the cursor as a unit",
+        context,
+        key: "Backspace",
+        run: (view) => this.handleBreakDeletion(view, false),
+      },
+      {
+        name: "Delete forwards",
+        description: "Remove the line break after the cursor as a unit",
+        context,
+        key: "Delete",
+        run: (view) => this.handleBreakDeletion(view, true),
+      },
     ];
   }
 

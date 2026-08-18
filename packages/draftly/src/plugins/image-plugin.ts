@@ -1,5 +1,5 @@
 import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
-import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { createTheme } from "../editor";
 import { safeUrl } from "../lib/safe-url";
 import { escapeHtml } from "../lib/escape-html";
@@ -160,9 +160,11 @@ export class ImagePlugin extends DecorationPlugin {
   /**
    * Keyboard shortcuts for image formatting
    */
-  override getKeymap(): KeyBinding[] {
+  override getKeymap(): DescribedKeyBinding[] {
     return [
       {
+        name: "Image",
+        description: "Turn the selection into an image reference, or unwrap one",
         key: "Mod-Shift-i",
         run: (view) => this.toggleImage(view),
         preventDefault: true,

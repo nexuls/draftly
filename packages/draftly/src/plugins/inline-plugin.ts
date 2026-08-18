@@ -1,5 +1,5 @@
 import { Decoration, type KeyBinding } from "@codemirror/view";
-import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { createTheme } from "../editor";
 import type { SyntaxNode } from "@lezer/common";
 import { toggleMarkdownStyle } from "../editor/utils";
@@ -128,34 +128,46 @@ export class InlinePlugin extends DecorationPlugin {
   /**
    * Keyboard shortcuts for inline formatting
    */
-  override getKeymap(): KeyBinding[] {
+  override getKeymap(): DescribedKeyBinding[] {
     return [
       {
+        name: "Bold",
+        description: "Wrap the selection in ** **",
         key: "Mod-b",
         run: toggleMarkdownStyle("**"),
         preventDefault: true,
       },
       {
+        name: "Italic",
+        description: "Wrap the selection in * *",
         key: "Mod-i",
         run: toggleMarkdownStyle("*"),
         preventDefault: true,
       },
       {
+        name: "Strikethrough",
+        description: "Wrap the selection in ~~ ~~",
         key: "Mod-Shift-s",
         run: toggleMarkdownStyle("~~"),
         preventDefault: true,
       },
       {
+        name: "Subscript",
+        description: "Wrap the selection in ~ ~",
         key: "Mod-,",
         run: toggleMarkdownStyle("~"),
         preventDefault: true,
       },
       {
+        name: "Superscript",
+        description: "Wrap the selection in ^ ^",
         key: "Mod-.",
         run: toggleMarkdownStyle("^"),
         preventDefault: true,
       },
       {
+        name: "Highlight",
+        description: "Wrap the selection in == ==",
         key: "Mod-Shift-h",
         run: toggleMarkdownStyle("=="),
         preventDefault: true,

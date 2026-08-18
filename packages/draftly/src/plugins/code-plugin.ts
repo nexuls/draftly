@@ -1,7 +1,7 @@
 import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
 import { LanguageDescription } from "@codemirror/language";
-import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { toggleMarkdownStyle } from "../editor";
 import type { Parser, SyntaxNode } from "@lezer/common";
 import { type Highlighter, highlightCode } from "@lezer/highlight";
@@ -314,14 +314,18 @@ export class CodePlugin extends DecorationPlugin {
   /**
    * Keyboard shortcuts for code formatting
    */
-  override getKeymap(): KeyBinding[] {
+  override getKeymap(): DescribedKeyBinding[] {
     return [
       {
+        name: "Inline code",
+        description: "Wrap the selection in backticks",
         key: "Mod-e",
         run: toggleMarkdownStyle("`"),
         preventDefault: true,
       },
       {
+        name: "Code block",
+        description: "Wrap the selection in a fenced code block",
         key: "Mod-Shift-e",
         run: (view) => this.toggleCodeBlock(view),
         preventDefault: true,

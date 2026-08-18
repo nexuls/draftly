@@ -21,6 +21,29 @@ const emptyThemeResolver = createTheme({
 });
 
 /**
+ * A CodeMirror {@link KeyBinding} carrying the metadata a shortcut reference needs.
+ *
+ * Plugins return these from {@link DraftlyPlugin.getKeymap}, and because the type
+ * only adds fields, CodeMirror consumes them unmodified. The fields are required
+ * so that a shortcut cannot ship without a name a user can read.
+ */
+export interface DescribedKeyBinding extends KeyBinding {
+  /** Short action name, e.g. `"Bold"`. */
+  name: string;
+
+  /** One line describing what the shortcut does. */
+  description: string;
+
+  /**
+   * Where the binding applies, when it is not global -- e.g. `"Inside a table"`.
+   *
+   * Context-scoped bindings often rebind keys that mean something else elsewhere
+   * (`Tab`, `Enter`), so a reference that lists them flat is misleading.
+   */
+  context?: string;
+}
+
+/**
  * Context passed to plugin lifecycle methods
  */
 export interface PluginContext {
@@ -188,9 +211,25 @@ export abstract class DraftlyPlugin {
   /**
    * Return keybindings for this plugin
    * Override to add custom keyboard shortcuts
+   *
+   * @returns Bindings to register, each carrying its own documentation
    */
-  getKeymap(): KeyBinding[] {
+  getKeymap(): DescribedKeyBinding[] {
     return [];
+  }
+
+  /**
+   * Return every shortcut this plugin wants listed in a shortcut reference.
+   *
+   * Defaults to {@link getKeymap}. Override when a plugin registers bindings some
+   * other way -- `TablePlugin` wraps its bindings in `Prec.highest()` and scopes
+   * them to a table, so they never pass through `getKeymap()` even though a user
+   * still needs to know they exist.
+   *
+   * @returns Documented shortcuts, registered or otherwise
+   */
+  getShortcuts(): DescribedKeyBinding[] {
+    return this.getKeymap();
   }
 
   // ============================================

@@ -1,5 +1,5 @@
 import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
-import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { createTheme } from "../editor";
 import { safeUrl } from "../lib/safe-url";
 import { escapeHtml } from "../lib/escape-html";
@@ -148,9 +148,11 @@ export class LinkPlugin extends DecorationPlugin {
   /**
    * Keyboard shortcuts for link formatting
    */
-  override getKeymap(): KeyBinding[] {
+  override getKeymap(): DescribedKeyBinding[] {
     return [
       {
+        name: "Link",
+        description: "Turn the selection into a link, or unwrap an existing one",
         key: "Mod-k",
         run: (view) => this.toggleLink(view),
         preventDefault: true,

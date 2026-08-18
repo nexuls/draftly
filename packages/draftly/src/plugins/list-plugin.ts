@@ -1,6 +1,6 @@
 import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
 import type { syntaxTree } from "@codemirror/language";
-import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
+import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { createTheme } from "../editor";
 import type { Range } from "@codemirror/state";
 import type { SyntaxNode } from "@lezer/common";
@@ -126,19 +126,25 @@ export class ListPlugin extends DecorationPlugin {
   /**
    * Keyboard shortcuts for list formatting
    */
-  override getKeymap(): KeyBinding[] {
+  override getKeymap(): DescribedKeyBinding[] {
     return [
       {
+        name: "Bullet list",
+        description: "Toggle the selected lines as a bullet list",
         key: "Mod-Shift-8",
         run: (view) => this.toggleListOnLines(view, "- "),
         preventDefault: true,
       },
       {
+        name: "Numbered list",
+        description: "Toggle the selected lines as a numbered list",
         key: "Mod-Shift-7",
         run: (view) => this.toggleListOnLines(view, "1. "),
         preventDefault: true,
       },
       {
+        name: "Task list",
+        description: "Toggle the selected lines as a task list",
         key: "Mod-Shift-9",
         run: (view) => this.toggleListOnLines(view, "- [ ] "),
         preventDefault: true,
@@ -147,6 +153,8 @@ export class ListPlugin extends DecorationPlugin {
         // The only way to toggle a task without a mouse. The rendered checkbox is not
         // focusable -- see TaskCheckboxWidget.toDOM for why -- so this is not a
         // convenience shortcut, it is the keyboard interface.
+        name: "Toggle task",
+        description: "Check or uncheck the task on the current line",
         key: "Mod-Enter",
         run: (view) => this.toggleTaskOnLines(view),
         preventDefault: true,
