@@ -1,11 +1,11 @@
 import { StyleModule } from "style-mod";
-import { draftlyBaseStyles } from "../editor/theme";
+import { resolveBaseStyles } from "../editor/theme";
 import { ThemeEnum } from "../editor/utils";
 import type { GenerateCSSConfig } from "./types";
 import { generateSyntaxThemeCSS } from "./syntax-theme";
 
 /**
- * Rendered base CSS, keyed by wrapper class.
+ * Rendered base CSS, keyed by theme and wrapper class.
  *
  * `generateCSS` is commonly called once per render on the server, and the rules
  * only depend on the wrapper name, so there is no reason to re-render them.
@@ -24,20 +24,22 @@ const baseStyleCache = new Map<string, string>();
  * Sharing one source of truth is what keeps preview padding, width and
  * typography from drifting away from the editor's.
  *
+ * @param theme - Which theme layer to resolve tokens for
  * @param wrapperClass - Wrapper class name, without the leading dot
- * @returns Base CSS for the preview
+ * @returns Base CSS for the preview, including the design-token block
  */
-function generateBaseStyles(wrapperClass: string): string {
-  const cached = baseStyleCache.get(wrapperClass);
+function generateBaseStyles(theme: ThemeEnum, wrapperClass: string): string {
+  const cacheKey = `${theme}\u0000${wrapperClass}`;
+  const cached = baseStyleCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
   const wrapperSelector = `.${wrapperClass}`;
-  const rules = new StyleModule(draftlyBaseStyles, {
+  const rules = new StyleModule(resolveBaseStyles(theme), {
     finish: (selector) =>
       selector.replace(/&\.cm-draftly \.cm-content/g, wrapperSelector).replace(/&\.cm-draftly/g, wrapperSelector),
   }).getRules();
 
-  baseStyleCache.set(wrapperClass, rules);
+  baseStyleCache.set(cacheKey, rules);
   return rules;
 }
 
@@ -72,7 +74,7 @@ export function generateCSS(config: GenerateCSSConfig = {}): string {
 
   // Include base styles, derived from the editor's own base theme
   if (includeBase) {
-    cssChunks.push(generateBaseStyles(wrapperClass));
+    cssChunks.push(generateBaseStyles(theme, wrapperClass));
   }
 
   // Collect syntax highlight styles (`tok-*` classes) from CodeMirror theme/extensions

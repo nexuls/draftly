@@ -342,6 +342,6 @@ export function createDraftlyViewExtension(
     draftlyOnPluginErrorFacet.of(onPluginError),
     draftlyThemeFacet.of(theme),
     draftlyViewPlugin,
-    ...(baseStyles ? [draftlyBaseTheme] : []),
+    ...(baseStyles ? [draftlyBaseTheme(theme)] : []),
   ];
 }
