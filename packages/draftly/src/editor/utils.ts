@@ -2,10 +2,25 @@ import type { EditorView } from "@codemirror/view";
 import type { StyleSpec } from "style-mod";
 
 /**
- * Deep merge two objects
- * @param a - First object
- * @param b - Second object
- * @returns Merged object
+ * Keys that must never be copied across during a merge. Assigning any of them
+ * walks up the prototype chain instead of writing an own property, which is the
+ * prototype-pollution shape. `deepMerge` is a generic exported utility, so the
+ * guard lives here rather than at its (currently theme-only) call sites.
+ */
+const UNSAFE_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
+ * Deep merge two objects.
+ *
+ * **Never mutates either argument** — every level allocates a fresh object.
+ * `createTheme` depends on this contract to stay pure, so it is part of the
+ * function's API rather than an implementation detail.
+ *
+ * Inherited keys and the prototype-pollution keys are skipped.
+ *
+ * @param a - Base object; its values are the fallback
+ * @param b - Overlay object; its values win where both define a key
+ * @returns A new object; neither input is modified
  */
 export function deepMerge<T>(a: T, b?: T): T {
   const result = { ...a };
@@ -15,6 +30,10 @@ export function deepMerge<T>(a: T, b?: T): T {
   }
 
   for (const key in b as T) {
+    if (!Object.hasOwn(b as object, key) || UNSAFE_MERGE_KEYS.has(key)) {
+      continue;
+    }
+
     if (b[key] && typeof b[key] === "object" && !Array.isArray(b[key]) && typeof a[key] === "object") {
       result[key] = deepMerge(a[key], b[key]);
     } else {
@@ -58,30 +77,46 @@ export function createTheme({
   dark?: ThemeStyle;
   light?: ThemeStyle;
 }): (theme: ThemeEnum) => ThemeStyle {
+  // Flatten once, at construction. The returned function is called per plugin per
+  // `draftly()` call and again per `generateCSS()` call, so flattening inside it
+  // repeated the whole tree walk every time -- and did so by reassigning the
+  // closure parameters, which only stayed correct because `deepMerge` happens not
+  // to mutate its first argument.
+  const flatDefault = flattenThemeStyles(defaultTheme);
+  const flatDark = flattenThemeStyles(darkTheme || {});
+  const flatLight = flattenThemeStyles(lightTheme || {});
+
   return (theme: ThemeEnum) => {
-    defaultTheme = flattenThemeStyles(defaultTheme);
-    darkTheme = flattenThemeStyles(darkTheme || {});
-    lightTheme = flattenThemeStyles(lightTheme || {});
-
-    let style: ThemeStyle = defaultTheme;
-
     if (theme === ThemeEnum.DARK) {
-      style = deepMerge(style, darkTheme);
+      return deepMerge(flatDefault, flatDark);
     }
 
     if (theme === ThemeEnum.LIGHT) {
-      style = deepMerge(style, lightTheme);
+      return deepMerge(flatDefault, flatLight);
     }
 
-    return style;
+    return flatDefault;
   };
 }
 
+/**
+ * Flatten a nested theme tree into a flat `selector -> StyleSpec` map.
+ *
+ * Nested objects become descendant selectors and comma-separated keys are split
+ * into one entry each, so `EditorView.theme()` and `generateCSS()` both receive
+ * the single-level shape they expect.
+ *
+ * @param themeStyles - Theme tree, possibly nested and comma-separated
+ * @param parentSelector - Accumulated ancestor selector during recursion
+ * @returns A flat map with one entry per resolved selector
+ */
 export function flattenThemeStyles(themeStyles: ThemeStyle, parentSelector?: string): ThemeStyle {
   const flattened: ThemeStyle = {};
 
   for (const [selectors, styles] of Object.entries(themeStyles)) {
-    for (const selector of selectors.split(",")) {
+    // Trim after splitting: `".b, .c"` otherwise yields a key of `" .c"`, whose
+    // leading space survives into the emitted selector.
+    for (const selector of selectors.split(",").map((s) => s.trim())) {
       if (typeof styles === "object" && !Array.isArray(styles)) {
         // Flatten nested styles
         const fullSelector = fixSelector(parentSelector ? `${parentSelector} ${selector}` : selector);
@@ -101,8 +136,17 @@ export function flattenThemeStyles(themeStyles: ThemeStyle, parentSelector?: str
   return flattened;
 }
 
+/**
+ * Collapse the nesting `&` into its parent selector.
+ *
+ * `flattenThemeStyles` always joins with a space before recursing, so a child
+ * written as `&.active` arrives here as `.parent &.active` and the space plus
+ * `&` are what have to go.
+ *
+ * @param selector - Joined selector, possibly containing ` &`
+ * @returns The selector with the nesting marker removed
+ */
 export function fixSelector(selector: string): string {
-  // Replace all occurrences of "&" with the parent selector
   return selector.replace(/\s&/g, "");
 }
 

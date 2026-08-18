@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-18 · commit `34805b6`
+> Last updated: 2026-08-18 · commit `d1bf639`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -76,12 +76,13 @@ into one API change and one changeset.
 | `T-005` | [Decompose oversized plugin files](./ongoing/T-005-decompose-large-plugins.md)              | Medium   | Proposed | Developer approval (memory Q6)          |
 | `T-006` | [Resolve or remove `plugin.dependencies`](./ongoing/T-006-plugin-dependencies.md)           | Medium   | Proposed | Developer decision (memory Q3)          |
 | `T-024` | [Dead configuration surfaces](./ongoing/T-024-dead-configuration-surfaces.md)               | Low      | Proposed | Developer decision (memory Q8)          |
-| `T-025` | [Harden `createTheme` / `deepMerge`](./ongoing/T-025-theme-utils-hardening.md)              | Low      | Proposed | —                                       |
 | `T-007` | [Wire up the type-check task](./ongoing/T-007-typecheck-task.md)                            | Low      | Proposed | Naming decision (memory Q4)             |
 | `T-008` | [Grapheme-aware table column widths](./ongoing/T-008-table-grapheme-width.md)               | Low      | Proposed | —                                       |
 
-**Nothing is currently in progress.** All ongoing items are proposals awaiting
-prioritisation — do not start one without checking with the developer.
+**Implementation of the unblocked items began 2026-08-18**, on the developer's instruction
+to work the ongoing list. Rows still marked `Proposed` with a "Developer decision" in the
+_Blocked on_ column are untouched and stay that way until answered — see the open questions
+in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 ### Suggested order
 
@@ -91,7 +92,7 @@ If the developer wants a single sequence rather than a set of groups:
 2. `T-011` → `T-012` — the O(document)-per-keystroke problem
 3. `T-016` → `T-017` → `T-018` — lifecycle, in that order
 4. `T-020` — bundle size, coordinated with T-017 if both land
-5. `T-014`, `T-019`, `T-021`, `T-025` — small, independent, low risk
+5. `T-014`, `T-019`, `T-021` — small, independent, low risk (`T-025` shipped as `C-009`)
 6. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
@@ -107,6 +108,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-009` | [Harden `createTheme` / `deepMerge`](./completed/C-009-theme-utils-hardening.md)                       | 2026-08-18           |
 | `C-008` | [Replace ESLint + Prettier with Biome](./completed/C-008-biome-migration.md)                          | 2026-08-18           |
 | `C-007` | [Agent artifact system](./completed/C-007-agent-artifact-system.md)                                   | 2026-08-18           |
 | `C-006` | [Vendored agent skills](./completed/C-006-agent-skills.md)                                            | `eae4434`            |

@@ -1,6 +1,6 @@
 # Theming
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-08-18 · commit `d1bf639`
 > Source: `packages/draftly/src/editor/utils.ts`, `editor/theme.ts`,
 > `editor/plugin.ts` (`getPreviewStyles` / `transformToCss`)
 
@@ -39,6 +39,11 @@ Resolution:
 > selectors inside the `default` layer themselves. The enum name promises more than the
 > implementation delivers — do not assume otherwise when reading plugin code.
 
+`createTheme` flattens all three layers **eagerly, at construction time**. The function it
+returns is pure — it selects a layer and merges, and mutates nothing. `deepMerge`'s
+non-mutation contract is what makes that safe, so it is documented on `deepMerge` itself
+rather than assumed.
+
 Theme resolution happens **once, at composition time** in `draftly()`. Changing themes at
 runtime requires reconstructing the extension bundle (which is what the playground does
 via `next-themes` + a new `draftly()` call).
@@ -61,8 +66,9 @@ via `next-themes` + a new `draftly()` call).
 
 Two behaviours to know:
 
-- **Comma-separated selectors are split and expanded.** `"a, b": { c: {...} }` produces
-  rules for both `a c` and `b c`. Added in `1ad0f3d`.
+- **Comma-separated selectors are split, trimmed, and expanded.** `"a, b": { c: {...} }`
+  produces rules for both `a c` and `b c`. Added in `1ad0f3d`; the trim came with C-009,
+  which removed a leading space from every selector after the first.
 - **`&` is handled by `fixSelector()`**, which strips the whitespace before an `&`
   (`/\s&/g → ""`). So `"&:hover"` nested under `.x` becomes `.x:hover`, not `.x :hover`.
   A bare `&` mid-selector without leading whitespace is **not** rewritten — write

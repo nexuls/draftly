@@ -1,9 +1,9 @@
-# T-025 — Harden `createTheme` and `deepMerge`
+# C-009 — Harden `createTheme` and `deepMerge`
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Low
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -73,12 +73,46 @@ is a generic exported utility with a generic name — the next caller may not be
 
 ## Acceptance
 
-- [ ] `createTheme`'s returned function does not mutate anything
-- [ ] Calling it repeatedly with different `ThemeEnum` values returns correct, independent
+- [x] `createTheme`'s returned function does not mutate anything
+- [x] Calling it repeatedly with different `ThemeEnum` values returns correct, independent
       results
-- [ ] Theme output byte-identical to current for all 14 plugins, both themes
-- [ ] `deepMerge` ignores inherited and dangerous keys
-- [ ] Nested and comma-separated selectors (C-004) still resolve correctly
+- [x] Theme output byte-identical to current for all 14 plugins, both themes — with one
+      deliberate exception, see Outcome
+- [x] `deepMerge` ignores inherited and dangerous keys
+- [x] Nested and comma-separated selectors (C-004) still resolve correctly
+
+## Outcome
+
+Landed as `refactor(draftly): Make createTheme pure and harden deepMerge`.
+
+**What changed in `editor/utils.ts`:**
+
+1. `createTheme` flattens `default`, `dark` and `light` **once at construction**, into
+   three `const`s. The returned resolver now only picks and merges. No parameter
+   reassignment, no re-flattening per call.
+2. `deepMerge` gained an `Object.hasOwn` filter and a `UNSAFE_MERGE_KEYS` skip list
+   (`__proto__`, `constructor`, `prototype`), plus JSDoc stating the non-mutation
+   contract that `createTheme` now depends on explicitly.
+3. `flattenThemeStyles` and `fixSelector` gained the JSDoc they were missing.
+
+**The one output change.** `flattenThemeStyles` split comma-separated keys without
+trimming, so `".b, .c"` produced a selector key of `" .c"` — with a leading space that
+survived into the emitted CSS. Now `.trim()`-ed. The rendered CSS is semantically
+identical (a leading descendant combinator against the style-mod prefix), so this is a
+cleanup rather than a behaviour change, but it does mean output is not byte-identical.
+
+**Verified:** `tsc --noEmit` clean; a scratch harness confirmed AUTO/DARK/LIGHT resolution
+is stable across repeated calls on one resolver, and that `deepMerge` with a
+`JSON.parse('{"__proto__":{...}}')` overlay leaves `Object.prototype` untouched.
+
+**Not done — deliberately:**
+
+- Proposal item 4, narrowing or removing the `deepMerge` export, is a public API change.
+  Per the boundaries rule it is flagged rather than taken; `deepMerge` is still exported
+  from `editor/index.ts`.
+- Proposal item 5, `fixSelector`: confirmed correct as written rather than changed.
+  `flattenThemeStyles` always joins with a space before recursing, so the ` &` form is the
+  only one that can reach it. Documented in its new JSDoc.
 
 ## Notes
 
