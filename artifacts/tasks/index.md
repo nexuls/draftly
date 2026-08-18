@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-18 · commit `d1bf639`
+> Last updated: 2026-08-18 · commit `0bba9ce`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -92,6 +92,16 @@ If the developer wants a single sequence rather than a set of groups:
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
 hard to verify by eye in the playground, and the pure layers they touch are the testable
 ones — an argument for answering memory Q5 before starting rather than after.
+
+### Cross-repo
+
+| Plan                                                              | Priority | Status   | Blocked on                |
+| ----------------------------------------------------------------- | -------- | -------- | ------------------------- |
+| [Migrate the `logits` fork's improvements](./logits-migration-plan.md) | High | Proposed | 5 developer decisions |
+
+The vendored copy in `/home/nexul/projects/logits` diverged on 2026-03-30 and gained a
+design-token theming layer, LaTeX math highlighting, shortcut metadata, and four bug fixes.
+Most of its 2,170-line diff is an 80-column reformat and is explicitly out of scope.
 
 ---
 
