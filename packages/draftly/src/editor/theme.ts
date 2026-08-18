@@ -1,11 +1,19 @@
 import { EditorView } from "@codemirror/view";
+import type { ThemeStyle } from "./utils";
 
 /**
- * Base theme for draftly styling
- * Note: Layout styles are scoped under .cm-draftly which is added by the view plugin
+ * Base styles shared by both surfaces.
+ *
+ * Selectors follow CodeMirror's convention: `&` is the surface root and
+ * `.cm-content` the element that holds the document. The static preview has the
+ * same two roles — both played by its wrapper element — so these rules can be
+ * re-emitted for it, which is what keeps the two surfaces from drifting.
+ * `generateCSS()` in `preview/` does that translation.
+ *
+ * Anything that targets a CodeMirror internal with no preview counterpart
+ * belongs in {@link editorOnlyStyles} instead.
  */
-export const draftlyBaseTheme = EditorView.theme({
-  // Container styles - only apply when view plugin is enabled
+export const draftlyBaseStyles: ThemeStyle = {
   "&.cm-draftly": {
     fontSize: "16px",
     lineHeight: "1.6",
@@ -21,7 +29,14 @@ export const draftlyBaseTheme = EditorView.theme({
     fontSize: "16px",
     lineHeight: "1.6",
   },
+};
 
+/**
+ * Styles that only make sense in the editor, because they address CodeMirror's
+ * own DOM. Kept out of {@link draftlyBaseStyles} so the preview does not inherit
+ * dead rules for elements it never renders.
+ */
+const editorOnlyStyles: ThemeStyle = {
   "&.cm-draftly .cm-content .cm-line": {
     paddingInline: 0,
   },
@@ -29,6 +44,21 @@ export const draftlyBaseTheme = EditorView.theme({
   "&.cm-draftly .cm-content .cm-widgetBuffer": {
     display: "none !important",
   },
+
+  // The editor supplies its own caret and selection affordances; the browser's
+  // focus ring on the scroller adds nothing but a box around the document.
+  "&.cm-draftly.cm-focused": {
+    outline: "none",
+  },
+};
+
+/**
+ * Base theme for draftly styling
+ * Note: Layout styles are scoped under .cm-draftly which is added by the view plugin
+ */
+export const draftlyBaseTheme = EditorView.theme({
+  ...draftlyBaseStyles,
+  ...editorOnlyStyles,
 });
 
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
