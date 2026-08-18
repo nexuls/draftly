@@ -207,12 +207,18 @@ export default function Page() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: recompute only when the selected content's text changes, not on every `contents` identity change
   const counts = useMemo(() => {
-    if (currentContent === -1) return { words: 0, lines: 0, char: 0 };
-    const content = contents[currentContent];
-    const words = content!.content.split(" ").length;
-    const lines = content!.content.split("\n").length;
-    const char = content!.content.length;
-    return { words, lines, char };
+    const text = currentContent === -1 ? "" : (contents[currentContent]?.content ?? "");
+    if (text === "") return { words: 0, lines: 0, char: 0 };
+
+    // Split on any whitespace run, not a single space: splitting on " " counted
+    // newline-separated words as one, counted consecutive spaces as empty words, and
+    // returned 1 for an empty document.
+    const trimmed = text.trim();
+    return {
+      words: trimmed === "" ? 0 : trimmed.split(/\s+/).length,
+      lines: text.split("\n").length,
+      char: text.length,
+    };
   }, [currentContent, contents[currentContent]?.content]);
 
   function handleContentChange(id: string, content: string) {
@@ -323,6 +329,12 @@ export default function Page() {
   );
 
   useEffect(() => {
+    // Overlapping renders: `contents` and `activePlugins` both change often, and without
+    // a guard whichever render *finishes* last wins rather than whichever *started* last
+    // -- so the pane could settle on output for a superseded document. The flag also
+    // prevents a setState after unmount.
+    let cancelled = false;
+
     (async () => {
       if (currentContent === -1 || !["view", "output"].includes(mode)) return;
       const start = performance.now();
@@ -347,9 +359,17 @@ export default function Page() {
         syntaxTheme: cmTheme,
       });
 
+      if (cancelled) return;
+
+      // Both inside the guard, so the reported time always belongs to the output on
+      // screen rather than to a run that was superseded.
       setOutputTime(performance.now() - start);
       setOutput({ html, css });
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentContent, contents, theme, mode, activePlugins, config.preview, cmTheme]);
 
   if (isLoading) {

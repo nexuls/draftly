@@ -59,7 +59,6 @@ into one API change and one changeset.
 | ID      | Task                                                                              | Priority | Status   | Blocked on                        |
 | ------- | ----------------------------------------------------------------------------------- | -------- | -------- | ----------------------------------- |
 | `T-026` | [`ThemeEnum.AUTO` ignores the system theme](./ongoing/T-026-theme-auto-system-detection.md) | Medium   | Proposed | Developer decision — behaviour change |
-| `T-021` | [Playground preview race & word count](./ongoing/T-021-playground-preview-race.md) | Low      | Proposed | —                                   |
 
 ### Code quality & tooling
 
@@ -82,8 +81,7 @@ If the developer wants a single sequence rather than a set of groups:
 
 1. `T-017` — the rest of the lifecycle work; needs an API decision
 2. `T-020` — bundle size, coordinated with T-017 if both land
-3. `T-021` — small, independent, low risk
-4. everything else, re-prioritised once the above is known
+3. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
 hard to verify by eye in the playground, and the pure layers they touch are the testable

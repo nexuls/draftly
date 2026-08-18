@@ -1,9 +1,9 @@
-# T-021 — Playground: unguarded async preview and wrong word count
+# C-023 — Playground: unguarded async preview and wrong word count
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Low
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -85,3 +85,40 @@ user as a document statistic.
 - Playground-only, so it needs no changeset and cannot break consumers. Good candidate for
   a first commit in a session — small, self-contained, no architectural decisions.
 - Per `AGENTS.md`, keep this in `apps/web`. None of it belongs in the library.
+
+
+## Outcome
+
+Landed as `fix(web): Guard the preview effect and fix the word count`.
+
+Playground-only; no library change, and no changeset.
+
+### Preview effect
+
+Standard cancellation flag, cleared in the cleanup function. Both `setOutputTime` and
+`setOutput` sit inside the guard — the task called out the timing as a separate symptom,
+but it has the same cause and the same fix: `start` belongs to one run and could be
+attributed to another. Guarding both means the reported time always describes the output
+actually on screen. The flag also covers the setState-after-unmount case.
+
+### Word count
+
+`content.split(" ").length` counted newline-separated words as one, counted consecutive
+spaces as words, and returned 1 for an empty document — shown to the user as a document
+statistic. Now trims, then splits on `/\s+/`, with an explicit zero for empty and
+whitespace-only input.
+
+Proposal item 4 folded in: `counts` split the document three times for three numbers and
+now does the minimum. The Biome suppression stays — it is about the dependency array
+deliberately keying on `contents[currentContent]?.content` rather than on `contents`
+identity, which the rewrite does not change.
+
+Verified against 9 cases: empty, whitespace-only, newline-only, single word, repeated
+spaces, newline-separated, leading/trailing padding, and tabs.
+
+### Not done
+
+Proposal item 2, debouncing the preview itself, was a "consider" and is skipped. The
+cancellation guard fixes the correctness problem outright; debouncing would only reduce
+wasted work, at the cost of adding latency to plugin toggles, which are the interaction
+where immediate feedback matters most in a playground.
