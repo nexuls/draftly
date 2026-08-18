@@ -134,6 +134,13 @@ class MermaidBlockWidget extends WidgetType {
     div.className = "cm-draftly-mermaid-rendered";
     div.style.cursor = "pointer";
 
+    // A rendered SVG has no text alternative of its own, and the diagram source it was
+    // built from is hidden by the decoration. Naming it from the source is the only
+    // description available -- imperfect, but it is the difference between "graphic" and
+    // nothing at all.
+    div.setAttribute("role", "img");
+    div.setAttribute("aria-label", `Mermaid diagram: ${this.definition.replace(/\s+/g, " ").trim().slice(0, 200)}`);
+
     // Show loading state initially
     div.innerHTML = `<div class="cm-draftly-mermaid-loading">Rendering diagram…</div>`;
 
@@ -149,6 +156,7 @@ class MermaidBlockWidget extends WidgetType {
         // classList.add, not `className +=` -- the latter accumulates if the element is
         // ever written to twice.
         div.classList.add("cm-draftly-mermaid-error");
+        div.setAttribute("role", "alert");
         div.innerHTML = `<span>[Mermaid Error: ${escapeHtml(error)}]</span>`;
       } else {
         div.innerHTML = svg;

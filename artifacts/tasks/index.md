@@ -58,7 +58,6 @@ into one API change and one changeset.
 
 | ID      | Task                                                                              | Priority | Status   | Blocked on                        |
 | ------- | ----------------------------------------------------------------------------------- | -------- | -------- | ----------------------------------- |
-| `T-022` | [Widgets are not keyboard accessible](./ongoing/T-022-widget-accessibility.md)    | Medium   | Proposed | —                                   |
 | `T-026` | [`ThemeEnum.AUTO` ignores the system theme](./ongoing/T-026-theme-auto-system-detection.md) | Medium   | Proposed | Developer decision — behaviour change |
 | `T-021` | [Playground preview race & word count](./ongoing/T-021-playground-preview-race.md) | Low      | Proposed | —                                   |
 

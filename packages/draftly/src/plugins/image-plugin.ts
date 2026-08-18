@@ -71,9 +71,9 @@ class ImageWidget extends WidgetType {
     figure.className = "cm-draftly-image-figure";
     figure.setAttribute("role", "figure");
     figure.style.cursor = "pointer";
-    if (this.title) {
-      figure.setAttribute("aria-label", this.title);
-    }
+    // Fall back to the alt text: a figure with no accessible name is announced as an
+    // unlabelled group, which is worse than repeating the image's own description.
+    figure.setAttribute("aria-label", this.title || this.alt || "Image");
 
     // Click handler to select the raw markdown text
     figure.addEventListener("click", (e) => {

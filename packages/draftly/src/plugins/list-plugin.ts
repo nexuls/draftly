@@ -49,12 +49,21 @@ export class TaskCheckboxWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const wrap = document.createElement("span");
     wrap.className = `cm-draftly-task-checkbox ${this.checked ? "checked" : ""}`;
-    wrap.setAttribute("aria-hidden", "true");
+
+    // Announced as an image, not a checkbox. The widget replaces the raw `[ ]` marker, so
+    // without a label the state is invisible to assistive technology -- but it is not a
+    // real control either: making it focusable inside `contenteditable` fights the
+    // editor's own focus and selection handling. `role="img"` describes the state
+    // honestly without promising an interaction that is not there. The interaction lives
+    // on Mod-Enter instead, which works regardless of focus semantics.
+    wrap.setAttribute("role", "img");
+    wrap.setAttribute("aria-label", this.checked ? "Task complete" : "Task incomplete");
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = this.checked;
     checkbox.tabIndex = -1;
+    checkbox.setAttribute("aria-hidden", "true");
 
     checkbox.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -134,7 +143,51 @@ export class ListPlugin extends DecorationPlugin {
         run: (view) => this.toggleListOnLines(view, "- [ ] "),
         preventDefault: true,
       },
+      {
+        // The only way to toggle a task without a mouse. The rendered checkbox is not
+        // focusable -- see TaskCheckboxWidget.toDOM for why -- so this is not a
+        // convenience shortcut, it is the keyboard interface.
+        key: "Mod-Enter",
+        run: (view) => this.toggleTaskOnLines(view),
+        preventDefault: true,
+      },
     ];
+  }
+
+  /**
+   * Toggle the checked state of every task on the selected lines.
+   *
+   * Mirrors what clicking the checkbox does, for every line the selection touches.
+   * Mixed selections are normalised to checked, matching how checkbox groups behave
+   * elsewhere: if anything is unchecked, check everything; otherwise uncheck everything.
+   *
+   * @param view - The editor view
+   * @returns `true` if any task was toggled, so the keymap can fall through otherwise
+   */
+  private toggleTaskOnLines(view: EditorView): boolean {
+    const { state } = view;
+    const { from, to } = state.selection.main;
+    const startLine = state.doc.lineAt(from);
+    const endLine = state.doc.lineAt(to);
+
+    const marks: { pos: number; checked: boolean }[] = [];
+    for (let lineNum = startLine.number; lineNum <= endLine.number; lineNum++) {
+      const line = state.doc.line(lineNum);
+      const match = line.text.match(/^(\s*(?:[-*+]|\d+\.)\s*)\[([ xX])\]/);
+      if (match) {
+        marks.push({ pos: line.from + match[1]!.length + 1, checked: match[2] !== " " });
+      }
+    }
+
+    if (marks.length === 0) {
+      return false;
+    }
+
+    const target = marks.some((mark) => !mark.checked) ? "x" : " ";
+    view.dispatch({
+      changes: marks.map((mark) => ({ from: mark.pos, to: mark.pos + 1, insert: target })),
+    });
+    return true;
   }
 
   /**

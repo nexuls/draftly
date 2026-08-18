@@ -66,6 +66,10 @@ class LinkTooltipWidget extends WidgetType {
     const wrapper = document.createElement("span");
     wrapper.className = "cm-draftly-link-wrapper";
     wrapper.style.cursor = "pointer";
+    // The native title works where the hover tooltip does not: it is announced by screen
+    // readers and surfaces on long-press. It is also the cheapest way to make Ctrl+Click
+    // discoverable -- nothing in the UI said it existed.
+    wrapper.title = `${this.url} — Ctrl+Click to open`;
 
     // Tooltip element
     const tooltip = document.createElement("span");
@@ -372,9 +376,11 @@ class LinkTextWidget extends WidgetType {
     span.textContent = this.text;
     span.style.cursor = "pointer";
 
-    if (this.title) {
-      span.title = this.title;
-    }
+    // The URL only existed in a hover tooltip, so it was undiscoverable by keyboard, by
+    // screen reader, and on touch. The native title covers all three, and carries the
+    // otherwise-invisible Ctrl+Click affordance.
+    span.title = this.title ? `${this.title} — ${this.url} — Ctrl+Click to open` : `${this.url} — Ctrl+Click to open`;
+    span.setAttribute("aria-label", `${this.text}, link to ${this.url}`);
 
     // Tooltip element
     const tooltip = document.createElement("span");

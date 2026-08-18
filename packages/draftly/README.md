@@ -355,6 +355,33 @@ import { HeadingPlugin, ListPlugin } from "draftly/plugins";
 
 ---
 
+## Keyboard Shortcuts
+
+Contributed by the built-in plugins. `Mod` is `Cmd` on macOS and `Ctrl` elsewhere.
+
+| Shortcut                                | Action                                           |
+| --------------------------------------- | ------------------------------------------------ |
+| `Mod-B` / `Mod-I` / `Mod-Shift-S`       | Bold / italic / strikethrough                    |
+| `Mod-,` / `Mod-.`                       | Subscript / superscript                          |
+| `Mod-Shift-H`                           | Highlight                                        |
+| `Mod-E` / `Mod-Shift-E`                 | Inline code / fenced code block                  |
+| `Mod-K`                                 | Link                                             |
+| `Mod-Shift-I`                           | Image                                            |
+| `Mod-Shift-8` / `Mod-Shift-7`           | Bullet list / ordered list                       |
+| `Mod-Shift-9`                           | Task list                                        |
+| `Mod-Enter`                             | Toggle the task(s) on the selected lines         |
+| `Mod-Shift-T`                           | Insert table                                     |
+| `Mod-Alt-Down` / `Mod-Alt-Right`        | Add table row / column                           |
+| `Mod-Alt-Backspace` / `Mod-Alt-Delete`  | Remove table row / column                        |
+| `Tab` / `Shift-Tab` (in a table)        | Next / previous cell                             |
+| `Shift-Enter` (in a table)              | Insert a line break inside a cell                |
+
+`Mod-Enter` is the only way to toggle a task without a mouse: the rendered checkbox is
+deliberately not focusable, because focusable children inside a `contenteditable` surface
+interfere with the editor's own focus and selection handling.
+
+---
+
 ## Browser Support
 
 Draftly supports all modern browsers:

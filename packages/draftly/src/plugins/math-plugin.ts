@@ -41,7 +41,12 @@ const mathMarkDecorations = {
 };
 
 /**
- * Render LaTeX to HTML using KaTeX
+ * Render LaTeX to HTML using KaTeX.
+ *
+ * KaTeX's default output is `htmlAndMathml`: the visual layer is marked `aria-hidden` and
+ * a MathML representation sits beside it, so the formula is already readable by assistive
+ * technology. **Do not add an `aria-label` to the container** — it would override the
+ * MathML with a flat string and make accessibility worse, not better.
  */
 function renderMath(latex: string, displayMode: boolean): { html: string; error: string | null } {
   try {
@@ -91,7 +96,8 @@ class InlineMathWidget extends WidgetType {
     const { html, error } = renderMath(this.latex, false);
 
     if (error) {
-      span.className += " cm-draftly-math-error";
+      span.classList.add("cm-draftly-math-error");
+      span.setAttribute("role", "alert");
       span.textContent = `[Math Error: ${error}]`;
     } else {
       span.innerHTML = html;
@@ -149,7 +155,8 @@ class MathBlockWidget extends WidgetType {
     const { html, error } = renderMath(this.latex, true);
 
     if (error) {
-      div.className += " cm-draftly-math-error";
+      div.classList.add("cm-draftly-math-error");
+      div.setAttribute("role", "alert");
       div.textContent = `[Math Error: ${error}]`;
     } else {
       div.innerHTML = html;

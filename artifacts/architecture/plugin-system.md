@@ -232,7 +232,24 @@ const theme = createTheme({
     writing DOM — the flag catches a teardown CodeMirror announced, `isConnected` catches
     an element that left the document without it. `MermaidBlockWidget` and
     `CodeBlockHeaderWidget` are the reference implementations.
-11. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
+11. **Decide whether your widget is decorative or a control, and build accordingly.**
+    A widget is a **control** only if activating it is the *only* way to do something —
+    `TaskCheckboxWidget` is the sole example, because it mutates the document and the raw
+    `[ ]` it replaces is hidden. Everything else merely reveals markdown the cursor can
+    already reach, and CodeMirror's own accessibility model exposes that text.
+
+    Decorative widgets need an accessible **name** (`role="img"` plus `aria-label`, or an
+    equivalent) so their content is announced. They must **not** be made focusable:
+    focusable children inside `contenteditable` fight the editor's focus and selection
+    handling, for no gain when the underlying text is reachable anyway.
+
+    A control's interaction belongs on `getKeymap()`, which works regardless of focus
+    semantics — that is how `Mod-Enter` toggles a task.
+
+    Do not add an `aria-label` over content that already carries its own accessible
+    representation. KaTeX emits MathML beside its visual output; labelling the container
+    would replace it with a flat string.
+12. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
    a `src`, or `window.open` — on **both** surfaces. Setting a DOM property protects
    against injection but not against `javascript:`. Pass `{ allowDataImages: true }` only
    for an image `src`.
