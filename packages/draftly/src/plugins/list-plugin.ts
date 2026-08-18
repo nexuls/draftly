@@ -286,7 +286,11 @@ export class ListPlugin extends DecorationPlugin {
             break;
 
           case "ListMark":
-            this.decorateListMark(node, line, decorations, cursorInLine);
+            // Narrower than cursorInLine on purpose: the mark reveals its raw
+            // syntax only when the cursor is actually on it, matching the range
+            // the decoration covers. Keying it to the whole line un-styled every
+            // bullet the moment the caret entered its text.
+            this.decorateListMark(node, line, decorations, ctx.cursorInRange(from, to + 1));
             break;
 
           case "TaskMarker":
@@ -349,13 +353,13 @@ export class ListPlugin extends DecorationPlugin {
     node: Parameters<NonNullable<Parameters<ReturnType<typeof syntaxTree>["iterate"]>[0]["enter"]>>[0],
     line: { from: number; to: number },
     decorations: Range<Decoration>[],
-    cursorInLine: boolean
+    cursorOnMark: boolean
   ): void {
     const { from, to } = node;
     const parent = node.node.parent;
     const grandparent = parent?.parent;
     const listType = grandparent?.name;
-    const activeClass = cursorInLine ? classes.active : "";
+    const activeClass = cursorOnMark ? classes.active : "";
 
     // Add indent decoration for nested items
     if (from > line.from) {
