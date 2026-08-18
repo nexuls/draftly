@@ -129,12 +129,19 @@ Four things worth internalising:
   plugins decorate overlapping ranges without any of them knowing about the others.
 - **Sorting is centralised.** A plugin may push in whatever order is convenient for its
   own tree walk; `view-plugin.ts:65` normalises. Never hand-sort inside a plugin.
-- **Errors are swallowed** (`view-plugin.ts:57`). This is intentional: Lezer can hand out
-  a partially-built `TreeBuffer` mid-parse and node access throws `Invalid child in
-posBefore`. Those states resolve on the next update. **The cost is that genuine plugin
-  bugs disappear silently** — if a decoration "just doesn't show up", temporarily replace
-  the `catch` with a `console.error` before assuming your logic is wrong. Tracked as an
-  open task.
+- **Errors are swallowed, but no longer silently.** Lezer can hand out a partially-built
+  `TreeBuffer` mid-parse and node access throws until it settles; letting that propagate
+  would break the editor for a transient, expected state. Since C-020 the catch asks
+  `syntaxTreeAvailable(state, view.viewport.to)` — if the tree *is* finished, whatever
+  threw is a genuine bug and gets reported through `DraftlyConfig.onPluginError`, or a
+  dev-only `console.error` if no handler was supplied. Deduplicated per plugin and
+  message, because decorations rebuild on every cursor move.
+
+  Parse completeness is the discriminator rather than the error message, which is not a
+  stable contract across Lezer versions.
+
+  **If a decoration does not appear and nothing was logged, no exception was thrown** —
+  the bug is in the logic, not in an error you cannot see.
 
 ### Rebuild triggers
 

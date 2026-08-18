@@ -1,9 +1,9 @@
-# T-004 — Dev-mode diagnostics for swallowed decoration errors
+# C-020 — Dev-mode diagnostics for swallowed decoration errors
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Medium
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -57,11 +57,41 @@ Distinguish expected parse-transience from genuine bugs, and surface only the la
 
 ## Acceptance
 
-- [ ] A deliberate error thrown from a plugin's `buildDecorations` is visible in dev
-- [ ] Transient Lezer partial-tree errors remain silent
-- [ ] No console flooding during sustained typing or cursor movement
-- [ ] Production builds stay silent unless a handler is supplied
-- [ ] Architecture doc and memory entry updated
+- [x] A deliberate error thrown from a plugin's `buildDecorations` is visible in dev
+- [x] Transient Lezer partial-tree errors remain silent
+- [x] No console flooding during sustained typing or cursor movement
+- [x] Production builds stay silent unless a handler is supplied
+- [x] Architecture doc and memory entry updated
+
+## Outcome
+
+Landed as `feat(draftly): Report genuine plugin decoration errors`.
+
+### How benign is distinguished from genuine
+
+**Not by matching error messages.** The task's note flagged the risk and it is real —
+Lezer's message text is not a stable contract across versions.
+
+The discriminator is `syntaxTreeAvailable(view.state, view.viewport.to)`: if the tree is
+not finished for the rendered range, the parse is still in progress and a throw is
+expected. If it *is* finished, whatever threw is a bug. That is the actual invariant the
+original comment was reaching for, and it needs no knowledge of Lezer's internals.
+
+### Reporting
+
+- New `DraftlyConfig.onPluginError?: (plugin: string, error: unknown) => void`, threaded
+  through `draftlyOnPluginErrorFacet`. Took the recommended option: an explicit callback,
+  defaulting to a dev-only `console.error`.
+- Deduplicated on `plugin.name` + message via `reportOnce()` in `lib/dev.ts`. Decorations
+  rebuild on every cursor movement, so without this the first occurrence — the one with
+  the useful stack — would be buried within a second of typing.
+- Production with no handler does no work beyond the `isDevMode()` check.
+
+### Not done
+
+Proposal item 4, the playground devbar error panel, was marked optional and is skipped.
+It belongs in `apps/web` and the library-side hook it needs now exists, so it can be added
+independently whenever the playground wants it.
 
 ## Notes
 

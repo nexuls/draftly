@@ -1,10 +1,11 @@
 import { type Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { type Extension, Facet, type Range, RangeSetBuilder } from "@codemirror/state";
-import { syntaxTree } from "@codemirror/language";
+import { syntaxTree, syntaxTreeAvailable } from "@codemirror/language";
 import { cursorInRange, selectionOverlapsRange, ThemeEnum } from "./utils";
 import { draftlyBaseTheme } from "./theme";
 import type { DecorationContext, DraftlyPlugin } from "./plugin";
 import type { DraftlyNode } from "./draftly";
+import { isDevMode, reportOnce } from "../lib/dev";
 
 /**
  * Facet to register plugins with the view plugin
@@ -19,6 +20,16 @@ export const DraftlyPluginsFacet = Facet.define<DraftlyPlugin[], DraftlyPlugin[]
 export const draftlyOnNodesChangeFacet = Facet.define<
   ((nodes: DraftlyNode[]) => void) | undefined,
   ((nodes: DraftlyNode[]) => void) | undefined
+>({
+  combine: (values) => values.find((v) => v !== undefined),
+});
+
+/**
+ * Facet to register the plugin-error handler
+ */
+export const draftlyOnPluginErrorFacet = Facet.define<
+  ((plugin: string, error: unknown) => void) | undefined,
+  ((plugin: string, error: unknown) => void) | undefined
 >({
   combine: (values) => values.find((v) => v !== undefined),
 });
@@ -101,6 +112,49 @@ function createVisibleIterator(
  * @param view - The EditorView instance
  * @param plugins - Optional array of plugins to invoke for decorations
  */
+/**
+ * Decide whether a `buildDecorations` failure is worth telling anyone about.
+ *
+ * Swallowing these errors is deliberate: Lezer hands out partially-built trees while a
+ * parse is in progress and node access throws until it settles, and letting that
+ * propagate would break the editor for a transient, expected state. The cost is that a
+ * genuine plugin bug — a typo, a null dereference, a bad range — produces exactly the
+ * same symptom, silently.
+ *
+ * The discriminator is whether the tree is actually finished for the rendered range,
+ * rather than matching Lezer's error messages. Message text is not a stable contract
+ * across versions; parse completeness is.
+ *
+ * @param view - The EditorView being decorated
+ * @returns `true` if the error is a genuine bug rather than parse transience
+ */
+function isReportableDecorationError(view: EditorView): boolean {
+  return syntaxTreeAvailable(view.state, view.viewport.to);
+}
+
+/**
+ * Report a plugin's decoration failure, once per distinct plugin and message.
+ *
+ * @param view - The view being decorated
+ * @param plugin - The plugin that threw
+ * @param error - The thrown value
+ */
+function reportDecorationError(view: EditorView, plugin: DraftlyPlugin, error: unknown): void {
+  if (!isReportableDecorationError(view)) return;
+
+  const handler = view.state.facet(draftlyOnPluginErrorFacet);
+  if (!handler && !isDevMode()) return;
+
+  const message = error instanceof Error ? error.message : String(error);
+  reportOnce(`${plugin.name}\u0000${message}`, () => {
+    if (handler) {
+      handler(plugin.name, error);
+    } else {
+      console.error(`[draftly] Plugin "${plugin.name}" threw while building decorations:`, error);
+    }
+  });
+}
+
 function buildDecorations(view: EditorView, plugins: DraftlyPlugin[] = []): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const decorations: Range<Decoration>[] = [];
@@ -123,9 +177,10 @@ function buildDecorations(view: EditorView, plugins: DraftlyPlugin[] = []): Deco
     for (const plugin of sortedPlugins) {
       try {
         plugin.buildDecorations(ctx);
-      } catch {
-        // Silently ignore errors from partial tree states (e.g., Lezer TreeBuffer
-        // "Invalid child in posBefore"). These resolve on the next update cycle.
+      } catch (error) {
+        // Still swallowed -- a transient partial tree must not break the editor. But it
+        // is no longer silent when the tree is complete and the error is therefore real.
+        reportDecorationError(view, plugin, error);
       }
     }
   }
@@ -270,18 +325,21 @@ const draftlyEditorClass = EditorView.editorAttributes.of({ class: "cm-draftly" 
  * Create draftly view extension bundle with plugin support
  * @param plugins - Optional array of DraftlyPlugin instances
  * @param onNodesChange - Optional callback to receive nodes on every update
+ * @param onPluginError - Optional handler for plugin decoration failures
  * @returns Extension array including view plugin, theme, and plugin facet
  */
 export function createDraftlyViewExtension(
   theme: ThemeEnum = ThemeEnum.AUTO,
   baseStyles = true,
   plugins: DraftlyPlugin[] = [],
-  onNodesChange?: (nodes: DraftlyNode[]) => void
+  onNodesChange?: (nodes: DraftlyNode[]) => void,
+  onPluginError?: (plugin: string, error: unknown) => void
 ): Extension[] {
   return [
     draftlyEditorClass,
     DraftlyPluginsFacet.of(plugins),
     draftlyOnNodesChangeFacet.of(onNodesChange),
+    draftlyOnPluginErrorFacet.of(onPluginError),
     draftlyThemeFacet.of(theme),
     draftlyViewPlugin,
     ...(baseStyles ? [draftlyBaseTheme] : []),

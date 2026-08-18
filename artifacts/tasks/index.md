@@ -67,7 +67,6 @@ into one API change and one changeset.
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                            |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | --------------------------------------- |
 | `T-001` | [Establish a test suite](./ongoing/T-001-test-suite.md)                                     | High     | Proposed | Developer decision on runner (memory Q5) |
-| `T-004` | [Dev-mode diagnostics for swallowed errors](./ongoing/T-004-decoration-error-visibility.md) | Medium   | Proposed | —                                       |
 | `T-005` | [Decompose oversized plugin files](./ongoing/T-005-decompose-large-plugins.md)              | Medium   | Proposed | Developer approval (memory Q6)          |
 | `T-006` | [Resolve or remove `plugin.dependencies`](./ongoing/T-006-plugin-dependencies.md)           | Medium   | Proposed | Developer decision (memory Q3)          |
 | `T-024` | [Dead configuration surfaces](./ongoing/T-024-dead-configuration-surfaces.md)               | Low      | Proposed | Developer decision (memory Q8)          |

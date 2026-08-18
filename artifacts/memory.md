@@ -51,9 +51,12 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   renders in the editor but not the preview. Since C-012 this **warns in development**
   (`preview/renderer.ts`, `buildNodePluginMap`) — the trap is still real, it is just no
   longer silent.
-- **`buildDecorations` errors are swallowed** (`view-plugin.ts:57`). Intentional — Lezer
-  hands out partial trees mid-parse — but genuine plugin bugs vanish. Temporarily replace
-  the `catch` with a `console.error` when debugging a missing decoration.
+- **`buildDecorations` errors are swallowed *while the tree is still parsing*.** Since
+  C-020 they are reported otherwise — deduplicated per plugin and message, via
+  `DraftlyConfig.onPluginError` or a dev-only `console.error`. The discriminator is
+  `syntaxTreeAvailable(state, view.viewport.to)`, **not** matching Lezer's error messages;
+  message text is not stable across versions. If a decoration is missing and nothing was
+  logged, the failure is not an exception — look at the logic.
 - **`Decoration.replace` must never span a newline.** Clamp to `line.to`; CodeMirror
   throws otherwise. Canonical clamp: `heading-plugin.ts:104`.
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer

@@ -174,9 +174,10 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
   `syntaxTree(view.state).iterate` costs O(document) on every keystroke *and* every cursor
   move. Fixed library-wide in C-016; the two `TablePlugin` facet computations are the only
   deliberate exceptions.
-- **`buildDecorations` errors are swallowed** (`editor/view-plugin.ts:57`). Intentional —
-  Lezer exposes partial trees mid-parse — but genuine bugs vanish identically. Temporarily
-  swap the `catch` for a `console.error` when a decoration does not appear.
+- **`buildDecorations` errors are swallowed only while the tree is still parsing.**
+  Genuine errors are reported via `DraftlyConfig.onPluginError` or a dev-only
+  `console.error`, deduplicated per plugin and message. If a decoration does not appear
+  and nothing was logged, nothing threw — the bug is in the logic.
 - **`Decoration.replace` must never span a newline.** Clamp to `line.to`. Canonical
   example: `heading-plugin.ts:104`.
 - **Release view-scoped state in `onViewDestroy`.** Plugin instances are singletons that

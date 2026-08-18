@@ -36,3 +36,24 @@ export function devWarn(message: string, ...details: unknown[]): void {
   if (!isDevMode()) return;
   console.warn(`[draftly] ${message}`, ...details);
 }
+
+/**
+ * Keys already reported by {@link reportOnce}, for the lifetime of the module.
+ */
+const reportedOnce = new Set<string>();
+
+/**
+ * Run `report` the first time a given key is seen, and never again.
+ *
+ * Decorations rebuild on every cursor movement, so a persistent plugin bug would
+ * otherwise print on every keystroke and bury the first occurrence — which is the one
+ * with the useful stack.
+ *
+ * @param key - Identity of the condition being reported
+ * @param report - Called only on the first occurrence
+ */
+export function reportOnce(key: string, report: () => void): void {
+  if (reportedOnce.has(key)) return;
+  reportedOnce.add(key);
+  report();
+}
