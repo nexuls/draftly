@@ -238,43 +238,56 @@ const inlineMathParser: InlineParser = {
 };
 
 /**
- * Block parser for math blocks: $$...$$
+ * Block parser for math blocks: `$$...$$`
+ *
+ * Accepts both the fenced form, where the delimiters sit on their own lines, and
+ * the single-line form `$$x^2$$`. The single-line form is only claimed when it
+ * occupies the whole line; with trailing content the line is left to the
+ * paragraph and inline-math parsers rather than silently swallowing the rest.
  */
 const mathBlockParser: BlockParser = {
   name: "MathBlock",
   parse(cx: BlockContext, line: Line) {
-    // Check if line starts with $$
     const text = line.text;
-    const trimmed = text.slice(line.pos).trimStart();
 
-    if (!trimmed.startsWith("$$")) return false;
+    // `line.pos` is already past any container prefix (list bullet, blockquote
+    // marker). Offsets are measured against the raw line so that they stay
+    // valid document positions.
+    const openIndex = text.indexOf("$$", line.pos);
+    if (openIndex === -1) return false;
+    if (text.slice(line.pos, openIndex).trim() !== "") return false;
 
-    // Find the end of the math block
     const startLine = cx.lineStart;
+    const openMarkStart = startLine + openIndex;
     let endPos = -1;
-    let lastLineEnd = startLine + line.text.length;
 
-    // Move past the opening line
-    while (cx.nextLine()) {
-      const currentText = line.text;
-      lastLineEnd = cx.lineStart + currentText.length;
+    const sameLineClose = text.indexOf("$$", openIndex + 2);
+    if (sameLineClose !== -1) {
+      // Single-line form. Anything after the closing fence means this is not a
+      // block; bail so the rest of the line still gets parsed.
+      if (text.slice(sameLineClose + 2).trim() !== "") return false;
+      endPos = startLine + sameLineClose + 2;
+      cx.nextLine();
+    } else {
+      while (cx.nextLine()) {
+        const currentText = line.text;
+        const closeIndex = currentText.lastIndexOf("$$");
 
-      // Check if this line contains closing $$
-      if (currentText.trimEnd().endsWith("$$")) {
-        endPos = lastLineEnd;
-        // Move past the closing line so subsequent markdown gets parsed
-        cx.nextLine();
-        break;
+        // The closing fence must end the line, but trailing whitespace is fine —
+        // and the fence position, not the line end, is what bounds the mark.
+        if (closeIndex !== -1 && currentText.slice(closeIndex + 2).trim() === "") {
+          endPos = cx.lineStart + closeIndex + 2;
+          // Move past the closing line so subsequent markdown gets parsed.
+          cx.nextLine();
+          break;
+        }
       }
     }
 
-    if (endPos === -1) {
-      // No closing found, treat as regular paragraph
-      return false;
-    }
+    // No closing fence: treat as a regular paragraph.
+    if (endPos === -1) return false;
 
-    // Create the math block element
-    const openMark = cx.elt("MathBlockMark", startLine, startLine + text.indexOf("$$") + 2);
+    const openMark = cx.elt("MathBlockMark", openMarkStart, openMarkStart + 2);
     const closeMark = cx.elt("MathBlockMark", endPos - 2, endPos);
     cx.addElement(cx.elt("MathBlock", startLine, endPos, [openMark, closeMark]));
 
