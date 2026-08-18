@@ -1668,9 +1668,9 @@ const theme = createTheme({
       borderSpacing: "0",
       position: "relative",
       overflow: "visible",
-      border: "1px solid var(--color-border, #d7dee7)",
+      border: "1px solid var(--draftly-color-border)",
       borderRadius: "0.75rem",
-      backgroundColor: "var(--color-background, #ffffff)",
+      backgroundColor: "var(--draftly-color-surface)",
 
       "& .cm-draftly-table": {
         width: "100%",
@@ -1684,11 +1684,11 @@ const theme = createTheme({
       },
 
       "& .cm-draftly-table-header-row": {
-        backgroundColor: "rgba(15, 23, 42, 0.04)",
+        backgroundColor: "var(--draftly-surface-header)",
       },
 
       "& .cm-draftly-table-row-even": {
-        backgroundColor: "rgba(15, 23, 42, 0.02)",
+        backgroundColor: "var(--draftly-surface-stripe)",
       },
 
       "& .cm-draftly-table-delimiter-row": {
@@ -1702,8 +1702,8 @@ const theme = createTheme({
         height: "2.75rem",
         padding: "0.5rem 0.875rem",
         verticalAlign: "top",
-        borderRight: "1px solid var(--color-border, #d7dee7)",
-        borderBottom: "1px solid var(--color-border, #d7dee7)",
+        borderRight: "1px solid var(--draftly-color-border)",
+        borderBottom: "1px solid var(--draftly-color-border)",
         whiteSpace: "normal",
         overflowWrap: "break-word",
         wordBreak: "normal",
@@ -1754,11 +1754,11 @@ const theme = createTheme({
         position: "absolute",
         width: "1.75rem",
         height: "1.75rem",
-        border: "1px solid var(--color-border, #d7dee7)",
+        border: "1px solid var(--draftly-color-border)",
         borderRadius: "999px",
-        backgroundColor: "var(--color-background, #ffffff)",
-        color: "var(--color-text, #0f172a)",
-        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.12)",
+        backgroundColor: "var(--draftly-color-surface-raised)",
+        color: "var(--draftly-color-text)",
+        boxShadow: "var(--draftly-shadow-popover)",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
@@ -1768,7 +1768,7 @@ const theme = createTheme({
       },
 
       "& .cm-draftly-table-control:hover": {
-        backgroundColor: "rgba(15, 23, 42, 0.05)",
+        backgroundColor: "var(--draftly-surface-hover)",
       },
 
       "& .cm-draftly-table-control-column": {
@@ -1793,36 +1793,6 @@ const theme = createTheme({
 
       "&:hover .cm-draftly-table-control-row, &:focus-within .cm-draftly-table-control-row": {
         transform: "translate(-50%, 0)",
-      },
-    },
-  },
-
-  dark: {
-    ".cm-draftly-table-wrapper, .cm-draftly-table-widget": {
-      borderColor: "var(--color-border, #30363d)",
-      backgroundColor: "var(--color-background, #0d1117)",
-
-      "& .cm-draftly-table-header-row": {
-        backgroundColor: "rgba(255, 255, 255, 0.05)",
-      },
-
-      "& .cm-draftly-table-row-even": {
-        backgroundColor: "rgba(255, 255, 255, 0.025)",
-      },
-
-      "& .cm-draftly-table-cell": {
-        borderColor: "var(--color-border, #30363d)",
-      },
-
-      "& .cm-draftly-table-control": {
-        borderColor: "var(--color-border, #30363d)",
-        backgroundColor: "var(--color-background, #161b22)",
-        color: "var(--color-text, #e6edf3)",
-        boxShadow: "0 12px 28px rgba(0, 0, 0, 0.35)",
-      },
-
-      "& .cm-draftly-table-control:hover": {
-        backgroundColor: "rgba(255, 255, 255, 0.08)",
       },
     },
   },
