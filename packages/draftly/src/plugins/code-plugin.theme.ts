@@ -93,6 +93,12 @@ export const codePluginTheme = createTheme({
           "&.copied": {
             color: "#22c55e",
           },
+
+          // Clipboard writes are rejected on plain HTTP, without permission, and when
+          // the document is not focused. The button says so rather than doing nothing.
+          "&.copy-failed": {
+            color: "#ef4444",
+          },
         },
       },
     },

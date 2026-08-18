@@ -1,9 +1,9 @@
-# T-018 — Guard widget async work and repeated error nodes
+# C-019 — Guard widget async work and repeated error nodes
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Medium
 **Created:** 2026-08-18
-**Blocked on:** T-016 (needs a widget teardown path)
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -81,11 +81,65 @@ hard to reason about what mermaid retains internally.
 
 ## Acceptance
 
-- [ ] No DOM writes into detached widget elements
-- [ ] Clipboard failure shows a visible error state and produces no unhandled rejection
-- [ ] Copy button works correctly when clicked repeatedly in quick succession
-- [ ] A broken image shows exactly one error message
-- [ ] Rapid editing around a mermaid block leaves no orphaned work
+- [x] No DOM writes into detached widget elements
+- [x] Clipboard failure shows a visible error state and produces no unhandled rejection
+- [x] Copy button works correctly when clicked repeatedly in quick succession
+- [x] A broken image shows exactly one error message
+- [x] Rapid editing around a mermaid block leaves no orphaned work
+
+**All five are structural rather than observed** — none was exercised in a browser, since
+none was available. Each corresponds to a specific guard that is now present and was not
+before; that is weaker evidence than watching it, and the copy button in particular
+deserves a manual click-twice-quickly check.
+
+## Outcome
+
+Landed as `fix(draftly): Guard widget async work and error paths`.
+
+All six proposal items shipped.
+
+### Mermaid (items 1, 2, 6)
+
+`MermaidBlockWidget` implements `destroy()` and sets a `disposed` flag. The resolution
+handler checks **both** `disposed` and `div.isConnected` — the first catches a widget
+CodeMirror told us about, the second catches an element that left the document without
+`destroy()` being reached. Cheap enough that having both is not worth optimising away.
+
+`className +=` on the error path became `classList.add`, and the error text is now escaped
+— it was interpolated straight into `innerHTML`, and mermaid error messages quote the
+user's own diagram source back.
+
+The id counter wraps at 1,000,000 rather than growing unbounded. Item 6 offered
+`crypto.randomUUID()` as an alternative; a wrapping counter is cheaper, keeps ids readable
+while debugging, and the window is far larger than the number of renders that can be in
+flight.
+
+### Copy button (items 3, 4)
+
+Extracted to `copyToClipboard()`, which is the real fix — the old inline handler had
+nowhere to put the failure path.
+
+- `.catch()` shows a `copy-failed` state with a cross icon and a `title` of "Copy failed",
+  themed red next to the existing green `copied`. Silently doing nothing on plain HTTP was
+  a real UX bug in exactly the environment the playground runs in.
+- The reset timer is held on the widget, cleared in `destroy()`, and cleared before being
+  restarted — so a rapid second click restarts the window instead of having the first
+  click's timer reset the button mid-state.
+- Every DOM write is behind `copyBtn.isConnected`.
+
+### Images (item 5)
+
+`onerror` checks for an existing `.cm-draftly-image-error` before appending. Chose the
+DOM check over an instance flag deliberately: the widget can be reused across renders now
+that `eq()` compares content (C-017), so a flag would have to be reset somewhere and the
+DOM is the actual source of truth.
+
+### Note on the premise
+
+The task assumed "with T-012 unfixed, most of these resolve into nodes CodeMirror has
+already discarded". C-017 landed first, so that is no longer the common case — these
+guards now cover genuine teardown rather than routine churn. The guards are still correct
+and still needed; the volume they catch is much lower than the task anticipated.
 
 ## Notes
 

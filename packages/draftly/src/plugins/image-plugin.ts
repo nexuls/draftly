@@ -98,9 +98,13 @@ class ImageWidget extends WidgetType {
       img.title = this.title;
     }
 
-    // Handle image loading error
+    // Handle image loading error. `onerror` can fire more than once for the same element
+    // (re-decode, src reassignment), so appending unconditionally stacked duplicate
+    // messages inside the figure.
     img.onerror = () => {
       img.style.display = "none";
+      if (figure.querySelector(".cm-draftly-image-error")) return;
+
       const errorSpan = document.createElement("span");
       errorSpan.className = "cm-draftly-image-error";
       errorSpan.setAttribute("role", "alert");

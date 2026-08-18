@@ -2,6 +2,7 @@ import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme, ThemeEnum } from "../editor";
 import { resolveWidgetRange, shallowEqualRecord } from "../lib/widget-position";
+import { escapeHtml } from "../lib/escape-html";
 import type { SyntaxNode } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, BlockParser, Line, BlockContext } from "@lezer/markdown";
@@ -19,14 +20,23 @@ mermaid.initialize({
 /**
  * Render a mermaid diagram definition to SVG
  */
+/**
+ * Monotonic counter for mermaid's required per-render element id.
+ *
+ * Wraps, because mermaid keeps internal state keyed on these ids and the counter used to
+ * grow unbounded for the page's lifetime. The window is far larger than the number of
+ * renders that can be in flight at once, so wrapping cannot collide in practice.
+ */
 let mermaidCounter = 0;
+const MERMAID_ID_WINDOW = 1_000_000;
 async function renderMermaid(
   definition: string,
   options: Record<string, string> = {},
   defaultTheme = "default"
 ): Promise<{ svg: string; error: string | null }> {
   try {
-    const id = `draftly-mermaid-${mermaidCounter++}`;
+    mermaidCounter = (mermaidCounter + 1) % MERMAID_ID_WINDOW;
+    const id = `draftly-mermaid-${mermaidCounter}`;
     let finalDefinition = definition;
 
     // transform theme to mermaid config
@@ -109,6 +119,16 @@ class MermaidBlockWidget extends WidgetType {
     );
   }
 
+  /**
+   * Set by {@link destroy}. `mermaid.render()` is async and routinely outlives the
+   * element it was started for, so the resolution handler must be able to tell.
+   */
+  private disposed = false;
+
+  override destroy(): void {
+    this.disposed = true;
+  }
+
   toDOM(view: EditorView) {
     const div = document.createElement("div");
     div.className = "cm-draftly-mermaid-rendered";
@@ -117,12 +137,19 @@ class MermaidBlockWidget extends WidgetType {
     // Show loading state initially
     div.innerHTML = `<div class="cm-draftly-mermaid-loading">Rendering diagram…</div>`;
 
-    // Render mermaid asynchronously
-    // Render mermaid asynchronously
+    // Render mermaid asynchronously. Both guards matter: `disposed` catches a widget
+    // CodeMirror told us about, `isConnected` catches an element that left the document
+    // without destroy() being reached.
     renderMermaid(this.definition, this.attributes, this.defaultTheme).then(({ svg, error }) => {
+      if (this.disposed || !div.isConnected) {
+        return;
+      }
+
       if (error) {
-        div.className += " cm-draftly-mermaid-error";
-        div.innerHTML = `<span>[Mermaid Error: ${error}]</span>`;
+        // classList.add, not `className +=` -- the latter accumulates if the element is
+        // ever written to twice.
+        div.classList.add("cm-draftly-mermaid-error");
+        div.innerHTML = `<span>[Mermaid Error: ${escapeHtml(error)}]</span>`;
       } else {
         div.innerHTML = svg;
       }

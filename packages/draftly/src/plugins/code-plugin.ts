@@ -22,6 +22,9 @@ const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
 /** Delay before resetting copy button state (ms) */
 const COPY_RESET_DELAY = 2000;
 
+/** Shown on the copy button when the clipboard write is rejected. */
+const CROSS_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
 /** Code fence marker in markdown blocks */
 const CODE_FENCE = "```";
 
@@ -171,14 +174,7 @@ class CodeBlockHeaderWidget extends WidgetType {
       copyBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        navigator.clipboard.writeText(this.codeContent).then(() => {
-          copyBtn.classList.add("copied");
-          copyBtn.innerHTML = CHECK_ICON;
-          setTimeout(() => {
-            copyBtn.classList.remove("copied");
-            copyBtn.innerHTML = COPY_ICON;
-          }, COPY_RESET_DELAY);
-        });
+        this.copyToClipboard(copyBtn);
       });
 
       rightSide.appendChild(copyBtn);
@@ -186,6 +182,56 @@ class CodeBlockHeaderWidget extends WidgetType {
     }
 
     return header;
+  }
+
+  /**
+   * Handle to the pending "copied" reset.
+   *
+   * Tracked so a rapid second click restarts it rather than racing it, and so
+   * {@link destroy} can cancel it instead of letting it fire against a detached button.
+   */
+  private resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  override destroy(): void {
+    if (this.resetTimer !== null) {
+      clearTimeout(this.resetTimer);
+      this.resetTimer = null;
+    }
+  }
+
+  /**
+   * Copy the block's code, showing the outcome on the button.
+   *
+   * `navigator.clipboard.writeText` rejects when permission is denied, when the document
+   * is not focused, and over plain HTTP — all of which a docs-site playground in an
+   * iframe hits routinely. It used to have no `.catch()` at all, so the failure was an
+   * unhandled rejection and a button that silently did nothing.
+   *
+   * @param copyBtn - The button to reflect state on
+   */
+  private copyToClipboard(copyBtn: HTMLButtonElement): void {
+    const showResult = (className: string, icon: string, title: string) => {
+      if (!copyBtn.isConnected) return;
+
+      copyBtn.classList.remove("copied", "copy-failed");
+      copyBtn.classList.add(className);
+      copyBtn.innerHTML = icon;
+      copyBtn.title = title;
+
+      if (this.resetTimer !== null) clearTimeout(this.resetTimer);
+      this.resetTimer = setTimeout(() => {
+        this.resetTimer = null;
+        if (!copyBtn.isConnected) return;
+        copyBtn.classList.remove("copied", "copy-failed");
+        copyBtn.innerHTML = COPY_ICON;
+        copyBtn.title = "Copy code";
+      }, COPY_RESET_DELAY);
+    };
+
+    navigator.clipboard
+      .writeText(this.codeContent)
+      .then(() => showResult("copied", CHECK_ICON, "Copied"))
+      .catch(() => showResult("copy-failed", CROSS_ICON, "Copy failed"));
   }
 
   /** Checks equality for widget reuse optimization. */

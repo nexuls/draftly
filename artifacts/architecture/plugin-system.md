@@ -227,7 +227,12 @@ const theme = createTheme({
    rebuilds the DOM on every keystroke — re-running KaTeX, mermaid and image loads. A
    handler that needs a range calls `resolveWidgetRange(view, dom, [nodeName])` from
    `draftly/lib`, which reads it from the live DOM at event time.
-10. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
+10. **A widget that starts async work implements `destroy()`.** Set a `disposed` flag,
+    clear pending timers, and check both `disposed` and `element.isConnected` before
+    writing DOM — the flag catches a teardown CodeMirror announced, `isConnected` catches
+    an element that left the document without it. `MermaidBlockWidget` and
+    `CodeBlockHeaderWidget` are the reference implementations.
+11. **Run every URL through `safeUrl()`** from `draftly/lib` before it reaches an `href`,
    a `src`, or `window.open` — on **both** surfaces. Setting a DOM property protects
    against injection but not against `javascript:`. Pass `{ allowDataImages: true }` only
    for an image `src`.
