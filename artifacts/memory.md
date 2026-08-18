@@ -56,8 +56,26 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   throws otherwise. Canonical clamp: `heading-plugin.ts:104`.
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer
   only. The name over-promises.
-- **`sanitize()` is a no-op on the server** (`preview/context.ts`). DOMPurify needs a DOM.
-  `sanitize: true` provides no protection during SSR.
+- **`sanitize: true` guarantees nothing, on any surface.** `ctx.sanitize()` is opt-in per
+  plugin, not a pass over the finished document. On top of that, `preview/renderer.ts:125`
+  returns leaf-node text **unescaped**, and `HTMLPlugin` has no `requiredNodes`, so HTML
+  nodes reach exactly that path. DOMPurify is also the wrong tool for the attribute values
+  several plugins feed it. Server-side it no-ops entirely. See T-003, T-009, T-010.
+- **No plugin scopes its tree walk to the viewport.** `view.visibleRanges` is referenced
+  nowhere in the library, despite `buildDecorations`' own JSDoc claiming otherwise. Every
+  update — including a plain cursor move — costs 14 full-document tree walks plus a second
+  one for `buildNodes`. This is the library's dominant performance cost. See T-011, T-013.
+- **`WidgetType.eq()` must compare content, never document positions.** Six widgets compare
+  `from`/`to`, which shift on any edit above them, so the widget is never reused — KaTeX
+  and Mermaid re-render on every keystroke. `TaskCheckboxWidget` shows the correct pattern:
+  content-only `eq`, position resolved at event time via `view.posAtDOM()`. See T-012.
+- **There is no teardown path anywhere.** `grep -rn "destroy" packages/draftly/src` returns
+  nothing — no view-plugin `destroy()`, no widget `destroy()`, no `onViewDestroy`, and
+  `onUnregister` is declared but never called. The table plugin's pending-view fields
+  therefore retain destroyed editors indefinitely. See T-016.
+- **Plugin instances are module-level singletons with mutable per-view state.**
+  `allPlugins` is `[...essentialPlugins]` — the same objects. Two editors on one page
+  overwrite each other's `_context` and cancel each other's table normalization. See T-017.
 - **`wrapperClass` must match between `preview()` and `generateCSS()`** or preview output
   is completely unstyled. Most common integration mistake.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
@@ -122,10 +140,59 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
 | 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins and newly-gained a11y findings in `packages/ui`'s vendored shadcn components. Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
+| 9   | `essentialPlugins` / `allPlugins` export shared mutable instances, so two editors on one page cross-talk. Fix by exporting factories (breaking) or by moving view-scoped state into a `WeakMap`/`StateField` (non-breaking, larger refactor)? | `plugins/index.ts:38`; T-017 | 2026-08-18 |
+| 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
+| 11  | With `sanitize: false`, should `HTMLPlugin` emit raw HTML (honouring the flag literally) or escape it? The flag's name says the former; safety says the latter. | `plugins/html-plugin.ts`; T-010 | 2026-08-18 |
+| 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |
+| 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---
 
 ## Session log
+
+### Session 2026-08-18 — full-codebase audit
+
+**Goal:** Analyse the whole codebase for hidden bugs, memory leaks, and performance, UX and
+code-quality problems, then record the findings as tasks.
+
+**Done:**
+
+- Audited the library end to end (`editor/`, `preview/`, all 14 plugins, `lib/`), the
+  playground, and the build/packaging config.
+- Created `T-009`–`T-026` (18 tasks) and reorganised `tasks/index.md` by theme, since
+  sequencing within each group matters more than ID order.
+- Narrowed the scope of `T-003` — its original framing of the sanitization gap as
+  server-specific was wrong.
+- **Changed no source code.** Several findings are public-API or behaviour changes; per
+  working rule 1 they are logged as questions 9–13 above rather than resolved.
+
+**Learned** — the high-value items are promoted to _Traps that have cost time_ above. The
+findings that reframed how the codebase reads:
+
+- The performance story is not about individual plugins being slow; it is that the core
+  never established a viewport contract, so all 14 plugins independently do the maximum
+  possible work. Fixing it in `DecorationContext` fixes it everywhere and stops the next
+  plugin repeating it.
+- The sanitization gap is structural, not a server-side caveat. The renderer's *fallback*
+  path — not any plugin — is what emits raw HTML, which is why no amount of plugin-level
+  care would have caught it.
+- The `requiredNodes` trap already recorded in this file has a live instance: `HTMLPlugin`
+  is silently absent from preview, on the one node type where absence is dangerous.
+- Several "look like accidents but are not" mechanisms genuinely are accidents when read
+  against the whole system — positions in `eq()`, per-call theme `StyleModule`s, and the
+  singleton plugin collections all work only because a single editor is the only tested
+  configuration.
+
+**Decisions:**
+
+- Grouped the index by theme with an explicit suggested order, rather than appending 18
+  rows to a flat table.
+- Kept `T-009` and `T-010` separate despite the shared symptom — different mechanisms,
+  different files, two commits.
+- Recorded measurement as an acceptance criterion on every performance task. With no test
+  suite, an unmeasured perf claim is not a claim.
+
+**Left open:** everything. All 18 are `Proposed`; questions 9–13 need the developer.
 
 ### Session 2026-08-18 — artifact system bootstrap
 

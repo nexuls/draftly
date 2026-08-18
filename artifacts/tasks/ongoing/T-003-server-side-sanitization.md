@@ -22,11 +22,28 @@ DOMPurify needs a DOM, so outside a browser the function returns its input untou
 DOMPurify)". A consumer rendering untrusted markdown during SSR or static generation gets
 **no sanitization at all** while every signal tells them they are protected.
 
-This is a security-relevant default that reads as safe and is not. The affected path is
-`HTMLPlugin`, which is what passes raw `HTMLBlock`/`HTMLTag` content through.
+This is a security-relevant default that reads as safe and is not.
 
 The existing source comment acknowledges it ("user should sanitize at application level")
 but a code comment is not where a consumer looks.
+
+### Revised scope (2026-08-18 audit)
+
+The original framing — "`HTMLPlugin` is what passes raw content through" — was wrong in a
+way that matters. The audit found the gap is **structural, not server-specific**:
+
+- `ctx.sanitize()` is **opt-in per plugin**, not a pass over the finished document.
+  Nothing sanitizes the renderer's own output, so `sanitize: true` makes a document-level
+  promise the pipeline never keeps — in the browser as much as on the server.
+- `HTMLPlugin` has neither `requiredNodes` nor `renderToHTML`, so HTML nodes never reach a
+  plugin at all. They hit the renderer's leaf fallback (`renderer.ts:125`), which returns
+  `sliceDoc()` **unescaped**. Tracked as **T-010**.
+- Where plugins do call `sanitize()`, several use it on attribute *values*, which DOMPurify
+  does not protect. Tracked as **T-009**.
+
+So this task narrows to what its title says: making the server-side no-op honest. The two
+client-side halves are T-009 and T-010, and **both must land for `sanitize: true` to mean
+anything**. Fixing only this one yields a correctly-warned pipeline that is still unsafe.
 
 ## Proposed approach
 
@@ -67,3 +84,8 @@ developer's call.
 ## Notes
 
 - Ships as its own commit, separate from the broader README audit in T-002.
+- **2026-08-18:** scope narrowed after the codebase audit — see the revised-scope section
+  above. Sequence after T-010, which is the higher-severity half: an injected sanitizer
+  has nothing to protect while the renderer emits raw text on its own fallback path.
+- The injected-sanitizer option (approach 3) is also what makes T-010's `HTMLPlugin`
+  renderer safe server-side, so the two designs should be agreed together.
