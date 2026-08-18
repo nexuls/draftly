@@ -48,7 +48,9 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
 
 - **`requiredNodes` is the preview dispatch key.** A plugin with `renderToHTML()` but an
   empty `requiredNodes` is silently dead in preview. First thing to check when something
-  renders in the editor but not the preview.
+  renders in the editor but not the preview. Since C-012 this **warns in development**
+  (`preview/renderer.ts`, `buildNodePluginMap`) — the trap is still real, it is just no
+  longer silent.
 - **`buildDecorations` errors are swallowed** (`view-plugin.ts:57`). Intentional — Lezer
   hands out partial trees mid-parse — but genuine plugin bugs vanish. Temporarily replace
   the `catch` with a `console.error` when debugging a missing decoration.
@@ -56,11 +58,19 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   throws otherwise. Canonical clamp: `heading-plugin.ts:104`.
 - **`ThemeEnum.AUTO` does not detect the system theme.** It applies the `default` layer
   only. The name over-promises.
-- **`sanitize: true` guarantees nothing, on any surface.** `ctx.sanitize()` is opt-in per
-  plugin, not a pass over the finished document. On top of that, `preview/renderer.ts:125`
-  returns leaf-node text **unescaped**, and `HTMLPlugin` has no `requiredNodes`, so HTML
-  nodes reach exactly that path. DOMPurify is also the wrong tool for the attribute values
-  several plugins feed it. Server-side it no-ops entirely. See T-003, T-009, T-010.
+- **`sanitize: true` guarantees nothing *on the server*.** It used to guarantee nothing
+  anywhere; C-011 and C-012 fixed the client side. What remains: `ctx.sanitize()` is still
+  opt-in per plugin rather than a pass over the finished document, and it still **no-ops
+  outside a browser**, so SSR and static generation get no protection at all. See T-003.
+- **Escaping and sanitizing are different operations.** `ctx.sanitize()` parses an HTML
+  *fragment*; handed a bare string — a URL, a title, an alt text — it returns it unchanged,
+  quotes included. Attribute values and text get `escapeHtml` (`lib/escape-html.ts`); only
+  a real fragment gets `sanitize()`. URLs additionally get `safeUrl()` (`lib/safe-url.ts`),
+  on **both** surfaces. This cost a live attribute-injection bug (C-011).
+- **DOMPurify balances the fragment it is given**, so it cannot sanitize a lone tag:
+  `<b>` comes back `<b></b>` and `</b>` comes back `""`. The markdown parser emits one
+  `HTMLTag` node per tag, so `HTMLPlugin.renderToHTML` sanitizes inside a balanced probe
+  and reads the verdict off the result rather than using the output directly (C-012).
 - **No plugin scopes its tree walk to the viewport.** `view.visibleRanges` is referenced
   nowhere in the library, despite `buildDecorations`' own JSDoc claiming otherwise. Every
   update — including a plain cursor move — costs 14 full-document tree walks plus a second
@@ -142,7 +152,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
 | 9   | `essentialPlugins` / `allPlugins` export shared mutable instances, so two editors on one page cross-talk. Fix by exporting factories (breaking) or by moving view-scoped state into a `WeakMap`/`StateField` (non-breaking, larger refactor)? | `plugins/index.ts:38`; T-017 | 2026-08-18 |
 | 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
-| 11  | With `sanitize: false`, should `HTMLPlugin` emit raw HTML (honouring the flag literally) or escape it? The flag's name says the former; safety says the latter. | `plugins/html-plugin.ts`; T-010 | 2026-08-18 |
+| 11  | ~~With `sanitize: false`, should `HTMLPlugin` emit raw HTML or escape it?~~ **Answered provisionally in C-012: honour the flag literally** — raw HTML with `sanitize: false`, sanitized with the default `true`. Confirm or overturn. | `plugins/html-plugin.ts`; C-012 | 2026-08-18 |
 | 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 

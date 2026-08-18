@@ -92,7 +92,7 @@ const tree = markdownSupport.language.parser.parse(this.doc);
                         if (result !== null) return result       ← first non-null wins
 2. defaultRenderers[node.name]?  → renderer(node, await renderChildren(node), ctx)
 3. node.firstChild?              → return await renderChildren(node)
-4. leaf                          → return ctx.sliceDoc(node.from, node.to)
+4. leaf                          → return escapeHtml(ctx.sliceDoc(node.from, node.to))
 ```
 
 Note the cost in step 1: `renderChildren` is awaited **before** the plugin is consulted,
@@ -100,9 +100,11 @@ once per candidate plugin. A plugin that returns `null` has already paid for a f
 subtree render. This is why plugins should decline via `requiredNodes` (never registering
 for the node) rather than via a `null` return where possible.
 
-Step 4 returns **raw, unescaped** text for unknown leaf nodes. Leaf node text that
-reaches step 4 is markdown source, so this is usually correct — but a plugin introducing
-a new leaf node type that can contain `<` must render it explicitly.
+Step 4 **escapes** the leaf node's text (since C-012). It is a safety net, not a
+pass-through: `defaultRenderers` holds only `Document`, so most node types reach this
+line, and returning document source unescaped was how raw HTML entered the output. A
+plugin that genuinely needs to emit markup does so from `renderToHTML`, where the decision
+is explicit and visible.
 
 ### `renderChildren(node)` — gap preservation
 
@@ -119,7 +121,9 @@ if (pos < node.to) result += escapeHtml(sliceDoc(pos, node.to)); // trailing gap
 The gap handling is what keeps plain text between nodes intact. Lezer's markdown tree
 only creates nodes for _structure_ — the words in a paragraph are gaps, not nodes.
 Without this loop, preview would render a document consisting entirely of punctuation.
-**Gaps are always HTML-escaped; node output never is.**
+**Gaps are always HTML-escaped, and so is the leaf fallback. A plugin's `renderToHTML`
+output is the only thing emitted unescaped** — because that is the one place where
+emitting markup is the stated intent.
 
 ---
 

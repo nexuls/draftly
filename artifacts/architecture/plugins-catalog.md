@@ -27,7 +27,7 @@ into `essentialPlugins` / `allPlugins` (currently identical arrays — `allPlugi
 | `image`     | 1.0.0 | 25   | 447  | `DecorationPlugin` | `Image` — inline rendering, captions            |
 | `math`      | 1.0.0 | 25   | 526  | `DecorationPlugin` | `$…$` / `$$…$$` via KaTeX (custom parser nodes) |
 | `mermaid`   | 1.0.0 | 25   | 500  | `DecorationPlugin` | ` ```mermaid ` diagram blocks                   |
-| `html`      | 1.0.0 | 30   | 353  | `DecorationPlugin` | Raw `HTMLBlock` / `HTMLTag`                     |
+| `html`      | 1.0.0 | 30   | 419  | `DecorationPlugin` | Raw HTML: blocks, tags, comments                |
 
 `code-plugin.theme.ts` (426 LOC) holds `CodePlugin`'s styles separately — the precedent
 for splitting a theme out when it dominates the plugin file.
@@ -76,6 +76,16 @@ kinds of extension at once:
 HTML. It is also the main consumer of `ctx.sanitize()` — and therefore the plugin most
 affected by the server-side sanitization gap documented in
 [preview-pipeline.md](./preview-pipeline.md).
+
+Until C-012 it declared **no `requiredNodes` and no `renderToHTML`**, so it was silently
+absent from preview on the one node type where absence is dangerous — HTML nodes fell
+through to the renderer's unescaped leaf fallback. It now claims `HTMLBlock`, `HTMLTag`,
+`Comment` and `CommentBlock`.
+
+Its `HTMLTag` path is worth knowing about: DOMPurify balances the fragment it is handed,
+so a lone `<b>` becomes `<b></b>` and a lone `</b>` becomes `""`. The plugin therefore
+sanitizes inside a balanced probe and reads the verdict off the result, re-emitting the
+tag in its original role. Do not "simplify" it to a direct `ctx.sanitize()` call.
 
 ---
 

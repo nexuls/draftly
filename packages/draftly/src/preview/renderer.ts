@@ -8,6 +8,7 @@ import { ThemeEnum } from "../editor/utils";
 import { createPreviewContext } from "./context";
 import { defaultRenderers } from "./default-renderers";
 import { escapeHtml } from "../lib/escape-html";
+import { devWarn } from "../lib/dev";
 import { resolveSyntaxHighlighters } from "./syntax-theme";
 import type { NodeRendererMap, PreviewContext } from "./types";
 
@@ -56,6 +57,16 @@ export class PreviewRenderer {
   private buildNodePluginMap(): Map<string, DraftlyPlugin[]> {
     const map = new Map<string, DraftlyPlugin[]>();
     for (const plugin of this.plugins) {
+      // The sharpest edge in the system: `requiredNodes` is the preview dispatch key,
+      // so a plugin with a renderer but no declared nodes is silently absent from
+      // preview while working perfectly in the editor. Say so during development.
+      if (plugin.renderToHTML && plugin.requiredNodes.length === 0) {
+        devWarn(
+          `Plugin "${plugin.name}" defines renderToHTML() but declares no requiredNodes, ` +
+            "so it will never be called during preview rendering."
+        );
+      }
+
       if (plugin.renderToHTML && plugin.requiredNodes.length > 0) {
         for (const nodeName of plugin.requiredNodes) {
           const list = map.get(nodeName) || [];
@@ -123,8 +134,13 @@ export class PreviewRenderer {
       return await this.renderChildren(node);
     }
 
-    // Leaf node - return text content
-    return this.ctx.sliceDoc(node.from, node.to);
+    // Leaf node - return its text content, escaped.
+    //
+    // This is a safety net, not a pass-through. `defaultRenderers` holds only
+    // `Document`, so most node types reach this line, and returning document source
+    // unescaped is how raw HTML used to enter the output. A plugin that genuinely
+    // needs to emit markup does so from `renderToHTML`, where the decision is explicit.
+    return escapeHtml(this.ctx.sliceDoc(node.from, node.to));
   }
 
   /**
