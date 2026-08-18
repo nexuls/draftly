@@ -16,7 +16,6 @@ by theme rather than by ID, because within each group the sequencing matters.
 
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
-| `T-023` | [Preview dispatch ignores `decorationPriority`](./ongoing/T-023-preview-dispatch-priority.md) | Medium   | Proposed | —                                                       |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
 
 **T-009, T-010 and T-003 were one story, and all three have landed** (C-011, C-012,
@@ -105,6 +104,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-014` | [Preview dispatch ignores `decorationPriority`](./completed/C-014-preview-dispatch-priority.md)       | 2026-08-18           |
 | `C-013` | [Make server-side sanitization honest](./completed/C-013-server-side-sanitization.md)                 | 2026-08-18           |
 | `C-012` | [Preview emits raw HTML for unhandled nodes](./completed/C-012-preview-raw-leaf-output.md)            | 2026-08-18           |
 | `C-011` | [Escape attribute values in `renderToHTML`](./completed/C-011-preview-attribute-escaping.md)          | 2026-08-18           |

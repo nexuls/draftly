@@ -1,9 +1,9 @@
-# T-023 — Preview plugin dispatch ignores `decorationPriority`
+# C-014 — Preview plugin dispatch ignores `decorationPriority`
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Medium
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -73,11 +73,59 @@ two surfaces have different composition models, not just different orderings.
 
 ## Acceptance
 
-- [ ] Two plugins claiming the same node resolve identically in editor and preview
-- [ ] The resolution rule is documented with its direction stated explicitly
-- [ ] Built-in plugin output is unchanged (no current overlap, so this should be a no-op)
-- [ ] Equal-priority conflicts warn in development
-- [ ] `null`-means-decline is documented
+- [x] Two plugins claiming the same node resolve identically in editor and preview
+- [x] The resolution rule is documented with its direction stated explicitly
+- [x] Built-in plugin output is unchanged (no current overlap, so this should be a no-op)
+- [x] Equal-priority conflicts warn in development
+- [x] `null`-means-decline is documented
+
+## Outcome
+
+Landed as `fix(draftly): Resolve preview plugin conflicts by decorationPriority`.
+
+Took the recommended option — **document the single field**, no second `renderPriority`
+knob.
+
+### The direction, and why it is not the editor's
+
+`buildNodePluginMap` sorts candidates **descending**; the editor sorts **ascending**.
+That looks like a bug and is not:
+
+| Surface | Sort       | Composition                                  | Who wins        |
+| ------- | ---------- | -------------------------------------------- | --------------- |
+| Editor  | ascending  | every plugin runs; later layers over earlier | higher priority |
+| Preview | descending | first non-null `renderToHTML` result is used | higher priority |
+
+The sorts are inverse precisely so the *outcome* is identical. Working through it the
+other way — matching the editor's ascending sort literally — would have made the
+lowest-priority plugin win in preview and the highest win in the editor, which is the
+original bug with extra steps.
+
+This resolves the second inconsistency the task raised: the two surfaces genuinely have
+different composition models (layering versus precedence), and one number can serve both
+only if the sort compensates. Now documented as such rather than left implicit.
+
+### No-op verified, not assumed
+
+Per the task note, dumped `requiredNodes` across all plugins before shipping: **52 node
+names, zero overlaps**, so built-in output cannot change. Confirmed by diffing rendered
+output for a mixed document.
+
+The same dump also confirmed that no plugin now has `renderToHTML` without `requiredNodes`
+— `HTMLPlugin` was the last one, fixed in C-012.
+
+### Regression case
+
+The fixture the task suggested was built as a scratch harness: a custom plugin claiming
+`ATXHeading1` at priority 999 alongside `HeadingPlugin`. It now wins **regardless of array
+order**; before, writing it after `HeadingPlugin` lost. This is the first thing to turn
+into a real test under T-001.
+
+### Also
+
+`null`-means-decline is documented on `renderToHTML`'s JSDoc and in `plugin-system.md`,
+including the distinction from `""` (render as nothing), which was previously discoverable
+only by reading the renderer.
 
 ## Notes
 

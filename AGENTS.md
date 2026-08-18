@@ -199,7 +199,9 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
 1. Read [`artifacts/architecture/plugin-system.md`](artifacts/architecture/plugin-system.md).
 2. Create `packages/draftly/src/plugins/<feature>-plugin.ts`.
 3. Extend `DecorationPlugin` (or `DraftlyPlugin` if render-only). Set `name`, `version`,
-   `decorationPriority` (pick within an existing band), and `requiredNodes`.
+   `decorationPriority` (pick within an existing band), and `requiredNodes`. A higher
+   `decorationPriority` wins on **both** surfaces — it layers on top in the editor and is
+   consulted first in preview. Two plugins on one node at equal priority warn in dev.
 4. Hoist `Decoration` instances to module scope — allocating per keystroke is a real cost.
 5. In `renderToHTML`, read class names off the decoration specs
    (`someDecoration.spec.class`) rather than retyping them. This is the mechanism that

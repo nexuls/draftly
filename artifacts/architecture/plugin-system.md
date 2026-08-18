@@ -112,7 +112,10 @@ renderToHTML ? (node, children, ctx) : string | null | Promise<string | null>;
 Optional. Contract:
 
 - Return an **HTML string** to take over rendering for this node.
-- Return **`null`** to decline and let the next plugin, then the default renderer, handle it.
+- Return **`null`** to decline. The next candidate plugin for the node is tried, then the
+  default renderer, then the escaped leaf fallback. This is how a plugin claims a node
+  type broadly via `requiredNodes` and then opts out per node — and it is the mechanism
+  that lets a consumer's plugin sit alongside a built-in rather than replacing it.
 - Return **`""`** to render the node as nothing (how syntax markers like `HeaderMark` are
   dropped from static output).
 - `children` is pre-rendered HTML for the node's children — but note it is computed
@@ -205,7 +208,22 @@ const theme = createTheme({
 
 ### Choosing `decorationPriority`
 
-Lower runs first. Current allocation:
+One number, two surfaces, and the sorts point opposite ways on purpose:
+
+| Surface | Sort       | Composition                                  | Who wins        |
+| ------- | ---------- | -------------------------------------------- | --------------- |
+| Editor  | ascending  | every plugin runs; later layers over earlier | higher priority |
+| Preview | descending | first non-null `renderToHTML` result is used | higher priority |
+
+The *outcome* is the same on both — a higher number wins — which is the point. Preview
+used to dispatch in whatever order the consumer wrote their plugin array, so a custom
+plugin overriding a built-in behaved one way in the editor and another in preview. Fixed
+in C-014.
+
+Two plugins claiming the same node at the same priority is genuinely ambiguous; it warns
+in development.
+
+Current allocation:
 
 | Range | Used by                                    | Rationale                          |
 | ----- | ------------------------------------------ | ---------------------------------- |

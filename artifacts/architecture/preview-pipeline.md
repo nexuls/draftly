@@ -96,6 +96,12 @@ const tree = markdownSupport.language.parser.parse(this.doc);
 4. leaf                          → return escapeHtml(ctx.sliceDoc(node.from, node.to))
 ```
 
+Candidates for a node are ordered by **descending `decorationPriority`**, matching the
+editor's resolution (see [plugin-system.md](./plugin-system.md#choosing-decorationpriority)).
+Before C-014 they were in the order the consumer passed them, which is only invisible
+because no two built-ins share a `requiredNodes` entry — verified, 52 node names, zero
+overlaps. A consumer adding a plugin to override a built-in is exactly the case that broke.
+
 Note the cost in step 1: `renderChildren` is awaited **before** the plugin is consulted,
 once per candidate plugin. A plugin that returns `null` has already paid for a full
 subtree render. This is why plugins should decline via `requiredNodes` (never registering

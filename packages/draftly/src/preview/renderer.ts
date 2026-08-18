@@ -60,7 +60,20 @@ export class PreviewRenderer {
   }
 
   /**
-   * Build a map from node names to plugins that handle them
+   * Build a map from node names to the plugins that handle them.
+   *
+   * Candidates for a node are ordered by **descending `decorationPriority`**, so the
+   * plugin that would win visually in the editor is the one consulted first here.
+   * `renderNode` takes the first non-null result, so highest priority wins.
+   *
+   * That direction is the inverse of the editor's sort, and deliberately so: the editor
+   * sorts ascending because it applies *every* plugin and later decorations layer over
+   * earlier ones. The two surfaces have different composition models — layering versus
+   * precedence — and this is what makes one priority number mean the same thing in both.
+   * Before this, preview resolved conflicts by whatever order the consumer happened to
+   * write their plugin array in.
+   *
+   * @returns Node name to prioritised candidate list
    */
   private buildNodePluginMap(): Map<string, DraftlyPlugin[]> {
     const map = new Map<string, DraftlyPlugin[]>();
@@ -83,6 +96,24 @@ export class PreviewRenderer {
         }
       }
     }
+
+    for (const [nodeName, candidates] of map) {
+      if (candidates.length < 2) continue;
+
+      candidates.sort((a, b) => b.decorationPriority - a.decorationPriority);
+
+      // Equal priority on a shared node is genuinely ambiguous -- the sort cannot break
+      // the tie, so the outcome falls back to array order and the author should know.
+      const [first, second] = candidates as [DraftlyPlugin, DraftlyPlugin];
+      if (first.decorationPriority === second.decorationPriority) {
+        devWarn(
+          `Plugins "${first.name}" and "${second.name}" both claim node "${nodeName}" at ` +
+            `decorationPriority ${first.decorationPriority}. Which one renders it is ` +
+            "unspecified; give one a higher priority."
+        );
+      }
+    }
+
     return map;
   }
 

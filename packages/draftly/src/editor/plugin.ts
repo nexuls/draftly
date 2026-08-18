@@ -68,7 +68,21 @@ export abstract class DraftlyPlugin {
   /** Plugin version (abstract - must be implemented) */
   abstract readonly version: string;
 
-  /** Decoration priority (higher = applied later) */
+  /**
+   * Priority of this plugin relative to others, on **both** surfaces.
+   *
+   * - **Editor:** plugins are sorted *ascending* and all of them run. Later decorations
+   *   layer over earlier ones, so a higher number wins visually.
+   * - **Preview:** candidates for a node are tried in *descending* order and the first
+   *   non-null `renderToHTML` result wins. So a higher number wins here too.
+   *
+   * The sorts point opposite ways because the composition models differ — layering
+   * versus precedence — and that is exactly what makes one number mean the same thing
+   * on both surfaces. Two plugins claiming the same node at the same priority is
+   * ambiguous and warns in development.
+   *
+   * Pick a value inside an existing band; see `artifacts/architecture/plugin-system.md`.
+   */
   readonly decorationPriority: number = 100;
 
   /** Plugin dependencies - names of required plugins */
@@ -222,10 +236,15 @@ export abstract class DraftlyPlugin {
    * Render a syntax node to HTML for preview mode
    * Override to provide custom HTML rendering for specific node types
    *
+   * Returning `null` **declines**: the next candidate plugin for this node is tried,
+   * then the default renderer, then the escaped leaf fallback. Returning `""` is not the
+   * same thing — it renders the node as nothing, which is how syntax markers are dropped
+   * from static output.
+   *
    * @param node - The syntax node to render
    * @param children - Pre-rendered children HTML
    * @param ctx - Preview context with document and utilities
-   * @returns HTML string to use, or null to use default rendering
+   * @returns HTML to use, `""` to render nothing, or `null` to decline
    */
   renderToHTML?(
     node: SyntaxNode,
