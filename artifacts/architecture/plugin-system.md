@@ -87,12 +87,28 @@ interface DecorationContext {
 
 ### Lifecycle hooks
 
-| Hook                   | When                                | Base behaviour    |
-| ---------------------- | ----------------------------------- | ----------------- |
-| `onRegister(ctx)`      | Composition time, before extensions | Stores `_context` |
-| `onUnregister()`       | Teardown                            | Clears `_context` |
-| `onViewReady(view)`    | `ViewPlugin` constructor            | No-op             |
-| `onViewUpdate(update)` | Every `ViewUpdate`, unconditionally | No-op             |
+| Hook                    | When                                    | Base behaviour    |
+| ----------------------- | --------------------------------------- | ----------------- |
+| `onRegister(ctx)`       | Composition time, before extensions     | Stores `_context` |
+| `onViewReady(view)`     | `ViewPlugin` constructor                | No-op             |
+| `onViewUpdate(update)`  | Every `ViewUpdate`, unconditionally     | No-op             |
+| `onViewDestroy(view)`   | `ViewPlugin.destroy()`                  | No-op             |
+| ~~`onUnregister()`~~    | **Never — deprecated**                  | Clears `_context` |
+
+**Release view-scoped state in `onViewDestroy`.** Plugin instances are module-level
+singletons that outlive every view, so a retained `EditorView` retains its DOM, its state
+and the whole document for the lifetime of the page. Added in C-018, along with the view
+plugin's `destroy()` — before that the library had no teardown path at all. It fires on
+every reconfigure as well as on a real teardown, because a host that rebuilds its
+extension array destroys and recreates the view.
+
+`EditorView` has **no public "destroyed" flag**, so async work already in flight cannot
+ask the view whether it is still alive. `TablePlugin` keeps a `WeakSet` of torn-down views
+and checks it before dispatching; copy that pattern rather than inventing another.
+
+`onUnregister` is **deprecated and never called.** It cannot be wired to view destruction
+while plugin instances are shared: clearing `_context` for one editor would break every
+other editor on the page. Its fate is tied to T-017.
 
 **Always call `super.onRegister(context)` when overriding it** — otherwise `this.context`
 stays `null` and anything reading plugin config breaks. `TablePlugin.onRegister` is the

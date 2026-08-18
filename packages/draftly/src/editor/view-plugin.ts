@@ -150,7 +150,14 @@ class draftlyViewPluginClass {
   private plugins: DraftlyPlugin[];
   private onNodesChange: ((nodes: DraftlyNode[]) => void) | undefined;
 
+  /**
+   * Held solely so `destroy()` can name the view it is tearing down. `destroy()` takes
+   * no arguments, and `onViewDestroy` needs the identity to release the right state.
+   */
+  private readonly view: EditorView;
+
   constructor(view: EditorView) {
+    this.view = view;
     this.plugins = view.state.facet(DraftlyPluginsFacet);
     this.onNodesChange = view.state.facet(draftlyOnNodesChangeFacet);
     this.decorations = buildDecorations(view, this.plugins);
@@ -186,6 +193,30 @@ class draftlyViewPluginClass {
       // Call onNodesChange callback
       if (this.onNodesChange) {
         this.onNodesChange(this.buildNodes(update.view));
+      }
+    }
+  }
+
+  /**
+   * Called by CodeMirror when the view is torn down.
+   *
+   * The library had no teardown path at all before this: no view-plugin `destroy()`, no
+   * widget `destroy()`, and `onUnregister` declared but never called. Since plugin
+   * instances are module-level singletons, anything a plugin was holding — a pending
+   * microtask's `EditorView`, most concretely — was retained for the lifetime of the
+   * page. Hosts that rebuild their extension array on a config change (the playground
+   * does, on every devbar toggle) create and destroy views routinely.
+   *
+   * Reads the plugin list from the facet rather than `this.plugins` so a plugin removed
+   * by a reconfigure just before teardown is not notified about a view it never saw.
+   */
+  destroy(): void {
+    for (const plugin of this.plugins) {
+      try {
+        plugin.onViewDestroy(this.view);
+      } catch {
+        // A throwing teardown in one plugin must not prevent the others from cleaning
+        // up -- that would turn a minor bug into the leak this method exists to fix.
       }
     }
   }

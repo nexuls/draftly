@@ -179,6 +179,10 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
   swap the `catch` for a `console.error` when a decoration does not appear.
 - **`Decoration.replace` must never span a newline.** Clamp to `line.to`. Canonical
   example: `heading-plugin.ts:104`.
+- **Release view-scoped state in `onViewDestroy`.** Plugin instances are singletons that
+  outlive every view; `EditorView` has no public "destroyed" flag, so guard in-flight
+  async work with a `WeakSet` as `table-plugin.ts` does. `onUnregister` is deprecated and
+  never called.
 - **A widget's `eq()` must compare content only.** Comparing `from`/`to` means it is never
   reused; use `resolveWidgetRange()` when a handler needs the range.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the

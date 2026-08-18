@@ -738,9 +738,26 @@ export class TablePlugin extends DecorationPlugin {
   override readonly requiredNodes = ["Table", "TableHeader", "TableDelimiter", "TableRow", "TableCell"] as const;
 
   private draftlyConfig: DraftlyConfig | undefined;
+
+  // Re-entrancy locks, not caches -- see artifacts/architecture/plugin-table.md. Each
+  // holds the view a deferred repair is queued for, and each queued microtask bails if
+  // the field no longer names its view. Removing them causes infinite dispatch loops.
+  //
+  // They are also the library's most concrete leak: a view destroyed while its microtask
+  // is queued would be retained here for the lifetime of the page, since this plugin is
+  // a module-level singleton. onViewDestroy is what closes that.
   private pendingNormalizationView: EditorView | null = null;
   private pendingPaddingView: EditorView | null = null;
   private pendingSelectionRepairView: EditorView | null = null;
+
+  /**
+   * Set of views CodeMirror has torn down.
+   *
+   * `EditorView` exposes no public "destroyed" flag, so a queued microtask cannot ask the
+   * view whether it is still alive. Weak, so an entry disappears with the view rather
+   * than becoming its own leak.
+   */
+  private readonly destroyedViews = new WeakSet<EditorView>();
 
   /** Stores the editor config for preview rendering and shared behavior. */
   override onRegister(context: PluginContext): void {
@@ -802,6 +819,21 @@ export class TablePlugin extends DecorationPlugin {
   }
 
   /** Re-schedules normalization after user-driven document changes. */
+  /**
+   * Releases everything scoped to a destroyed view.
+   *
+   * Clearing the pending fields drops the strong reference; recording the view as
+   * destroyed makes any microtask that is already queued bail rather than dispatching
+   * into a dead editor.
+   */
+  override onViewDestroy(view: EditorView): void {
+    this.destroyedViews.add(view);
+
+    if (this.pendingNormalizationView === view) this.pendingNormalizationView = null;
+    if (this.pendingPaddingView === view) this.pendingPaddingView = null;
+    if (this.pendingSelectionRepairView === view) this.pendingSelectionRepairView = null;
+  }
+
   override onViewUpdate(update: import("@codemirror/view").ViewUpdate): void {
     if (update.docChanged && !update.transactions.some((transaction) => transaction.annotation(normalizeAnnotation))) {
       this.schedulePadding(update.view);
@@ -1139,6 +1171,13 @@ export class TablePlugin extends DecorationPlugin {
       }
 
       this.pendingNormalizationView = null;
+
+      // The view may have been torn down between scheduling and now; dispatching into
+      // a destroyed editor throws.
+      if (this.destroyedViews.has(view)) {
+        return;
+      }
+
       this.normalizeTables(view);
     });
   }
@@ -1201,6 +1240,13 @@ export class TablePlugin extends DecorationPlugin {
       }
 
       this.pendingPaddingView = null;
+
+      // The view may have been torn down between scheduling and now; dispatching into
+      // a destroyed editor throws.
+      if (this.destroyedViews.has(view)) {
+        return;
+      }
+
       this.ensureTablePadding(view);
     });
   }
@@ -1247,6 +1293,13 @@ export class TablePlugin extends DecorationPlugin {
       }
 
       this.pendingSelectionRepairView = null;
+
+      // The view may have been torn down between scheduling and now; dispatching into
+      // a destroyed editor throws.
+      if (this.destroyedViews.has(view)) {
+        return;
+      }
+
       this.ensureTableSelection(view);
     });
   }

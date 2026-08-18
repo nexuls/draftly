@@ -150,6 +150,18 @@ single `ctx.iterateVisible` and avoid allocation in the enter callback.
 `viewportChanged` is what keeps viewport scoping correct: scrolling brings new ranges into
 view and rebuilds against them.
 
+### `destroy()` — teardown
+
+CodeMirror calls it when the view is torn down; the view plugin forwards to
+`plugin.onViewDestroy(view)` for every plugin, each wrapped in a `try`/`catch` so one
+plugin throwing does not prevent the rest from cleaning up.
+
+Added in C-018. Before it the library had **no teardown path**, and since plugin instances
+are module-level singletons, whatever a plugin held survived every view. Hosts that
+rebuild their extension array on a config change — the playground does, on every devbar
+toggle — create and destroy views routinely, so this is a normal-operation path rather
+than a shutdown path.
+
 ### `buildNodes()` — AST emission
 
 When `onNodesChange` is supplied, the plugin materialises the **entire** syntax tree into

@@ -89,10 +89,14 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   it from the live DOM — it tries **both** sides of `posAtDOM`, because Draftly places
   widgets as both a `replace` over the construct (position = start) and a `widget` with
   `side: 1` at its end (position = end).
-- **There is no teardown path anywhere.** `grep -rn "destroy" packages/draftly/src` returns
-  nothing — no view-plugin `destroy()`, no widget `destroy()`, no `onViewDestroy`, and
-  `onUnregister` is declared but never called. The table plugin's pending-view fields
-  therefore retain destroyed editors indefinitely. See T-016.
+- **Release view-scoped state in `onViewDestroy`.** Added in C-018, called from the view
+  plugin's `destroy()`. Plugin instances are module-level singletons, so anything a plugin
+  holds outlives every view. `EditorView` has **no public "destroyed" flag** — a queued
+  microtask cannot ask the view whether it is still alive, so `TablePlugin` keeps a
+  `WeakSet` of torn-down views and checks it before dispatching.
+- **`onUnregister` is deprecated and still never called.** It cannot be wired to view
+  destruction while plugin instances are shared singletons — clearing `_context` for one
+  editor would break the others. Its fate is tied to T-017; do not "fix" it in isolation.
 - **Plugin instances are module-level singletons with mutable per-view state.**
   `allPlugins` is `[...essentialPlugins]` — the same objects. Two editors on one page
   overwrite each other's `_context` and cancel each other's table normalization. See T-017.

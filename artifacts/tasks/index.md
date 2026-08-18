@@ -39,11 +39,11 @@ assumed widgets re-render constantly, and after C-017 they no longer do.
 
 | ID      | Task                                                                            | Priority | Status   | Blocked on                          |
 | ------- | --------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------- |
-| `T-016` | [Add a teardown lifecycle](./ongoing/T-016-plugin-teardown-lifecycle.md)        | High     | Proposed | —                                     |
 | `T-017` | [Plugin collections are shared singletons](./ongoing/T-017-plugin-instance-scoping.md) | High     | Proposed | Developer decision — public API        |
-| `T-018` | [Guard widget async work](./ongoing/T-018-widget-async-robustness.md)           | Medium   | Proposed | T-016                                 |
+| `T-018` | [Guard widget async work](./ongoing/T-018-widget-async-robustness.md)           | Medium   | Proposed | —                                     |
 
-**T-016 enables the other two.** There is currently no `destroy()` anywhere in the library.
+**T-016 has landed** (C-018), which unblocks the other two. `DraftlyPlugin.onViewDestroy`
+now exists and the view plugin implements `destroy()`.
 
 ### Bundle size
 
@@ -83,7 +83,7 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 If the developer wants a single sequence rather than a set of groups:
 
-1. `T-016` → `T-017` → `T-018` — lifecycle, in that order
+1. `T-018` → `T-017` — the rest of the lifecycle work
 2. `T-020` — bundle size, coordinated with T-017 if both land
 3. `T-021` — small, independent, low risk
 4. everything else, re-prioritised once the above is known

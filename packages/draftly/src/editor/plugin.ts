@@ -223,8 +223,16 @@ export abstract class DraftlyPlugin {
   }
 
   /**
-   * Called when plugin is unregistered
-   * Override to perform cleanup
+   * Called when plugin is unregistered.
+   *
+   * @deprecated **Nothing calls this.** `onRegister` runs from `draftly()`, and there is
+   * no corresponding teardown of an extension bundle to hang an unregister off. It
+   * cannot simply be called on view destruction either: plugin instances are shared
+   * module-level singletons (T-017), so clearing `_context` for one editor would break
+   * every other editor on the page.
+   *
+   * Use {@link onViewDestroy} to release view-scoped state. This hook is kept rather than
+   * removed because it is public API; its fate is tied to T-017.
    */
   onUnregister(): void {
     this._context = null;
@@ -247,6 +255,24 @@ export abstract class DraftlyPlugin {
    * @param update - The ViewUpdate with change information
    */
   onViewUpdate(_update: ViewUpdate): void {
+    // Default implementation does nothing
+  }
+
+  /**
+   * Called when the `EditorView` is torn down. Symmetric with {@link onViewReady}.
+   *
+   * **Any plugin holding view-scoped state must release it here.** Plugin instances are
+   * module-level singletons that outlive every view, so a retained `EditorView` retains
+   * its DOM, its state and the whole document for the lifetime of the page. Pending
+   * timers and microtasks holding a view are the usual culprits.
+   *
+   * Called from the view plugin's own `destroy()`, so it fires for every reconfigure as
+   * well as for a real teardown — hosts that rebuild their extension array do this
+   * routinely.
+   *
+   * @param view - The view being destroyed
+   */
+  onViewDestroy(_view: EditorView): void {
     // Default implementation does nothing
   }
 

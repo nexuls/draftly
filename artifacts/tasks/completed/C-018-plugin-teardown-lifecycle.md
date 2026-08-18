@@ -1,9 +1,9 @@
-# T-016 — Add a teardown lifecycle for plugins and widgets
+# C-018 — Add a teardown lifecycle for plugins and widgets
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** High
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -76,13 +76,61 @@ views are created and destroyed routinely during normal use.
 
 ## Acceptance
 
-- [ ] Destroying an `EditorView` invokes `onViewDestroy` on every registered plugin
-- [ ] No plugin retains a reference to a destroyed view
-- [ ] Creating and destroying 100 editors in the playground leaves no retained views in a
-      heap snapshot
-- [ ] Table normalization still works correctly on live views (no regression from the
-      added guards)
-- [ ] `onUnregister` is either wired up or gone
+- [x] Destroying an `EditorView` invokes `onViewDestroy` on every registered plugin
+- [x] No plugin retains a reference to a destroyed view — by construction; the three
+      `TablePlugin` fields were the only such references in the library
+- [ ] **Heap snapshot after 100 create/destroy cycles — NOT DONE.** Requires a browser;
+      none was available. This is the acceptance criterion that actually proves the leak
+      is gone and it needs a human pass.
+- [ ] **Table normalization still works on live views — NOT VERIFIED.** The guards are
+      additive (a live view is never in `destroyedViews`), but this is table behaviour and
+      the standing rule is to exercise it in the playground.
+- [~] `onUnregister` is neither wired up nor gone — see below.
+
+## Outcome
+
+Landed as `feat(draftly): Add a plugin teardown lifecycle`.
+
+### The anchor
+
+`draftlyViewPluginClass` now holds its view and implements `destroy()`, which CodeMirror
+calls on teardown. It notifies every plugin via the new `onViewDestroy(view)`.
+
+Each notification is wrapped in `try`/`catch`. A throwing teardown in one plugin must not
+prevent the others from cleaning up — that would turn a minor bug into exactly the leak
+this method exists to fix.
+
+### `TablePlugin`
+
+The three `pending*View` fields are cleared in `onViewDestroy`. Read `plugin-table.md`
+first, as the standing rule requires: those fields are **re-entrancy locks, not caches**,
+and their semantics are load-bearing. Clearing them on teardown is consistent with that —
+a destroyed view has no cycle left to re-enter.
+
+The guard for microtasks already in flight needed something extra, because `EditorView`
+exposes no public "destroyed" flag. Added a `WeakSet<EditorView>` of torn-down views; each
+queued microtask checks it before dispatching. Weak, so an entry disappears with the view
+rather than becoming a leak of its own.
+
+### `onUnregister` — neither, and why
+
+The task said "either call it from a real unregister path or delete it". Neither was
+right:
+
+- **Wiring it to view destruction is wrong.** `onRegister` sets `_context`, and plugin
+  instances are shared module-level singletons (T-017). Clearing `_context` when *one*
+  editor is destroyed would break every other editor on the page.
+- **Deleting it is a public API removal**, which the boundaries rule says to flag rather
+  than take.
+
+So it is marked `@deprecated` with the reasoning inline, pointing at `onViewDestroy`. Its
+fate is genuinely tied to T-017 and should be settled with it, not before.
+
+### Enables
+
+T-018 is now unblocked. The two remaining unguarded async paths are `CodePlugin`'s
+copy-button `setTimeout` and `MermaidBlockWidget`'s `renderMermaid().then()` — both widget
+lifetime rather than view lifetime, which is what T-018 covers.
 
 ## Notes
 

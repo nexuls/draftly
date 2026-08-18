@@ -138,6 +138,23 @@ worker clears its field first thing. The `pending*View` guards are **re-entrancy
 not caching — removing them causes infinite dispatch loops, because each repair
 transaction triggers another `onViewUpdate`.
 
+### Teardown
+
+They were also the library's most concrete memory leak. A view destroyed while its
+microtask was queued stayed reachable from the field, and since the plugin is a
+module-level singleton, that meant the view, its DOM, its state and the whole document
+were retained for the lifetime of the page.
+
+Since C-018:
+
+- `onViewDestroy(view)` clears whichever of the three fields names that view.
+- A `WeakSet<EditorView>` records torn-down views, and each queued microtask checks it
+  before dispatching. `EditorView` exposes no public "destroyed" flag, so there is nothing
+  to ask the view directly; the set is weak so it does not become a leak of its own.
+
+The identity check and the destroyed check are **different guards for different problems**
+— re-entrancy and liveness. Do not collapse them.
+
 Two `Annotation`s tag the plugin's own transactions:
 
 ```ts
