@@ -559,7 +559,13 @@ export class CodePlugin extends DecorationPlugin {
     const { view, decorations } = ctx;
     const nodeLineStart = view.state.doc.lineAt(node.from);
     const nodeLineEnd = view.state.doc.lineAt(node.to);
-    const cursorInRange = ctx.selectionOverlapsRange(nodeLineStart.from, nodeLineEnd.to);
+    // Two distinct questions that used to share one answer. Line-level styling
+    // relaxes whenever the caret is anywhere in the block, but the ``` fences
+    // should only reappear when the caret is on a fence line itself.
+    const cursorInCodeBlock = ctx.selectionOverlapsRange(nodeLineStart.from, nodeLineEnd.to);
+    const cursorOnFenceLine =
+      ctx.selectionOverlapsRange(nodeLineStart.from, nodeLineStart.to) ||
+      ctx.selectionOverlapsRange(nodeLineEnd.from, nodeLineEnd.to);
 
     let infoProps: CodeBlockProperties = { language: "" };
     let codeContent = "";
@@ -606,8 +612,10 @@ export class CodePlugin extends DecorationPlugin {
     const diffOldLineNumWidth = Math.max(String(startLineNum).length, String(maxOldDiffLineNum).length);
     const diffNewLineNumWidth = Math.max(String(startLineNum).length, String(maxNewDiffLineNum).length);
 
-    const shouldShowHeader = !cursorInRange && (infoProps.title || infoProps.copy || infoProps.language);
-    const shouldShowCaption = !cursorInRange && !!infoProps.caption;
+    // Header and caption are chrome, not syntax: they stay put while editing so
+    // that clicking into a block does not shift every line under the cursor.
+    const shouldShowHeader = !!(infoProps.title || infoProps.copy || infoProps.language);
+    const shouldShowCaption = !!infoProps.caption;
 
     if (shouldShowHeader) {
       decorations.push(
@@ -671,7 +679,14 @@ export class CodePlugin extends DecorationPlugin {
       }
 
       if (!isFenceLine && infoProps.diff) {
-        this.decorateDiffLine(line, codeLineIndex, diffStates, cursorInRange, !infoProps.showLineNumbers, decorations);
+        this.decorateDiffLine(
+          line,
+          codeLineIndex,
+          diffStates,
+          cursorInCodeBlock,
+          !infoProps.showLineNumbers,
+          decorations
+        );
       }
 
       if (!isFenceLine && infoProps.highlightLines) {
@@ -698,9 +713,11 @@ export class CodePlugin extends DecorationPlugin {
       }
     }
 
-    this.decorateFenceMarkers(node.node, cursorInRange, decorations);
+    this.decorateFenceMarkers(node.node, cursorOnFenceLine, decorations);
 
-    if (!cursorInRange && infoProps.caption) {
+    // Same condition as shouldShowCaption, written against the field so that
+    // TypeScript narrows it for the widget.
+    if (infoProps.caption) {
       decorations.push(
         Decoration.widget({
           widget: new CodeBlockCaptionWidget(infoProps.caption),
@@ -713,13 +730,13 @@ export class CodePlugin extends DecorationPlugin {
 
   private decorateFenceMarkers(
     node: SyntaxNode,
-    cursorInRange: boolean,
+    showFenceMarkers: boolean,
     decorations: DecorationContext["decorations"]
   ): void {
     for (let child = node.firstChild; child; child = child.nextSibling) {
       if (child.name === "CodeMark" || child.name === "CodeInfo") {
         decorations.push(
-          (cursorInRange ? codeMarkDecorations["code-fence"] : codeMarkDecorations["code-hidden"]).range(
+          (showFenceMarkers ? codeMarkDecorations["code-fence"] : codeMarkDecorations["code-hidden"]).range(
             child.from,
             child.to
           )
