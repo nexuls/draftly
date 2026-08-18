@@ -21,7 +21,7 @@ import CodeMirror, { EditorView, type Extension, type ReactCodeMirrorRef } from 
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
-import { createAllPlugins } from "draftly/src";
+import { createAllPlugins } from "draftly/src/plugins/all";
 import { generateCSS, preview } from "draftly/src";
 import { draftly, type DraftlyNode, type DraftlyPlugin, ThemeEnum } from "draftly/src";
 
@@ -32,6 +32,10 @@ import { draftly, type DraftlyNode, type DraftlyPlugin, ThemeEnum } from "draftl
  * with two editors would call `createAllPlugins()` once per editor instead — plugin
  * instances hold per-view state, so sharing one set across editors makes them overwrite
  * each other's configuration.
+ *
+ * The playground deliberately imports from `draftly/plugins/all`, which pulls mermaid and
+ * KaTeX. It is a demo of every feature, so it is the one consumer that genuinely wants
+ * all of them; a real app imports `draftly/plugins` and adds only what it needs.
  *
  * Exported so `devbar` can list the same instances rather than constructing a second set
  * just to read their names.
@@ -89,7 +93,7 @@ const DEBOUNCE_MS = 500;
 
 // Bump this version whenever default content (whatIsDraftly / walkthrough) changes.
 // The app will detect the mismatch and refresh the default entries in localStorage.
-const VERSION = 2;
+const VERSION = 3;
 
 const DEFAULT_CONTENTS: Content[] = [
   {

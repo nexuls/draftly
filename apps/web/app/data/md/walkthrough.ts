@@ -28,7 +28,7 @@ The \`draftly()\` function returns a CodeMirror extension bundle. Drop it into a
 import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { draftly } from "draftly/editor";
-import { createAllPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins/all";
 
 const view = new EditorView({
   state: EditorState.create({
@@ -45,7 +45,7 @@ The \`draftly()\` function accepts a \`DraftlyConfig\` object. Here is a full ex
 
 \`\`\`ts title="config.ts" line-numbers {4-15}
 import { draftly } from "draftly/editor";
-import { createAllPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins/all";
 
 const extensions = draftly({
   theme: "auto",                // "auto" | "dark" | "light"
@@ -70,7 +70,9 @@ Draftly ships three entry points so you can import only what you need:
 | Entry Point        | What it provides |
 |--------------------|-----------------|
 | \`draftly/editor\`   | Core \`draftly()\` function, \`DraftlyPlugin\` base class, utilities |
-| \`draftly/plugins\`  | All built-in plugins + \`createEssentialPlugins()\` / \`createAllPlugins()\` factories |
+| \`draftly/plugins\`  | The light built-in plugins + \`createEssentialPlugins()\` |
+| \`draftly/plugins/all\` | \`createAllPlugins()\` — everything, including the heavy plugins |
+| \`draftly/plugins/mermaid\`, \`/math\`, \`/emoji\` | The three opt-in plugins with heavy dependencies |
 | \`draftly/preview\`  | Server-side \`preview()\` renderer + \`generateCSS()\` |
 
 ---
@@ -319,7 +321,7 @@ Draftly's **preview** module renders Markdown to semantic HTML — perfect for s
 
 \`\`\`ts title="preview-example.ts" line-numbers caption="Render Markdown to HTML on the server."
 import { preview } from "draftly/preview";
-import { createAllPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins/all";
 
 const html = await preview("# Hello World\\n\\nSome **bold** text.", {
   plugins: createAllPlugins(),
@@ -341,7 +343,7 @@ Use \`generateCSS()\` to extract all plugin styles for the preview:
 
 \`\`\`ts title="css-gen.ts" line-numbers
 import { generateCSS } from "draftly/preview";
-import { createAllPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins/all";
 
 const css = generateCSS({
   plugins: createAllPlugins(),

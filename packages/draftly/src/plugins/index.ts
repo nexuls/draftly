@@ -1,4 +1,15 @@
 // Re-export individual plugins
+//
+// The three plugins with heavy third-party dependencies are deliberately absent:
+// `MermaidPlugin` (mermaid, 5.3 MB), `MathPlugin` (katex, 452 KB) and `EmojiPlugin`
+// (node-emoji, 312 KB). They live behind `draftly/plugins/mermaid`, `/math` and `/emoji`.
+//
+// This is a bundling constraint, not a stylistic one. tsup concatenates everything
+// reachable from an entry point into one chunk, and a chunk's top-level
+// `import mermaid from "mermaid"` runs whenever any binding in that chunk is used — so
+// while these three were in this barrel, `import { HeadingPlugin } from "draftly/plugins"`
+// pulled 8 MB. Adding a heavy plugin back here silently undoes that; give it its own
+// entry point instead.
 export { ParagraphPlugin } from "./paragraph-plugin";
 export { HeadingPlugin } from "./heading-plugin";
 export { InlinePlugin } from "./inline-plugin";
@@ -7,12 +18,9 @@ export { ListPlugin } from "./list-plugin";
 export { TablePlugin } from "./table-plugin";
 export { HTMLPlugin } from "./html-plugin";
 export { ImagePlugin } from "./image-plugin";
-export { MathPlugin } from "./math-plugin";
-export { MermaidPlugin } from "./mermaid-plugin";
 export { CodePlugin } from "./code-plugin";
 export { QuotePlugin } from "./quote-plugin";
 export { HRPlugin } from "./hr-plugin";
-export { EmojiPlugin } from "./emoji-plugin";
 
 // Plugin collections
 import type { DraftlyPlugin } from "../editor/plugin";
@@ -24,12 +32,9 @@ import { ListPlugin } from "./list-plugin";
 import { TablePlugin } from "./table-plugin";
 import { HTMLPlugin } from "./html-plugin";
 import { ImagePlugin } from "./image-plugin";
-import { MathPlugin } from "./math-plugin";
-import { MermaidPlugin } from "./mermaid-plugin";
 import { CodePlugin } from "./code-plugin";
 import { QuotePlugin } from "./quote-plugin";
 import { HRPlugin } from "./hr-plugin";
-import { EmojiPlugin } from "./emoji-plugin";
 
 /**
  * Build a fresh set of the essential plugins — the built-in markdown features Draftly
@@ -40,6 +45,16 @@ import { EmojiPlugin } from "./emoji-plugin";
  * set overwrite each other's configuration and silently cancel each other's scheduled
  * work. A factory makes that impossible to get wrong by accident; the deprecated
  * {@link essentialPlugins} array does not.
+ *
+ * Excludes the three plugins with heavy dependencies. For everything, use
+ * `createAllPlugins()` from `draftly/plugins/all`, or add the ones you want:
+ *
+ * ```ts
+ * import { createEssentialPlugins } from "draftly/plugins";
+ * import { MermaidPlugin } from "draftly/plugins/mermaid";
+ *
+ * const plugins = [...createEssentialPlugins(), new MermaidPlugin()];
+ * ```
  *
  * The order is the registration order, which is *not* the decoration order — plugins are
  * sorted by `decorationPriority` downstream.
@@ -64,29 +79,10 @@ export function createEssentialPlugins(): DraftlyPlugin[] {
     new TablePlugin(),
     new HTMLPlugin(),
     new ImagePlugin(),
-    new MathPlugin(),
-    new MermaidPlugin(),
     new CodePlugin(),
     new QuotePlugin(),
     new HRPlugin(),
-    new EmojiPlugin(),
   ];
-}
-
-/**
- * Build a fresh set of every plugin Draftly ships.
- *
- * Same one-set-per-editor rule as {@link createEssentialPlugins}.
- *
- * Currently returns exactly the essential set: nothing is opt-in yet, so the two factories
- * are equivalent. They are kept distinct because T-028 will move the heavy plugins
- * (`MermaidPlugin`, `MathPlugin`) out of the essential set, at which point this is the one
- * that still includes them.
- *
- * @returns A new array of newly-constructed plugin instances, owned by the caller
- */
-export function createAllPlugins(): DraftlyPlugin[] {
-  return createEssentialPlugins();
 }
 
 /**
@@ -102,13 +98,4 @@ export function createAllPlugins(): DraftlyPlugin[] {
  */
 const essentialPlugins: DraftlyPlugin[] = createEssentialPlugins();
 
-/**
- * Every plugin Draftly ships, as a single shared array.
- *
- * @deprecated Use {@link createAllPlugins} instead — see {@link essentialPlugins} for why.
- * Note that this array holds the *same instances* as `essentialPlugins`, so mutating a
- * plugin reached through one is visible through the other.
- */
-const allPlugins: DraftlyPlugin[] = [...essentialPlugins];
-
-export { essentialPlugins, allPlugins };
+export { essentialPlugins };

@@ -102,11 +102,24 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   rationale — with per-editor instances, clearing `_context` no longer breaks other
   editors — but plugin registration is still not scoped to a view, so there is no event to
   fire it on. Do not "fix" it by calling it from view destruction.
-- **Build plugins with `createEssentialPlugins()` / `createAllPlugins()`, one set per
-  editor** (C-026). The `essentialPlugins` / `allPlugins` arrays are the old shared
-  singletons, kept `@deprecated` and **behaviourally unchanged** for one cycle — a consumer
-  who only recompiles keeps the bug, which is the point of the deprecation. Removing them
-  is a major and is still open.
+- **Build plugins with `createEssentialPlugins()` (`draftly/plugins`) or
+  `createAllPlugins()` (`draftly/plugins/all`), one set per editor** (C-026). The
+  `essentialPlugins` / `allPlugins` arrays are the old shared singletons, kept
+  `@deprecated` and **behaviourally unchanged** for one cycle — a consumer who only
+  recompiles keeps the bug, which is the point of the deprecation. Removing them is a major
+  and is still open.
+- **A tsup entry point is a bundling boundary, and the only one that works for a heavy
+  dependency.** Everything reachable from an entry is concatenated into one chunk, and that
+  chunk's *top-level* `import mermaid from "mermaid"` is evaluated whenever any binding in
+  it is used. So while all 14 plugins shared `plugins/index.ts`,
+  `import { HeadingPlugin } from "draftly/plugins"` bundled to **8.0 MB**; after C-027 it is
+  2.5 MB. `sideEffects: false` (C-024) does not help here — it lets a bundler drop
+  *draftly's* modules, not a third-party package it cannot prove pure — and CJS consumers
+  get no tree-shaking at all. `MermaidPlugin`, `MathPlugin` and `EmojiPlugin` therefore
+  live at `draftly/plugins/{mermaid,math,emoji}`, and `createAllPlugins()` at
+  `draftly/plugins/all` rather than beside `createEssentialPlugins()`. **Adding a heavy
+  plugin to `plugins/index.ts` silently reverts all of it**, and nothing will fail — the
+  only symptom is the bundle.
 - **A plugin must not hold view-scoped state.** Anything derived from a specific
   `EditorView` keys off the view (`WeakMap`/`StateField`) or is released in
   `onViewDestroy`. `_config`/`_context` are the sanctioned exception, written once at

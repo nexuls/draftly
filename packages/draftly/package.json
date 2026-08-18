@@ -60,6 +60,30 @@
       "require": "./dist/plugins/index.cjs",
       "default": "./dist/plugins/index.js"
     },
+    "./plugins/mermaid": {
+      "types": "./dist/plugins/mermaid.d.ts",
+      "import": "./dist/plugins/mermaid.js",
+      "require": "./dist/plugins/mermaid.cjs",
+      "default": "./dist/plugins/mermaid.js"
+    },
+    "./plugins/math": {
+      "types": "./dist/plugins/math.d.ts",
+      "import": "./dist/plugins/math.js",
+      "require": "./dist/plugins/math.cjs",
+      "default": "./dist/plugins/math.js"
+    },
+    "./plugins/emoji": {
+      "types": "./dist/plugins/emoji.d.ts",
+      "import": "./dist/plugins/emoji.js",
+      "require": "./dist/plugins/emoji.cjs",
+      "default": "./dist/plugins/emoji.js"
+    },
+    "./plugins/all": {
+      "types": "./dist/plugins/all.d.ts",
+      "import": "./dist/plugins/all.js",
+      "require": "./dist/plugins/all.cjs",
+      "default": "./dist/plugins/all.js"
+    },
     "./preview": {
       "types": "./dist/preview/index.d.ts",
       "import": "./dist/preview/index.js",
@@ -76,7 +100,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./src/*": "./src/*"
+    "./src/*": [
+      "./src/*.ts",
+      "./src/*"
+    ]
   },
   "files": [
     "dist",

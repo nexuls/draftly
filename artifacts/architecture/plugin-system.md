@@ -87,9 +87,9 @@ interface DecorationContext {
 
 ### Instance lifetime
 
-**One plugin instance belongs to one editor.** `createEssentialPlugins()` and
-`createAllPlugins()` (`plugins/index.ts`) construct a fresh set on every call, and a
-consumer calls one of them per editor.
+**One plugin instance belongs to one editor.** `createEssentialPlugins()`
+(`plugins/index.ts`) and `createAllPlugins()` (`plugins/all.ts`) construct a fresh set on
+every call, and a consumer calls one of them per editor.
 
 This is not stylistic. Plugin objects carry per-editor state — `_config` and `_context` on
 the base class, `draftlyConfig` and three pending-view re-entrancy locks on `TablePlugin` —
@@ -245,7 +245,11 @@ const theme = createTheme({
 6. **Keep the theme at the bottom of the file** as a `createTheme()` call. Split into
    `*-plugin.theme.ts` when it dominates the file (precedent: `code-plugin.theme.ts`).
 7. **Register in `plugins/index.ts`** — both the named export and the
-   `createEssentialPlugins()` factory.
+   `createEssentialPlugins()` factory. A plugin with a heavy third-party dependency
+   instead gets its own entry point (`src/plugins/<name>.ts` + `tsup.config.ts` +
+   `exports`) and is added to `createAllPlugins()` in `plugins/all.ts`; putting it in the
+   barrel puts its dependency in every consumer's bundle. See
+   [`build-and-tooling.md`](./build-and-tooling.md#plugin-entry-points).
 8. **Escape attribute values; sanitize fragments.** These are different operations and
    `ctx.sanitize()` only does the second one. An attribute value or a run of text goes
    through `escapeHtml` from `draftly/lib`; a blob of HTML that is *meant* to stay markup

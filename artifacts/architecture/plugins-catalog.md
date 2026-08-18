@@ -5,10 +5,11 @@
 > For the contract these all implement, see [plugin-system.md](./plugin-system.md).
 
 14 built-in plugins. All are exported individually from `draftly/plugins` and bundled
-via the `createEssentialPlugins()` / `createAllPlugins()` factories (currently equivalent —
-`createAllPlugins()` returns the essential set, leaving room for future opt-in plugins; see
-T-028). The `essentialPlugins` / `allPlugins` arrays are the deprecated shared-singleton
-form of the same thing.
+via `createEssentialPlugins()` (`draftly/plugins` — the 11 light plugins) and
+`createAllPlugins()` (`draftly/plugins/all` — those plus `MathPlugin`, `MermaidPlugin` and
+`EmojiPlugin`, which sit behind their own entry points because of their dependencies). The
+`essentialPlugins` / `allPlugins` arrays are the deprecated shared-singleton form of the
+same two sets.
 
 ---
 
@@ -118,7 +119,7 @@ which the contract guarantees by having both call `getMarkdownConfig()`.
 | `html`    | `dompurify`  | medium     | Browser-only effectiveness                 |
 | `emoji`   | `node-emoji` | small      |                                            |
 
-These are why `createAllPlugins()` is opt-in rather than a default. A consumer who does not need
+These are why the three sit behind their own entry points rather than in the barrel. A consumer who does not need
 diagrams should not import `MermaidPlugin` at all — the subpath exports and `tsup`'s
 `splitting: true` make that a real bundle saving.
 
@@ -129,7 +130,9 @@ diagrams should not import `MermaidPlugin` at all — the subpath exports and `t
 1. Create `packages/draftly/src/plugins/<feature>-plugin.ts`.
 2. Extend `DecorationPlugin` (or `DraftlyPlugin` if render-only).
 3. Set `name`, `version`, `decorationPriority`, `requiredNodes`.
-4. Add the named export **and** the `createEssentialPlugins()` entry in `plugins/index.ts`.
+4. Add the named export **and** the `createEssentialPlugins()` entry in `plugins/index.ts` —
+   unless the plugin pulls a heavy dependency, in which case it gets its own entry point
+   and an entry in `plugins/all.ts` instead.
 5. Add a row to the catalog table above.
 6. Verify both surfaces in the playground: the editor pane _and_ the rendered preview.
 

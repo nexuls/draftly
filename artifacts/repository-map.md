@@ -44,7 +44,11 @@ packages/draftly/
 │   │   ├── theme.ts                # Base editor theme + markdown highlight reset
 │   │   └── utils.ts                # createTheme, flattenThemeStyles, selection helpers
 │   ├── plugins/                    # Built-in feature plugins (one file per feature)
-│   │   ├── index.ts                # Barrel + `createEssentialPlugins()` / `createAllPlugins()`
+│   │   ├── index.ts                # Light-plugin barrel + `createEssentialPlugins()`
+│   │   ├── all.ts                  # Entry point: `createAllPlugins()` — pulls everything
+│   │   ├── mermaid.ts              # Entry point: MermaidPlugin (opt-in)
+│   │   ├── math.ts                 # Entry point: MathPlugin (opt-in)
+│   │   ├── emoji.ts                # Entry point: EmojiPlugin (opt-in)
 │   │   ├── paragraph-plugin.ts
 │   │   ├── heading-plugin.ts
 │   │   ├── inline-plugin.ts
@@ -85,12 +89,20 @@ packages/draftly/
 
 | Import specifier  | Source entry           | Contents                                      |
 | ----------------- | ---------------------- | --------------------------------------------- |
-| `draftly`         | `src/index.ts`         | Everything (backwards compatible barrel)      |
-| `draftly/editor`  | `src/editor/index.ts`  | `draftly()`, plugin base classes, theme utils |
-| `draftly/plugins` | `src/plugins/index.ts` | All built-in plugins + collections            |
-| `draftly/preview` | `src/preview/index.ts` | `preview()`, `generateCSS()`, renderer        |
-| `draftly/lib`     | `src/lib/index.ts`     | Standalone CodeMirror helpers                 |
-| `draftly/src`     | `src/index.ts` (raw)   | Untranspiled TS — used by `apps/web` for HMR  |
+| `draftly`                 | `src/index.ts`           | Editor, preview, lib, and the **light** plugins |
+| `draftly/editor`          | `src/editor/index.ts`    | `draftly()`, plugin base classes, theme utils |
+| `draftly/plugins`         | `src/plugins/index.ts`   | The 11 light plugins + `createEssentialPlugins()` |
+| `draftly/plugins/mermaid` | `src/plugins/mermaid.ts` | `MermaidPlugin` — opt-in, pulls `mermaid` (5.3 MB) |
+| `draftly/plugins/math`    | `src/plugins/math.ts`    | `MathPlugin` — opt-in, pulls `katex` (475 KB)  |
+| `draftly/plugins/emoji`   | `src/plugins/emoji.ts`   | `EmojiPlugin` — opt-in, pulls `node-emoji` (312 KB) |
+| `draftly/plugins/all`     | `src/plugins/all.ts`     | `createAllPlugins()` — the essential set plus all three |
+| `draftly/preview`         | `src/preview/index.ts`   | `preview()`, `generateCSS()`, renderer        |
+| `draftly/lib`             | `src/lib/index.ts`       | Standalone CodeMirror helpers                 |
+| `draftly/src`             | `src/index.ts` (raw)     | Untranspiled TS — used by `apps/web` for HMR  |
+| `draftly/src/*`           | `src/*.ts` (raw)         | Deep raw import, e.g. `draftly/src/plugins/all` |
+
+The four plugin entry points exist so that the heavy third-party dependencies land in their
+own chunks. See [`architecture/build-and-tooling.md`](./architecture/build-and-tooling.md#plugin-entry-points).
 
 ---
 

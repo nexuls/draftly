@@ -1,6 +1,6 @@
 # Build & Tooling
 
-> Last verified: 2026-08-18 · commit `4181c2f`
+> Last verified: 2026-08-19 · commit `fa72daf`
 
 ---
 
@@ -80,8 +80,46 @@ format: ["esm", "cjs"]
 dts: true, splitting: true, sourcemap: true, clean: true, treeshake: true
 ```
 
-Five entries, one per subpath export. `splitting: true` plus `treeshake: true` is what
+Nine entries, one per subpath export. `splitting: true` plus `treeshake: true` is what
 lets a consumer importing only `draftly/preview` avoid pulling in mermaid and KaTeX.
+
+### Plugin entry points
+
+Four of the nine entries exist purely for bundle size:
+
+| Entry                    | Exports                    | Pulls                |
+| ------------------------ | -------------------------- | -------------------- |
+| `src/plugins/index.ts`   | 11 light plugins, `createEssentialPlugins()` | nothing heavy |
+| `src/plugins/mermaid.ts` | `MermaidPlugin`            | `mermaid`, 5.3 MB    |
+| `src/plugins/math.ts`    | `MathPlugin`               | `katex`, 475 KB      |
+| `src/plugins/emoji.ts`   | `EmojiPlugin`              | `node-emoji`, 312 KB |
+| `src/plugins/all.ts`     | `createAllPlugins()`       | all three            |
+
+**Why this is structural and not stylistic.** tsup concatenates everything reachable from
+an entry point into one chunk. Before C-027 all 14 plugins were reachable from
+`src/plugins/index.ts`, so they were emitted as a single 223 KB chunk whose *top level*
+read:
+
+```js
+import katex from 'katex';
+import mermaid from 'mermaid';
+import * as emoji from 'node-emoji';
+```
+
+A top-level import in a retained chunk is evaluated whenever any binding in that chunk is
+used. `import { HeadingPlugin } from "draftly/plugins"` therefore bundled to **8.0 MB**.
+Tree-shaking cannot rescue this: `sideEffects: false` lets a bundler drop draftly's own
+modules, but mermaid and katex are third-party packages it cannot prove pure, and CJS
+consumers get no tree-shaking at all.
+
+Splitting the three into their own entries puts them in their own chunks. The same import
+is now **2.5 MB**, and `dist/plugins/index.{js,cjs}` reaches no heavy dependency by either
+module system.
+
+`createAllPlugins()` lives in `all.ts` rather than beside `createEssentialPlugins()` for
+exactly this reason — one function referencing `MermaidPlugin` from the barrel module would
+put mermaid back in the light chunk and silently undo the split. **Adding a heavy plugin to
+`src/plugins/index.ts` is the one edit that reverts this change.**
 
 ### Externals
 

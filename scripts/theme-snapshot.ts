@@ -8,7 +8,7 @@
  * Usage: bun run scripts/theme-snapshot.ts <out-dir>
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { createAllPlugins } from "../packages/draftly/src/plugins";
+import { createAllPlugins } from "../packages/draftly/src/plugins/all";
 import { generateCSS } from "../packages/draftly/src/preview/css-generator";
 import { ThemeEnum } from "../packages/draftly/src/editor/utils";
 

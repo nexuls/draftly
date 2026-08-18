@@ -97,7 +97,8 @@ Here's a complete example using `@uiw/react-codemirror`:
 
 ```tsx
 import CodeMirror from "@uiw/react-codemirror";
-import { draftly, createAllPlugins, ThemeEnum } from "draftly";
+import { draftly, ThemeEnum } from "draftly";
+import { createAllPlugins } from "draftly/plugins/all";
 import { githubDark } from "@uiw/codemirror-theme-github";
 
 function MarkdownEditor() {
@@ -147,7 +148,8 @@ function MarkdownEditor() {
 Render markdown to semantic HTML for server-side rendering, static site generation, or read-only views.
 
 ```tsx
-import { preview, generateCSS, createAllPlugins, ThemeEnum } from "draftly";
+import { preview, generateCSS, ThemeEnum } from "draftly";
+import { createAllPlugins } from "draftly/plugins/all";
 
 const plugins = createAllPlugins();
 
@@ -211,7 +213,7 @@ function ArticlePreview() {
 > import DOMPurify from "isomorphic-dompurify";
 >
 > preview(markdown, {
->   plugins: createAllPlugins(),
+>   plugins,
 >   sanitizer: (html) => DOMPurify.sanitize(html),
 > });
 > ```
@@ -314,8 +316,8 @@ Draftly provides seamless theming with automatic light/dark mode support:
 Import only what you need to minimize bundle size:
 
 ```typescript
-// Full package
-import { draftly, preview, createAllPlugins } from "draftly";
+// Core package — the editor, the preview renderer, and the light plugins
+import { draftly, preview } from "draftly";
 
 // Editor only
 import { draftly, DraftlyPlugin } from "draftly/editor";
@@ -325,6 +327,37 @@ import { preview, generateCSS } from "draftly/preview";
 
 // Individual plugins
 import { HeadingPlugin, ListPlugin } from "draftly/plugins";
+```
+
+#### The heavy plugins are opt-in
+
+Three plugins carry large third-party dependencies and live behind their own entry points,
+so that nothing importing `draftly/plugins` pays for them:
+
+| Entry point               | Plugin          | Dependency   | Approx. bundled cost |
+| ------------------------- | --------------- | ------------ | -------------------- |
+| `draftly/plugins/mermaid` | `MermaidPlugin` | `mermaid`    | 5.3 MB               |
+| `draftly/plugins/math`    | `MathPlugin`    | `katex`      | 475 KB               |
+| `draftly/plugins/emoji`   | `EmojiPlugin`   | `node-emoji` | 312 KB               |
+
+Compose the set you actually want:
+
+```typescript
+import { draftly } from "draftly";
+import { createEssentialPlugins } from "draftly/plugins";
+import { MathPlugin } from "draftly/plugins/math";
+
+const extensions = draftly({
+  plugins: [...createEssentialPlugins(), new MathPlugin()],
+});
+```
+
+Or take everything from `draftly/plugins/all`, which pulls all three by design:
+
+```typescript
+import { createAllPlugins } from "draftly/plugins/all";
+
+const extensions = draftly({ plugins: createAllPlugins() });
 ```
 
 ---
@@ -342,8 +375,12 @@ import { HeadingPlugin, ListPlugin } from "draftly/plugins";
 | `preview`       | `draftly/preview` | Function to render markdown to HTML.            |
 | `generateCSS`   | `draftly/preview` | Function to generate CSS for preview styling.   |
 | `createEssentialPlugins()` | `draftly/plugins` | Builds a fresh set of the essential plugins. Call once per editor. |
-| `createAllPlugins()`       | `draftly/plugins` | Builds a fresh set of every built-in plugin. Call once per editor. |
-| ~~`allPlugins`~~           | `draftly/plugins` | **Deprecated** — shared array of all built-in plugins. Use `createAllPlugins()`. |
+| `createAllPlugins()`       | `draftly/plugins/all` | Builds a fresh set of every built-in plugin, heavy ones included. Call once per editor. |
+| `MermaidPlugin`            | `draftly/plugins/mermaid` | Mermaid diagrams. Opt-in — pulls `mermaid`. |
+| `MathPlugin`               | `draftly/plugins/math` | LaTeX via KaTeX. Opt-in — pulls `katex`. |
+| `EmojiPlugin`              | `draftly/plugins/emoji` | `:shortcode:` emoji. Opt-in — pulls `node-emoji`. |
+| ~~`essentialPlugins`~~     | `draftly/plugins` | **Deprecated** — shared array. Use `createEssentialPlugins()`. |
+| ~~`allPlugins`~~           | `draftly/plugins/all` | **Deprecated** — shared array. Use `createAllPlugins()`. |
 
 ---
 

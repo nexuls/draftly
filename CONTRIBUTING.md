@@ -190,6 +190,8 @@ When creating a new plugin:
 2. Extend the `DraftlyPlugin` base class.
 3. Export the plugin from `packages/draftly/src/plugins/index.ts`.
 4. Add the plugin to the `createEssentialPlugins()` factory if it should be included by default.
+   If it pulls a heavy third-party dependency, give it its own entry point instead (see
+   `src/plugins/mermaid.ts`) and add it to `createAllPlugins()` in `src/plugins/all.ts`.
 5. Update documentation if needed.
 
 ### Testing

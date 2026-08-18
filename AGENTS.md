@@ -186,7 +186,14 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
 - **Build plugins with `createEssentialPlugins()` / `createAllPlugins()`, one set per
   editor.** The `essentialPlugins` / `allPlugins` arrays are deprecated shared singletons —
   two editors holding them overwrite each other's config and cancel each other's table
-  normalization (T-017).
+  normalization (C-026).
+- **Never import a heavy plugin from the `plugins` barrel.** `MermaidPlugin`,
+  `MathPlugin` and `EmojiPlugin` live at `draftly/plugins/{mermaid,math,emoji}`, and
+  `createAllPlugins()` lives at `draftly/plugins/all`. tsup concatenates everything
+  reachable from an entry point into one chunk, and a chunk's top-level `import mermaid`
+  runs whenever *any* binding in it is used — so one barrel re-export puts 5.3 MB back on
+  every consumer (C-027). Adding a plugin with a heavy dependency means adding an entry
+  point, not a barrel line.
 - **A widget's `eq()` must compare content only.** Comparing `from`/`to` means it is never
   reused; use `resolveWidgetRange()` when a handler needs the range.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
@@ -238,7 +245,10 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
    `_config`/`_context` are the sanctioned exception: written once at composition time.
 10. Put the theme at the bottom of the file via `createTheme()`.
 11. Register in `plugins/index.ts` — named export **and** the `createEssentialPlugins()`
-    factory.
+    factory. **If the plugin pulls a heavy third-party dependency**, it goes in its own
+    entry point instead (`src/plugins/<name>.ts`, plus `tsup.config.ts` and the
+    `exports` map) and is added to `createAllPlugins()` in `plugins/all.ts` — never to the
+    barrel.
 12. Add a row to `artifacts/architecture/plugins-catalog.md`.
 13. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
 14. Verify both surfaces in the playground.
@@ -266,7 +276,7 @@ CodeMirror internals.
 - **Do not** change the public API surface without flagging it — `draftly` is published
   and consumers depend on it.
 - **Do not** add a runtime dependency to `packages/draftly` without asking; bundle size is
-  a design constraint (it is why `createAllPlugins()` is opt-in).
+  a design constraint (it is why the heavy plugins sit behind their own entry points).
 - **Do not** move CodeMirror packages out of peer/external.
 - **Do not** put library features in `apps/web`. The playground is a consumer, exactly
   like an external user's app. Shared helpers belong in `packages/draftly/src/lib/`.
