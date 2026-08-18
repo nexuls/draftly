@@ -8,6 +8,7 @@ import type { DraftlyConfig } from "../editor/draftly";
 import { type DecorationContext, DecorationPlugin, type PluginContext } from "../editor/plugin";
 import { ThemeEnum } from "../editor/utils";
 import { PreviewRenderer } from "../preview/renderer";
+import { displayWidth } from "../lib/display-width";
 
 type Alignment = "left" | "center" | "right";
 type TableRowKind = "header" | "body";
@@ -280,9 +281,16 @@ function normalizeCellContent(text: string): string {
   return parts.join(` ${BREAK_TAG} `).trim();
 }
 
-/** Measures the visible width of a cell for markdown alignment output. */
+/**
+ * Measures the visible width of a cell for markdown alignment output.
+ *
+ * Measured in monospace **columns**, not code units. `String.length` misaligns the raw
+ * markdown for CJK (two columns, one unit), emoji (two columns, two units), combining
+ * marks (zero columns, one unit) and ZWJ sequences. Pure ASCII is unaffected, so existing
+ * documents see no padding churn.
+ */
 function renderWidth(text: string): number {
-  return canonicalizeBreakTags(text).replace(BREAK_TAG, " ").replace(/\\\|/g, "|").length;
+  return displayWidth(canonicalizeBreakTags(text).replace(BREAK_TAG, " ").replace(/\\\|/g, "|"));
 }
 
 /** Pads a cell according to its alignment for normalized markdown output. */

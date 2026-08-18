@@ -71,7 +71,6 @@ into one API change and one changeset.
 | `T-006` | [Resolve or remove `plugin.dependencies`](./ongoing/T-006-plugin-dependencies.md)           | Medium   | Proposed | Developer decision (memory Q3)          |
 | `T-024` | [Dead configuration surfaces](./ongoing/T-024-dead-configuration-surfaces.md)               | Low      | Proposed | Developer decision (memory Q8)          |
 | `T-007` | [Wire up the type-check task](./ongoing/T-007-typecheck-task.md)                            | Low      | Proposed | Naming decision (memory Q4)             |
-| `T-008` | [Grapheme-aware table column widths](./ongoing/T-008-table-grapheme-width.md)               | Low      | Proposed | —                                       |
 
 **Implementation of the unblocked items began 2026-08-18**, on the developer's instruction
 to work the ongoing list. Rows still marked `Proposed` with a "Developer decision" in the

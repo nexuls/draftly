@@ -366,6 +366,13 @@ Draftly supports all modern browsers:
 | Safari  | 14+     |
 | Edge    | 88+     |
 
+Table column alignment in the **raw markdown** uses `Intl.Segmenter` (Chrome 87+,
+Safari 14.1+, Firefox 125+) to group grapheme clusters. Where it is unavailable Draftly
+falls back to per-code-point measurement, which still handles CJK, emoji and combining
+marks and only slightly over-estimates emoji built from ZWJ sequences. The support floor
+above is unchanged, and the rendered table view is unaffected either way — it is laid out
+with CSS, not with padding.
+
 ---
 
 ## Contributing

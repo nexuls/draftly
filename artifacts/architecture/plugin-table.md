@@ -214,9 +214,12 @@ If a key works in one context and not another, check whether it is registered on
   `escapeUnescapedPipes()` escapes user-typed `|` inside cell content.
 - **Breaks** — `canonicalizeBreakTags()` normalises every `<br>`, `<br/>`, `<BR />` form
   to the single canonical `<br />` (`BREAK_TAG`).
-- **Width** — `renderWidth()` computes display width for padding. **It is not
-  grapheme-aware**, so CJK characters and emoji misalign the raw markdown. Cosmetic only
-  (the decorated view still looks right), tracked as an open task.
+- **Width** — `renderWidth()` computes display width for padding, in monospace
+  **columns** via `lib/display-width.ts` (C-021). Not `String.length`: a CJK glyph is one
+  code unit and two columns, an emoji is two and two, a combining mark is one and zero.
+  Pure ASCII measures identically to `.length`, so existing documents see no padding
+  churn. Grapheme clustering needs `Intl.Segmenter`; where it is missing the fallback
+  measures per code point and only over-estimates ZWJ sequences.
 - **Delimiter** — `DELIMITER_CELL_PATTERN = /^:?-{3,}:?$/` enforces a 3-dash minimum,
   stricter than GFM's 1-dash. Deliberate, for readable source.
 - **Trailing content** — `splitTableAndTrailingMarkdown()` separates a table from

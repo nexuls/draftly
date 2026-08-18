@@ -6,3 +6,4 @@ export type { SafeUrlOptions } from "./safe-url";
 export { devWarn, isDevMode } from "./dev";
 export { resolveWidgetRange, shallowEqualRecord } from "./widget-position";
 export type { WidgetRange } from "./widget-position";
+export { displayWidth } from "./display-width";
