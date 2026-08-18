@@ -26,7 +26,13 @@ const classes = {
   content: "cm-draftly-list-content",
   indent: "cm-draftly-list-indent",
   active: " cm-draftly-active",
-  preview: "cm-draftly-preview",
+
+  // Preview classes. Deliberately distinct from the `line*` classes above: those
+  // describe an editor *line*, and their flex layout and `!important` padding are
+  // meaningless -- and actively wrong -- on a real <ul>.
+  previewList: "cm-draftly-list",
+  previewUL: "cm-draftly-list-ul",
+  previewOL: "cm-draftly-list-ol",
 };
 
 // ============================================================================
@@ -417,10 +423,10 @@ export class ListPlugin extends DecorationPlugin {
   ): string | null {
     switch (node.name) {
       case "BulletList":
-        return `<ul class="${classes.lineUL} ${classes.preview}">${children}</ul>\n`;
+        return `<ul class="${classes.previewList} ${classes.previewUL}">${children}</ul>\n`;
 
       case "OrderedList":
-        return `<ol class="${classes.lineOL} ${classes.preview}">${children}</ol>\n`;
+        return `<ol class="${classes.previewList} ${classes.previewOL}">${children}</ol>\n`;
 
       case "ListItem":
         return `<li>${children}</li>\n`;
@@ -487,7 +493,7 @@ const theme = createTheme({
     // Styled bullet for unordered lists
     ".cm-draftly-list-line-ul .cm-draftly-list-mark-ul:not(.cm-draftly-active)::after": {
       content: '"•"',
-      color: "var(--color-link)",
+      color: "var(--draftly-color-link)",
       fontWeight: "bold",
       pointerEvents: "none",
     },
@@ -530,27 +536,37 @@ const theme = createTheme({
       top: "-3px",
     },
 
-    // Preview styles (override editor-specific layout)
-    ".cm-draftly-preview": {
+    // Preview: a real <ul>/<ol>, styled as one.
+    //
+    // Nesting depth is structural here -- a nested list is a nested element -- so
+    // indentation comes from the child list's own padding and needs no `--depth`.
+    // The editor cannot do that, which is why its line classes carry a computed
+    // padding and why reusing them here would be wrong.
+    ".cm-draftly-list": {
       display: "block",
       paddingLeft: "1.5rem",
       margin: "0.5rem 0",
     },
-    ".cm-draftly-preview li": {
+    ".cm-draftly-list li": {
       display: "list-item",
       marginBottom: "0.25rem",
     },
-    "ul.cm-draftly-preview": {
+    "ul.cm-draftly-list": {
       listStyleType: "disc",
     },
-    "ol.cm-draftly-preview": {
+    "ol.cm-draftly-list": {
       listStyleType: "decimal",
     },
+    // A nested list is already indented by its parent's list item; the wider
+    // top-level margin would double the gap.
+    ".cm-draftly-list .cm-draftly-list": {
+      margin: "0.25rem 0",
+    },
     // Hide list marker for task items
-    ".cm-draftly-preview li:has(.cm-draftly-task-checkbox)": {
+    ".cm-draftly-list li:has(.cm-draftly-task-checkbox)": {
       listStyleType: "none",
     },
-    ".cm-draftly-preview li .cm-draftly-paragraph": {
+    ".cm-draftly-list li .cm-draftly-paragraph": {
       padding: "0",
     },
   },
