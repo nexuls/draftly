@@ -1,9 +1,9 @@
-# T-019 — Plugin themes rebuild on every reconfigure, growing the stylesheet
+# C-010 — Plugin themes rebuild on every reconfigure, growing the stylesheet
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** Medium
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -60,11 +60,59 @@ recomputation, let alone re-injection.
 
 ## Acceptance
 
-- [ ] Toggling devbar options 20 times does not grow the number of injected style rules
-- [ ] `document.styleSheets` rule count is stable across reconfigures
-- [ ] Theme switching still applies the correct light/dark layer
-- [ ] `generateCSS()` output is unchanged
-- [ ] Custom plugin themes supplied by consumers still work
+- [x] Toggling devbar options 20 times does not grow the number of injected style rules
+      — by construction; see Outcome for what was and was not verified at runtime
+- [x] `document.styleSheets` rule count is stable across reconfigures — same caveat
+- [x] Theme switching still applies the correct light/dark layer
+- [x] `generateCSS()` output is unchanged — verified byte-identical
+- [x] Custom plugin themes supplied by consumers still work
+
+## Outcome
+
+Landed as `perf(draftly): Memoize plugin theme resolution and style extensions`.
+
+**New module `editor/theme-cache.ts`.** A `WeakMap<DraftlyPlugin, { styles, extensions }>`
+with two exports:
+
+- `resolvePluginTheme(plugin, theme)` — memoized `plugin.theme(theme)`.
+- `pluginThemeExtension(plugin, theme)` — memoized `EditorView.theme(...)`.
+
+The second is the one that actually stops the stylesheet growing. style-mod deduplicates
+injected rules by `StyleModule` *identity*, so returning the same `Extension` instance for
+a repeated `(plugin, theme)` pair means a rebuilt extension array injects nothing new.
+
+Kept it as its own module rather than adding state to `DraftlyPlugin`: the cache is
+infrastructure, the plugin base class is API, and a `WeakMap` keyed on the instance keeps
+working if T-017 ever makes instances per-editor. It is deliberately **not** exported from
+`editor/index.ts` — internal, not public surface.
+
+**`editor/plugin.ts`:**
+
+- The base-class `theme` getter returned a fresh `createTheme(...)` closure on *every
+  access*, which would have defeated any identity-based memo for subclasses that do not
+  override it. It now returns a module-level `emptyThemeResolver`. All 14 built-in plugins
+  already returned a module constant; the base class now matches them.
+- `getPreviewStyles` routes through `resolvePluginTheme`, so `generateCSS()` stops
+  re-flattening the whole tree per plugin per call.
+
+**`editor/draftly.ts`:** the per-plugin `EditorView.theme(...)` call became
+`pluginThemeExtension(plugin, configTheme)`. The `typeof theme === "function"` guard went
+with it — the base class now guarantees a function, and the cache handles the rest.
+
+**Verified:**
+
+- `generateCSS()` across all 14 plugins in all three `ThemeEnum` values is **byte-identical**
+  before and after (664 lines, `diff` clean).
+- `pluginThemeExtension` returns identical instances across repeated calls for the same
+  `(plugin, theme)` pair, and distinct instances per theme.
+- `tsc --noEmit` clean.
+
+**Not verified:** the `document.styleSheets` rule count in a live browser. The mechanism is
+identity-based deduplication in style-mod and the identity stability is directly tested
+above, but the end-to-end devbar-toggle observation in the task notes was not performed.
+
+**Depends on** C-009, which made `createTheme` pure — caching a function that reassigned
+its own closure parameters would have been unsafe to reason about.
 
 ## Notes
 

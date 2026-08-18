@@ -34,7 +34,6 @@ either surface; all three must land before it does.
 | `T-013` | [Stop building the debug node tree eagerly](./ongoing/T-013-lazy-node-tree.md)           | Medium   | Proposed | API decision (see task)         |
 | `T-014` | [Redundant work in the preview renderer](./ongoing/T-014-preview-renderer-redundant-work.md) | Medium   | Proposed | —                               |
 | `T-015` | [Memoize KaTeX / Mermaid / emoji renders](./ongoing/T-015-memoize-expensive-renders.md)  | Medium   | Proposed | Re-measure after T-011, T-012   |
-| `T-019` | [Theme rebuild grows the stylesheet](./ongoing/T-019-theme-stylesheet-growth.md)         | Medium   | Proposed | —                               |
 
 **T-011 is the headline item.** No plugin scopes its tree walk to `view.visibleRanges`, so
 every update costs O(document) — including plain cursor movement. Do it before T-012 and
@@ -92,7 +91,7 @@ If the developer wants a single sequence rather than a set of groups:
 2. `T-011` → `T-012` — the O(document)-per-keystroke problem
 3. `T-016` → `T-017` → `T-018` — lifecycle, in that order
 4. `T-020` — bundle size, coordinated with T-017 if both land
-5. `T-014`, `T-019`, `T-021` — small, independent, low risk (`T-025` shipped as `C-009`)
+5. `T-014`, `T-021` — small, independent, low risk (`T-025`/`T-019` shipped as `C-009`/`C-010`)
 6. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
@@ -108,6 +107,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-010` | [Theme rebuild grows the stylesheet](./completed/C-010-theme-stylesheet-growth.md)                     | 2026-08-18           |
 | `C-009` | [Harden `createTheme` / `deepMerge`](./completed/C-009-theme-utils-hardening.md)                       | 2026-08-18           |
 | `C-008` | [Replace ESLint + Prettier with Biome](./completed/C-008-biome-migration.md)                          | 2026-08-18           |
 | `C-007` | [Agent artifact system](./completed/C-007-agent-artifact-system.md)                                   | 2026-08-18           |

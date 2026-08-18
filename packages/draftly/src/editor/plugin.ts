@@ -4,7 +4,21 @@ import type { MarkdownConfig } from "@lezer/markdown";
 import type { SyntaxNode } from "@lezer/common";
 import type { DraftlyConfig } from "./draftly";
 import { createTheme, type ThemeEnum, type ThemeStyle } from "./utils";
+import { resolvePluginTheme } from "./theme-cache";
 import { StyleModule } from "style-mod";
+
+/**
+ * Shared no-op theme resolver for plugins that do not override `theme`.
+ *
+ * Module-level so the base-class getter returns a *stable* value. It previously
+ * built a new `createTheme(...)` closure per access, which broke identity-based
+ * memoization for every subclass that did not override the getter.
+ */
+const emptyThemeResolver = createTheme({
+  default: {},
+  dark: {},
+  light: {},
+});
 
 /**
  * Context passed to plugin lifecycle methods
@@ -84,13 +98,15 @@ export abstract class DraftlyPlugin {
     return this._context;
   }
 
-  /** Plugin theme */
+  /**
+   * Plugin theme resolver.
+   *
+   * Overrides must return a **module-level constant**, not a fresh `createTheme(...)`
+   * per access — the resolved styles and the `EditorView.theme()` extension are both
+   * memoized per `(plugin, ThemeEnum)` pair, and an unstable getter defeats that.
+   */
   get theme(): (theme: ThemeEnum) => ThemeStyle {
-    return createTheme({
-      default: {},
-      dark: {},
-      light: {},
-    });
+    return emptyThemeResolver;
   }
 
   // ============================================
@@ -229,8 +245,7 @@ export abstract class DraftlyPlugin {
    * @returns CSS string for preview styles
    */
   getPreviewStyles(theme: ThemeEnum, wrapperClass: string): string {
-    const themeStyles = this.theme(theme);
-    return this.transformToCss(themeStyles, wrapperClass);
+    return this.transformToCss(resolvePluginTheme(this, theme), wrapperClass);
   }
 
   /**

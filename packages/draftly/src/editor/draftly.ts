@@ -8,6 +8,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { indentOnInput } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { ThemeEnum } from "./utils";
+import { pluginThemeExtension } from "./theme-cache";
 import { markdownResetExtension } from "./theme";
 
 /**
@@ -132,10 +133,10 @@ export function draftly(config: DraftlyConfig = {}): Extension[] {
         pluginKeymaps.push(...keys);
       }
 
-      // Collect theme via class method
-      const theme = plugin.theme;
-      if (baseStyles && theme && typeof theme === "function") {
-        pluginExtensions.push(EditorView.theme(theme(configTheme)));
+      // Collect theme via class method. Memoized per (plugin, theme): a fresh
+      // EditorView.theme() here would re-inject every rule on each draftly() call.
+      if (baseStyles) {
+        pluginExtensions.push(pluginThemeExtension(plugin, configTheme));
       }
 
       // Collect markdown parser extensions via class method

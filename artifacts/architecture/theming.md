@@ -83,16 +83,26 @@ Output is a flat `Record<selector, StyleSpec>` ready for `style-mod`.
 ### Editor — `EditorView.theme()`
 
 ```ts
-// draftly.ts:136
-const theme = plugin.theme;
-if (baseStyles && theme && typeof theme === "function") {
-  pluginExtensions.push(EditorView.theme(theme(configTheme)));
+// draftly.ts:138
+if (baseStyles) {
+  pluginExtensions.push(pluginThemeExtension(plugin, configTheme));
 }
 ```
 
 CodeMirror scopes these rules to the editor instance automatically and injects them as a
 stylesheet. Gated on `baseStyles` — `baseStyles: false` means a consumer supplies all
 styling themselves.
+
+**Both the resolved styles and the extension are memoized**, in `editor/theme-cache.ts`,
+by a `WeakMap` keyed on the plugin instance. This matters more than it looks:
+`EditorView.theme()` mints a new `StyleModule`, and style-mod deduplicates injected rules
+by module *identity* — so a fresh module per `draftly()` call appends a fresh copy of
+every rule to `document.head`. A host that rebuilds its extension array (the playground
+does, on every devbar toggle) would otherwise grow the stylesheet without bound.
+
+The consequence for plugin authors: **a `theme` override must return a module-level
+constant**, not a fresh `createTheme(...)` per access. All 14 built-ins already do, and
+the base class default does now too.
 
 ### Preview — scoped CSS text
 
