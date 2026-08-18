@@ -9,13 +9,27 @@ import type { MarkdownConfig, BlockParser, Line, BlockContext } from "@lezer/mar
 import mermaid from "mermaid";
 
 /**
- * Initialize mermaid with default configuration
+ * Whether {@link ensureMermaidInitialized} has run.
  */
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "default",
-  suppressErrorRendering: true,
-});
+let mermaidInitialized = false;
+
+/**
+ * Initialize mermaid with Draftly's defaults, once.
+ *
+ * Called on first render rather than at module scope. `mermaid.initialize()` on import
+ * makes the module unconditionally side-effecting, so a bundler cannot drop mermaid —
+ * roughly a megabyte — for a consumer who never writes a diagram.
+ */
+function ensureMermaidInitialized(): void {
+  if (mermaidInitialized) return;
+  mermaidInitialized = true;
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "default",
+    suppressErrorRendering: true,
+  });
+}
 
 /**
  * Render a mermaid diagram definition to SVG
@@ -35,6 +49,8 @@ async function renderMermaid(
   defaultTheme = "default"
 ): Promise<{ svg: string; error: string | null }> {
   try {
+    ensureMermaidInitialized();
+
     mermaidCounter = (mermaidCounter + 1) % MERMAID_ID_WINDOW;
     const id = `draftly-mermaid-${mermaidCounter}`;
     let finalDefinition = definition;

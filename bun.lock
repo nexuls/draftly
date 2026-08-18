@@ -76,7 +76,6 @@
         "mermaid": "^11.12.2",
         "node-emoji": "^2.2.0",
         "style-mod": "^4.1.3",
-        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@turbo/gen": "^2.7.6",

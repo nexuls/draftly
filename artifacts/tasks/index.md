@@ -16,6 +16,7 @@ by theme rather than by ID, because within each group the sequencing matters.
 
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
+| `T-027` | [`dist/` has an unresolvable `?raw` CSS import](./ongoing/T-027-katex-raw-css-import.md)     | High     | Proposed | —                                                       |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
 
 **T-009, T-010 and T-003 were one story, and all three have landed** (C-011, C-012,
@@ -49,10 +50,15 @@ remainder and needs a developer decision on the public API.
 
 | ID      | Task                                                              | Priority | Status   | Blocked on |
 | ------- | ------------------------------------------------------------------- | -------- | -------- | ------------ |
-| `T-020` | [Barrel pulls in Mermaid and KaTeX](./ongoing/T-020-bundle-size.md) | High     | Proposed | —            |
+| `T-028` | [Split heavy plugins behind entry points](./ongoing/T-028-heavy-plugin-entry-points.md) | High | Proposed | Coordinate with T-017 |
 
-Overlaps T-017 — both change `plugins/index.ts` exports. If both are approved, coordinate
+`T-020` landed as **C-024** for its first three steps — the import-time side effects are
+gone, `sideEffects: false` is truthful, and `import { draftly }` no longer pulls in
+mermaid or KaTeX. Its fourth step became **T-028**, which is a breaking export change and
+still overlaps T-017 — both change `plugins/index.ts`. If both are approved, coordinate
 into one API change and one changeset.
+
+**T-027** came out of C-024's bundle analysis and is in the correctness table above.
 
 ### UX & accessibility
 
@@ -80,7 +86,7 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 If the developer wants a single sequence rather than a set of groups:
 
 1. `T-017` — the rest of the lifecycle work; needs an API decision
-2. `T-020` — bundle size, coordinated with T-017 if both land
+2. `T-027` — the packaging bug C-024 surfaced; then `T-028`, coordinated with T-017
 3. everything else, re-prioritised once the above is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are

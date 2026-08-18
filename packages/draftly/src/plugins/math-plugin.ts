@@ -12,7 +12,15 @@ import { createWrapSelectionInputHandler } from "../lib";
 import katexCss from "katex/dist/katex.min.css?raw";
 
 /**
- * Inject KaTeX CSS into the document head (only once)
+ * Inject KaTeX CSS into the document head, once.
+ *
+ * Called from the widgets rather than at module scope. Module-scope DOM mutation runs on
+ * `import`, which makes the module unconditionally side-effecting — a bundler must then
+ * keep it even for a consumer who never writes a formula — and it touches `document`
+ * during SSR module evaluation, where there is none.
+ *
+ * The guard is the element lookup, so this stays correct across multiple editors and
+ * across hot reloads.
  */
 function injectKatexStyles(): void {
   if (typeof document === "undefined") return;
@@ -23,9 +31,6 @@ function injectKatexStyles(): void {
   style.textContent = katexCss;
   document.head.appendChild(style);
 }
-
-// Inject styles when module loads
-injectKatexStyles();
 
 // Character codes
 const DOLLAR = 36; // '$'
@@ -49,6 +54,8 @@ const mathMarkDecorations = {
  * MathML with a flat string and make accessibility worse, not better.
  */
 function renderMath(latex: string, displayMode: boolean): { html: string; error: string | null } {
+  injectKatexStyles();
+
   try {
     const html = katex.renderToString(latex, {
       displayMode,

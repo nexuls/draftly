@@ -9,6 +9,7 @@
     "directory": "packages/draftly"
   },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,8 +38,7 @@
     "katex": "^0.16.28",
     "mermaid": "^11.12.2",
     "node-emoji": "^2.2.0",
-    "style-mod": "^4.1.3",
-    "zod": "^4.3.6"
+    "style-mod": "^4.1.3"
   },
   "exports": {
     ".": {
