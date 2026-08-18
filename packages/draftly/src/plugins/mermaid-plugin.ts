@@ -1,5 +1,4 @@
 import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
-import { syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme, ThemeEnum } from "../editor";
 import type { SyntaxNode } from "@lezer/common";
@@ -249,11 +248,12 @@ export class MermaidPlugin extends DecorationPlugin {
    */
   buildDecorations(ctx: DecorationContext): void {
     const { view, decorations } = ctx;
-    const tree = syntaxTree(view.state);
     const config = this.context?.config;
     const currentTheme = config?.theme === ThemeEnum.DARK ? "dark" : "default";
 
-    tree.iterate({
+    // Scoped to the viewport: an unbounded walk makes every update -- including a
+    // plain cursor move -- cost O(document). See DecorationContext.iterateVisible.
+    ctx.iterateVisible({
       enter: (node) => {
         const { from, to, name } = node;
 

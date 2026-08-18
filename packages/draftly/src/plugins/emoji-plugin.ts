@@ -1,5 +1,4 @@
 import { Decoration, WidgetType } from "@codemirror/view";
-import { syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
 import type { SyntaxNode } from "@lezer/common";
@@ -67,9 +66,9 @@ export class EmojiPlugin extends DecorationPlugin {
    */
   buildDecorations(ctx: DecorationContext): void {
     const { view, decorations } = ctx;
-    const tree = syntaxTree(view.state);
-
-    tree.iterate({
+    // Scoped to the viewport: an unbounded walk makes every update -- including a
+    // plain cursor move -- cost O(document). See DecorationContext.iterateVisible.
+    ctx.iterateVisible({
       enter: (node) => {
         const { from, to, name } = node;
 

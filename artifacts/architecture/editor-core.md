@@ -106,16 +106,25 @@ reconfigure them through `StateEffect.reconfigure` without rebuilding the editor
 ### `buildDecorations(view, plugins)`
 
 ```
-1. Create DecorationContext { view, decorations[], selectionOverlapsRange, cursorInRange }
-2. Sort plugins by decorationPriority ASCENDING (low number = runs first)
-3. For each plugin: try { plugin.buildDecorations(ctx) } catch { /* swallowed */ }
-4. Sort the collected array by (from, startSide)
-5. Feed into RangeSetBuilder in order
-6. Return the finished DecorationSet
+1. Resolve visibleRanges (falls back to the whole doc before the view has measured)
+2. Create DecorationContext { view, decorations[], visibleRanges, iterateVisible,
+                              selectionOverlapsRange, cursorInRange }
+3. Sort plugins by decorationPriority ASCENDING (low number = runs first)
+4. For each plugin: try { plugin.buildDecorations(ctx) } catch { /* swallowed */ }
+5. Sort the collected array by (from, startSide)
+6. Feed into RangeSetBuilder in order
+7. Return the finished DecorationSet
 ```
 
-Three things worth internalising:
+Four things worth internalising:
 
+- **The walk is viewport-scoped, and that is the core's job.** `ctx.iterateVisible` bounds
+  the tree walk to `view.visibleRanges`. Before C-016 no plugin did this, so a single
+  update cost 14 full-document walks — on cursor movement as much as on edits. Fixing it
+  in the context rather than in each plugin is what stops the next plugin repeating it.
+  Lezer yields nodes that *overlap* the bounds, so a construct straddling the viewport
+  edge is entered and decorated in full. When the viewport is split into several ranges,
+  `iterateVisible` deduplicates nodes spanning a gap.
 - **Plugins push into a shared array.** They do not return decorations. This lets several
   plugins decorate overlapping ranges without any of them knowing about the others.
 - **Sorting is centralised.** A plugin may push in whatever order is convenient for its
@@ -136,7 +145,10 @@ if (update.docChanged || update.selectionSet || update.viewportChanged)
 `selectionSet` is the interesting one: it is what makes syntax markers appear when the
 cursor enters a construct. It also means **decorations rebuild on every cursor move**, so
 `buildDecorations` sits on the interactive hot path. Keep plugin implementations to a
-single `tree.iterate` and avoid allocation in the enter callback.
+single `ctx.iterateVisible` and avoid allocation in the enter callback.
+
+`viewportChanged` is what keeps viewport scoping correct: scrolling brings new ranges into
+view and rebuilds against them.
 
 ### `buildNodes()` — AST emission
 
@@ -144,7 +156,9 @@ When `onNodesChange` is supplied, the plugin materialises the **entire** syntax 
 a `DraftlyNode[]` on every rebuild, tagging each node with `isSelected`.
 
 > **Cost warning:** this is a full-document walk that allocates one object per node, and
-> it runs on every cursor move. It exists for playground/devtools use (outline, AST
+> it runs on every cursor move. It was **not** brought under C-016's viewport scoping —
+> the callback's contract is the whole tree, and narrowing it is a public API change
+> (T-013). It exists for playground/devtools use (outline, AST
 > inspector). Do not encourage it in production integrations without debouncing.
 
 ### `.cm-draftly` class

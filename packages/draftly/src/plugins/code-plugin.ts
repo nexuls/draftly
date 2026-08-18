@@ -1,6 +1,6 @@
 import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
-import { LanguageDescription, syntaxTree } from "@codemirror/language";
+import { LanguageDescription } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin } from "../editor/plugin";
 import { toggleMarkdownStyle } from "../editor";
 import type { Parser, SyntaxNode } from "@lezer/common";
@@ -478,9 +478,9 @@ export class CodePlugin extends DecorationPlugin {
    * Handles line numbers, highlights, header/caption widgets, and fence visibility.
    */
   buildDecorations(ctx: DecorationContext): void {
-    const tree = syntaxTree(ctx.view.state);
-
-    tree.iterate({
+    // Scoped to the viewport: an unbounded walk makes every update -- including a
+    // plain cursor move -- cost O(document). See DecorationContext.iterateVisible.
+    ctx.iterateVisible({
       enter: (node) => {
         if (node.name === "InlineCode") {
           this.decorateInlineCode(node, ctx);

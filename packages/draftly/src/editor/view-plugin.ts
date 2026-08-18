@@ -31,6 +31,72 @@ export const draftlyThemeFacet = Facet.define<ThemeEnum, ThemeEnum>({
 });
 
 /**
+ * Resolve the ranges a decoration walk should cover.
+ *
+ * `view.visibleRanges` is empty before the view has measured — during construction, and
+ * for a view that is not in the document yet. Falling back to the whole document there
+ * keeps the first paint correct; the next update narrows it.
+ *
+ * @param view - The EditorView instance
+ * @returns Non-empty, ascending, disjoint ranges
+ */
+function resolveVisibleRanges(view: EditorView): readonly { readonly from: number; readonly to: number }[] {
+  const ranges = view.visibleRanges;
+  return ranges.length > 0 ? ranges : [{ from: 0, to: view.state.doc.length }];
+}
+
+/**
+ * Build the viewport-scoped tree walker handed to every plugin.
+ *
+ * The walk is bounded so a plugin's cost is O(viewport) rather than O(document). Lezer
+ * yields nodes that *overlap* the bounds, so a construct straddling the viewport edge is
+ * still entered and decorated in full.
+ *
+ * When the viewport is split into several ranges, a node spanning the gap would be
+ * entered once per range and its decorations pushed twice. The `seen` set collapses
+ * that; returning `false` on a repeat also skips the subtree, whose nodes were seen for
+ * the same reason. The set is only allocated when there is more than one range, which is
+ * the uncommon case.
+ *
+ * @param view - The EditorView instance
+ * @param ranges - Ranges from {@link resolveVisibleRanges}
+ * @returns The `iterateVisible` implementation for the context
+ */
+function createVisibleIterator(
+  view: EditorView,
+  ranges: readonly { readonly from: number; readonly to: number }[]
+): DecorationContext["iterateVisible"] {
+  return (spec) => {
+    const tree = syntaxTree(view.state);
+
+    // `exactOptionalPropertyTypes` is on, so `leave` cannot be passed as possibly
+    // undefined -- give Lezer a no-op instead of an absent key.
+    const leave = spec.leave ?? (() => {});
+
+    const first = ranges[0];
+    if (ranges.length === 1 && first) {
+      tree.iterate({ from: first.from, to: first.to, enter: spec.enter, leave });
+      return;
+    }
+
+    const seen = new Set<string>();
+    for (const { from, to } of ranges) {
+      tree.iterate({
+        from,
+        to,
+        enter: (node) => {
+          const key = `${node.from}:${node.to}:${node.name}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return spec.enter(node);
+        },
+        leave,
+      });
+    }
+  };
+}
+
+/**
  * Build decorations for the visible viewport
  * @param view - The EditorView instance
  * @param plugins - Optional array of plugins to invoke for decorations
@@ -41,9 +107,12 @@ function buildDecorations(view: EditorView, plugins: DraftlyPlugin[] = []): Deco
 
   // Allow plugins to contribute decorations
   if (plugins.length > 0) {
+    const visibleRanges = resolveVisibleRanges(view);
     const ctx: DecorationContext = {
       view,
       decorations,
+      visibleRanges,
+      iterateVisible: createVisibleIterator(view, visibleRanges),
       selectionOverlapsRange: (from, to) => selectionOverlapsRange(view, from, to),
       cursorInRange: (from, to) => cursorInRange(view, from, to),
     };

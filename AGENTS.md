@@ -170,6 +170,10 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
 - **`requiredNodes` is the preview dispatch key.** A plugin with `renderToHTML()` but an
   empty `requiredNodes` is silently dead in preview. First thing to check when something
   renders in the editor but not the preview.
+- **Never walk the tree unbounded in `buildDecorations`.** Use `ctx.iterateVisible`;
+  `syntaxTree(view.state).iterate` costs O(document) on every keystroke *and* every cursor
+  move. Fixed library-wide in C-016; the two `TablePlugin` facet computations are the only
+  deliberate exceptions.
 - **`buildDecorations` errors are swallowed** (`editor/view-plugin.ts:57`). Intentional —
   Lezer exposes partial trees mid-parse — but genuine bugs vanish identically. Temporarily
   swap the `catch` for a `console.error` when a decoration does not appear.
@@ -203,6 +207,9 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
    `decorationPriority` wins on **both** surfaces — it layers on top in the editor and is
    consulted first in preview. Two plugins on one node at equal priority warn in dev.
 4. Hoist `Decoration` instances to module scope — allocating per keystroke is a real cost.
+   Walk the tree with **`ctx.iterateVisible`**, never `syntaxTree(view.state).iterate` —
+   the context carries the viewport bounds, and an unbounded walk costs O(document) on
+   every cursor movement.
 5. In `renderToHTML`, read class names off the decoration specs
    (`someDecoration.spec.class`) rather than retyping them. This is the mechanism that
    enforces parity.

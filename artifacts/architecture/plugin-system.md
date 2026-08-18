@@ -182,6 +182,11 @@ const theme = createTheme({
 
 ### House rules
 
+0. **Walk the tree with `ctx.iterateVisible`, never `syntaxTree(view.state).iterate`.**
+   The context supplies the viewport bounds. An unbounded walk makes every update cost
+   O(document), and decorations rebuild on cursor movement as well as edits — this was
+   the library's dominant performance cost until C-016. Nodes overlapping the viewport
+   are still entered, so constructs straddling the edge decorate correctly.
 1. **Hoist decorations to module scope.** `Decoration.mark({...})` inside
    `buildDecorations` allocates on every keystroke.
 2. **Read class names from the decoration specs in `renderToHTML`.** `HeadingPlugin` does

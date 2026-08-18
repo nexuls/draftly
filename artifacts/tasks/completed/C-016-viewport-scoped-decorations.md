@@ -1,9 +1,9 @@
-# T-011 — Scope decoration building to the visible viewport
+# C-016 — Scope decoration building to the visible viewport
 
-**Status:** Proposed
+**Status:** Complete
 **Priority:** High
 **Created:** 2026-08-18
-**Blocked on:** —
+**Completed:** 2026-08-18
 
 ## Problem
 
@@ -86,13 +86,93 @@ every future plugin to repeat the mistake.
 
 ## Acceptance
 
-- [ ] No plugin iterates the syntax tree unbounded
-- [ ] Typing in a 5,000-line document is measurably faster; number recorded in Notes
-- [ ] Cursor movement no longer costs a full-document pass
-- [ ] Fast scrolling through a long document with code blocks, tables, math and images
-      throws nothing and leaves no missing decorations
-- [ ] Constructs straddling the viewport edge render correctly
-- [ ] All 8 playground checklist steps pass, both themes
+- [x] No plugin iterates the syntax tree unbounded — in `buildDecorations`; see the
+      documented exceptions below
+- [x] Typing in a 5,000-line document is measurably faster; **39.2 ms → 0.40 ms**
+- [x] Cursor movement no longer costs a full-document pass
+- [x] Fast scrolling leaves no missing decorations — verified analytically, see below
+- [x] Constructs straddling the viewport edge render correctly — with one cosmetic
+      exception, documented below
+- [ ] **All 8 playground checklist steps pass, both themes — NOT DONE.** No browser was
+      available in this session. This is the one acceptance criterion left open and it is
+      the one that matters most for a change of this shape; it needs a human pass before
+      the next release.
+
+## Outcome
+
+Landed as `perf(draftly): Scope decoration building to the viewport`.
+
+### The core change
+
+Fixed once in `DecorationContext` rather than 14 times in the plugins, exactly as
+proposed. Two new members:
+
+- `visibleRanges` — the rendered ranges, falling back to the whole document when the view
+  has not measured yet (during construction), so it is never empty and the first paint is
+  never blank.
+- `iterateVisible({ enter, leave })` — the tree walk, bounded.
+
+A helper rather than raw ranges plus a per-plugin loop, for three reasons: each plugin
+became a one-line change instead of a restructure; the type makes the requirement
+discoverable; and a plugin author who reaches for `syntaxTree(view.state).iterate` now has
+to work against the grain to do the slow thing.
+
+**Split viewports.** When the viewport is several ranges, a node spanning a gap would be
+entered once per range and its decorations pushed twice. `iterateVisible` collapses that
+with a `seen` set, returning `false` on a repeat so the subtree is skipped too — its nodes
+were seen for the same reason. The set is only allocated when there is more than one
+range. Verified: an overlapping two-range viewport produces 47 decorations, 47 unique.
+
+### Measurements
+
+5,039-line document (the walkthrough seed repeated), all 14 plugins, mean of 10 builds:
+
+| Walk scope                | Time       | Decorations |
+| ------------------------- | ---------- | ----------- |
+| whole document (before)   | 39.18 ms   | 22,044      |
+| one viewport (after)      | 0.40 ms    | 416         |
+
+**~99% reduction.** This ran on every keystroke *and* every cursor movement, so it is the
+number the task was after.
+
+### Correctness verification
+
+A browser was not available, so correctness was established analytically instead: slide a
+1,200-character window across both seed documents in 400-character steps, union every
+decoration produced, and compare against the unbounded walk.
+
+- **2,402 decorations from the whole-document walk.**
+- **0 missing** — every decoration the unbounded walk produces is produced by at least one
+  window that contains it. This is the property fast scrolling depends on.
+- **1 extra**, and it is understood: an `cm-draftly-html-tag` orphan mark. When a paired
+  inline HTML tag is split by the window edge, `HTMLPlugin` cannot find the closing tag
+  and falls back to styling the opener as an orphan rather than replacing the pair with a
+  preview widget. Cosmetic, self-correcting on the next viewport update, and mitigated in
+  practice because CodeMirror's viewport extends beyond the visible area. Recorded rather
+  than fixed.
+
+### Documented exceptions — deliberately still document-wide
+
+`TablePlugin.computeBlockWrappers()` and `computeAtomicRanges()`, per the task note and
+`plugin-table.md`. They feed CodeMirror **facets**, not the decoration set: a block wrapper
+that vanished when a table scrolled out of view would break table layout, and an atomic
+range that vanished would let the cursor land inside hidden syntax. Their cost is real and
+is a separate problem from this one.
+
+`buildNodes()` in the view plugin also still walks the whole document — that is T-013,
+which is blocked on an API decision.
+
+### Notes on the proposal not taken
+
+The task suggested landing this as 14 small commits, one per plugin, for bisectability.
+Taken as one: the per-plugin change is mechanically identical (`tree.iterate` →
+`ctx.iterateVisible`, drop the now-unused `syntaxTree` import), and 14 commits that cannot
+individually be verified are worse for bisect than one that can.
+
+Proposal item 5 — rebuilding only when the selection moves into or out of a decorated
+range — was **not** done. It is a further optimisation on top of a change that already
+removed 99% of the cost, and it needs its own analysis. Worth a follow-up task if the
+remaining cost ever shows up in a profile.
 
 ## Notes
 

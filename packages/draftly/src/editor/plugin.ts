@@ -1,7 +1,7 @@
 import type { Decoration, EditorView, KeyBinding, ViewUpdate } from "@codemirror/view";
 import type { Extension, Range } from "@codemirror/state";
 import type { MarkdownConfig } from "@lezer/markdown";
-import type { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { DraftlyConfig } from "./draftly";
 import { createTheme, type ThemeEnum, type ThemeStyle } from "./utils";
 import { resolvePluginTheme } from "./theme-cache";
@@ -36,6 +36,24 @@ export interface PluginConfig {
 }
 
 /**
+ * Spec for {@link DecorationContext.iterateVisible}.
+ *
+ * Mirrors the subset of Lezer's `iterate` options a decoration builder needs; `from`
+ * and `to` are supplied by the context, which is the entire point.
+ */
+export interface VisibleIterateSpec {
+  /**
+   * Called on entering a node. Return `false` to skip its subtree.
+   */
+  enter(node: SyntaxNodeRef): boolean | void;
+
+  /**
+   * Called on leaving a node whose `enter` did not return `false`.
+   */
+  leave?(node: SyntaxNodeRef): void;
+}
+
+/**
  * Decoration context passed to plugin decoration builders
  * Provides access to view state and decoration collection
  */
@@ -45,6 +63,30 @@ export interface DecorationContext {
 
   /** Array to push decorations into (will be sorted automatically) */
   readonly decorations: Range<Decoration>[];
+
+  /**
+   * The document ranges CodeMirror has actually rendered.
+   *
+   * Falls back to the whole document when the view has not measured yet, so this is
+   * never empty.
+   */
+  readonly visibleRanges: readonly { readonly from: number; readonly to: number }[];
+
+  /**
+   * Walk the syntax tree, **scoped to the viewport**.
+   *
+   * Use this instead of `syntaxTree(view.state).iterate(...)`. An unbounded walk makes
+   * every update cost O(document) — including a plain cursor move, which rebuilds
+   * decorations just like an edit does. With 14 plugins that was 14 full-document walks
+   * per keystroke.
+   *
+   * Nodes that merely *overlap* a visible range are still entered, so a construct half
+   * off-screen is decorated in full. When the viewport is split into several ranges,
+   * a node spanning the gap is entered once, not once per range.
+   *
+   * @param spec - `enter`, and optionally `leave`
+   */
+  iterateVisible(spec: VisibleIterateSpec): void;
 
   /** Check if selection overlaps with a range (to show raw markdown) */
   selectionOverlapsRange(from: number, to: number): boolean;

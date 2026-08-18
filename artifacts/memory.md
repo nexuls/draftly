@@ -72,10 +72,16 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `<b>` comes back `<b></b>` and `</b>` comes back `""`. The markdown parser emits one
   `HTMLTag` node per tag, so `HTMLPlugin.renderToHTML` sanitizes inside a balanced probe
   and reads the verdict off the result rather than using the output directly (C-012).
-- **No plugin scopes its tree walk to the viewport.** `view.visibleRanges` is referenced
-  nowhere in the library, despite `buildDecorations`' own JSDoc claiming otherwise. Every
-  update — including a plain cursor move — costs 14 full-document tree walks plus a second
-  one for `buildNodes`. This is the library's dominant performance cost. See T-011, T-013.
+- **Walk the tree with `ctx.iterateVisible`, never `syntaxTree(view.state).iterate`.**
+  Fixed in C-016; before it, all 14 plugins walked the whole document on every update,
+  including a plain cursor move (decorations rebuild on `selectionSet` too). 39.2 ms →
+  0.40 ms per build on a 5,000-line document. Two deliberate exceptions remain, both in
+  `TablePlugin`: `computeBlockWrappers` and `computeAtomicRanges` feed **facets**, not the
+  decoration set, and a wrapper or atomic range that vanished on scroll would break table
+  layout and cursor motion. `buildNodes` is also still document-wide — that is T-013.
+- **A paired inline HTML tag split by the viewport edge loses its preview widget** and
+  renders as an orphan-tag mark instead. Known and accepted (C-016); cosmetic, and it
+  self-corrects on the next viewport update.
 - **`WidgetType.eq()` must compare content, never document positions.** Six widgets compare
   `from`/`to`, which shift on any edit above them, so the widget is never reused — KaTeX
   and Mermaid re-render on every keystroke. `TaskCheckboxWidget` shows the correct pattern:

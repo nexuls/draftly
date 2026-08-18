@@ -851,11 +851,20 @@ export class TablePlugin extends DecorationPlugin {
     return handled;
   }
 
-  /** Builds the visual table decorations for every parsed table block. */
+  /**
+   * Builds the visual table decorations for every parsed table block in the viewport.
+   *
+   * Scoped to `ctx.iterateVisible`, unlike `computeBlockWrappers` and
+   * `computeAtomicRanges` below, which stay document-wide deliberately — they feed
+   * CodeMirror facets rather than the decoration set, and a wrapper or atomic range that
+   * disappears when a table scrolls out of view would break layout and cursor motion.
+   * A `Table` node straddling the viewport edge is still entered in full, so a partly
+   * visible table decorates correctly.
+   */
   override buildDecorations(ctx: DecorationContext): void {
     const { view, decorations } = ctx;
 
-    syntaxTree(view.state).iterate({
+    ctx.iterateVisible({
       enter: (node) => {
         if (node.name !== "Table") {
           return;
