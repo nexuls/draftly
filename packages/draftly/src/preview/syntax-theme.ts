@@ -1,4 +1,5 @@
 import { classHighlighter, type Highlighter } from "@lezer/highlight";
+import { scopeCssToWrapper } from "./scope-css";
 import type { SyntaxThemeInput } from "./types";
 
 type HighlightSpec = {
@@ -17,10 +18,18 @@ const MAX_WALK_DEPTH = 8;
 
 /**
  * Extract syntax highlight CSS from resolved CodeMirror HighlightStyle modules.
+ *
+ * The rules are scoped to `wrapperClass` before being returned. CodeMirror emits
+ * bare `.tok-*` selectors, and preview CSS lands in the host page's global
+ * stylesheet — unscoped, the preview's syntax theme also restyles the editor.
+ *
+ * @param syntaxTheme - Highlight style(s) to extract rules from
+ * @param wrapperClass - Preview wrapper class every rule is scoped under
+ * @returns Scoped CSS, or an empty string when there is nothing to emit
  */
 export function generateSyntaxThemeCSS(
   syntaxTheme: SyntaxThemeInput | SyntaxThemeInput[] | undefined,
-  _wrapperClass: string
+  wrapperClass: string
 ): string {
   if (!syntaxTheme) return "";
 
@@ -32,7 +41,7 @@ export function generateSyntaxThemeCSS(
   for (const style of styles) {
     const rules = style.module?.getRules();
     if (!rules) continue;
-    cssChunks.push(rules);
+    cssChunks.push(scopeCssToWrapper(rules, wrapperClass));
   }
 
   if (!cssChunks.length) return "";
