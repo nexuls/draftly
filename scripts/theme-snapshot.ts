@@ -8,7 +8,7 @@
  * Usage: bun run scripts/theme-snapshot.ts <out-dir>
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { allPlugins } from "../packages/draftly/src/plugins";
+import { createAllPlugins } from "../packages/draftly/src/plugins";
 import { generateCSS } from "../packages/draftly/src/preview/css-generator";
 import { ThemeEnum } from "../packages/draftly/src/editor/utils";
 
@@ -63,14 +63,22 @@ function normalise(css: string): string {
   return collapseFallbacks(css)
     .replace(/--draftly-[\w-]+:\s*[^;}]+;?/g, "")
     .split("\n")
-    .map((line) => line.replace(/\s+/g, " ").replace(/\s*([{};:,])\s*/g, "$1").trim())
+    .map((line) =>
+      line
+        .replace(/\s+/g, " ")
+        .replace(/\s*([{};:,])\s*/g, "$1")
+        .trim()
+    )
     .filter(Boolean)
     .sort()
     .join("\n");
 }
 
+/** One set, reused across themes — matches how a single editor would hold them. */
+const plugins = createAllPlugins();
+
 for (const theme of [ThemeEnum.LIGHT, ThemeEnum.DARK, ThemeEnum.AUTO]) {
-  const css = generateCSS({ plugins: allPlugins, theme });
+  const css = generateCSS({ plugins, theme });
   const resolved = normalise(expand(css, collectTokens(css)));
   writeFileSync(`${outDir}/${theme}.css`, `${resolved}\n`);
 }

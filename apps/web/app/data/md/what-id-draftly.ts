@@ -148,12 +148,12 @@ Get up and running in seconds.
 import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { draftly } from "draftly/editor";
-import { allPlugin } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins";
 
 const view = new EditorView({
   state: EditorState.create({
     doc: "# Hello, Draftly!",
-    extensions: [draftly({ plugins: allPlugins })],
+    extensions: [draftly({ plugins: createAllPlugins() })],
   }),
   parent: document.getElementById("editor")!,
 });

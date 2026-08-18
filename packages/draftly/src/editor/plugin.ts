@@ -125,6 +125,25 @@ export interface DecorationContext {
  * - Abstraction: abstract name/version must be implemented by subclasses
  * - Encapsulation: private _config, protected _context
  * - Inheritance: specialized plugin classes can extend this
+ *
+ * ## Instance lifetime, and the rule that follows from it
+ *
+ * **One plugin instance belongs to one editor.** `createEssentialPlugins()` and
+ * `createAllPlugins()` construct a fresh set per call precisely so that a consumer cannot
+ * accidentally share one; the deprecated `essentialPlugins` / `allPlugins` arrays predate
+ * that and do share.
+ *
+ * **A plugin must not hold state that belongs to a view.** Anything derived from a
+ * specific `EditorView` — a pending timer, a scheduled microtask's target, a cached
+ * measurement, the view itself — either keys off the view (a `WeakMap` or a CodeMirror
+ * `StateField`) or is released in {@link DraftlyPlugin.onViewDestroy}. Two things go wrong
+ * otherwise, and both are silent: with a shared instance, one editor overwrites another's
+ * state, and with any instance, a retained view retains its document for the lifetime of
+ * the page.
+ *
+ * `_config` and `_context` are the one sanctioned exception, and only because they are
+ * written once at composition time by {@link DraftlyPlugin.onRegister}. They are still
+ * per-editor state, which is why the factories exist.
  */
 export abstract class DraftlyPlugin {
   /** Unique plugin identifier (abstract - must be implemented) */
@@ -265,13 +284,16 @@ export abstract class DraftlyPlugin {
    * Called when plugin is unregistered.
    *
    * @deprecated **Nothing calls this.** `onRegister` runs from `draftly()`, and there is
-   * no corresponding teardown of an extension bundle to hang an unregister off. It
-   * cannot simply be called on view destruction either: plugin instances are shared
-   * module-level singletons (T-017), so clearing `_context` for one editor would break
-   * every other editor on the page.
+   * no corresponding teardown of an extension bundle to hang an unregister off.
+   *
+   * T-017 removed the *second* reason it could not be wired to view destruction — with
+   * per-editor instances from `createEssentialPlugins()`, clearing `_context` no longer
+   * breaks other editors. It remains uncalled because the first reason stands: plugin
+   * registration is not scoped to a view, so there is no event to fire it on. A consumer
+   * still holding the deprecated shared arrays would also still be broken by it.
    *
    * Use {@link onViewDestroy} to release view-scoped state. This hook is kept rather than
-   * removed because it is public API; its fate is tied to T-017.
+   * removed because it is public API.
    */
   onUnregister(): void {
     this._context = null;

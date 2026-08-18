@@ -63,13 +63,13 @@ The app's centre of gravity. Responsibilities:
 
 ```ts
 const defaultPluginConfig: PluginConfig = Object.fromEntries(
-  allPlugins.map((plugin) => [plugin.name.toLowerCase(), true])
+  playgroundPlugins.map((plugin) => [plugin.name.toLowerCase(), true])
 );
 ```
 
 A new plugin registered in `plugins/index.ts` appears in the devbar automatically. **Do
 not add a manual entry** — if a toggle is missing, the plugin was not added to
-`essentialPlugins`.
+`createEssentialPlugins()`.
 
 ### localStorage keys and versioning
 

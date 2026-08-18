@@ -44,7 +44,7 @@ packages/draftly/
 │   │   ├── theme.ts                # Base editor theme + markdown highlight reset
 │   │   └── utils.ts                # createTheme, flattenThemeStyles, selection helpers
 │   ├── plugins/                    # Built-in feature plugins (one file per feature)
-│   │   ├── index.ts                # Barrel + `essentialPlugins` / `allPlugins` collections
+│   │   ├── index.ts                # Barrel + `createEssentialPlugins()` / `createAllPlugins()`
 │   │   ├── paragraph-plugin.ts
 │   │   ├── heading-plugin.ts
 │   │   ├── inline-plugin.ts

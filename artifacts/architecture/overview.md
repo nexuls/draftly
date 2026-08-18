@@ -126,7 +126,7 @@ tree-shakeable and lets consumers ship only the features they use.
 
 ## 5. Request lifecycle — editing
 
-1. Consumer calls `draftly({ plugins: allPlugins, theme, ... })`.
+1. Consumer calls `draftly({ plugins: createAllPlugins(), theme, ... })`.
 2. For each plugin: `onRegister(ctx)`, then collect `getExtensions()`, `getKeymap()`,
    `theme`, `getMarkdownConfig()`.
 3. Markdown configs are merged into a single `markdown()` language support instance.

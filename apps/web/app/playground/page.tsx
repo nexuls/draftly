@@ -21,16 +21,29 @@ import CodeMirror, { EditorView, type Extension, type ReactCodeMirrorRef } from 
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
-import { allPlugins } from "draftly/src";
+import { createAllPlugins } from "draftly/src";
 import { generateCSS, preview } from "draftly/src";
 import { draftly, type DraftlyNode, type DraftlyPlugin, ThemeEnum } from "draftly/src";
 
-// Plugin configuration - dynamic based on allPlugins
+/**
+ * The playground's own plugin instances.
+ *
+ * Built once, at module scope, because the playground renders exactly one editor. A page
+ * with two editors would call `createAllPlugins()` once per editor instead — plugin
+ * instances hold per-view state, so sharing one set across editors makes them overwrite
+ * each other's configuration.
+ *
+ * Exported so `devbar` can list the same instances rather than constructing a second set
+ * just to read their names.
+ */
+export const playgroundPlugins: DraftlyPlugin[] = createAllPlugins();
+
+// Plugin configuration - dynamic based on playgroundPlugins
 export type PluginConfig = Record<string, boolean>;
 
-// Build default plugin config from allPlugins (all enabled by default)
+// Build default plugin config from the plugin set (all enabled by default)
 const defaultPluginConfig: PluginConfig = Object.fromEntries(
-  allPlugins.map((plugin) => [plugin.name.toLowerCase(), true])
+  playgroundPlugins.map((plugin) => [plugin.name.toLowerCase(), true])
 );
 
 // Configuration for devbar controls
@@ -76,7 +89,7 @@ const DEBOUNCE_MS = 500;
 
 // Bump this version whenever default content (whatIsDraftly / walkthrough) changes.
 // The app will detect the mismatch and refresh the default entries in localStorage.
-const VERSION = 1;
+const VERSION = 2;
 
 const DEFAULT_CONTENTS: Content[] = [
   {
@@ -299,7 +312,7 @@ export default function Page() {
 
   // Build active plugins list based on config
   const activePlugins = useMemo<DraftlyPlugin[]>(() => {
-    return allPlugins.filter((plugin) => {
+    return playgroundPlugins.filter((plugin) => {
       const name = plugin.name.toLowerCase() as keyof PluginConfig;
       return config.plugins[name] ?? true;
     });

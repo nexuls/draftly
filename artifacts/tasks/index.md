@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-18 · commit `4181c2f`
+> Last updated: 2026-08-18 · commit `86335cd`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -44,25 +44,27 @@ because its failure modes cannot be checked without a browser.
 
 ### Lifecycle & memory
 
-| ID      | Task                                                                            | Priority | Status   | Blocked on                          |
-| ------- | --------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------- |
-| `T-017` | [Plugin collections are shared singletons](./ongoing/T-017-plugin-instance-scoping.md) | High     | Proposed | Developer decision — public API        |
+_Nothing outstanding._
 
-**T-016 and T-018 have landed** (C-018, C-019). `DraftlyPlugin.onViewDestroy` exists, the
-view plugin implements `destroy()`, and the async widget paths are guarded. `T-017` is the
-remainder and needs a developer decision on the public API.
+**T-016, T-018 and T-017 have all landed** (C-018, C-019, C-026).
+`DraftlyPlugin.onViewDestroy` exists, the view plugin implements `destroy()`, the async
+widget paths are guarded, and plugin instances are now per-editor via
+`createEssentialPlugins()` / `createAllPlugins()`. The deprecated `essentialPlugins` /
+`allPlugins` arrays remain, unchanged, for one cycle — **removing them is a major and is
+still open.**
 
 ### Bundle size
 
 | ID      | Task                                                              | Priority | Status   | Blocked on |
 | ------- | ------------------------------------------------------------------- | -------- | -------- | ------------ |
-| `T-028` | [Split heavy plugins behind entry points](./ongoing/T-028-heavy-plugin-entry-points.md) | High | Proposed | Coordinate with T-017 |
+| `T-028` | [Split heavy plugins behind entry points](./ongoing/T-028-heavy-plugin-entry-points.md) | High | Proposed | Developer decision — breaking export change |
 
 `T-020` landed as **C-024** for its first three steps — the import-time side effects are
 gone, `sideEffects: false` is truthful, and `import { draftly }` no longer pulls in
-mermaid or KaTeX. Its fourth step became **T-028**, which is a breaking export change and
-still overlaps T-017 — both change `plugins/index.ts`. If both are approved, coordinate
-into one API change and one changeset.
+mermaid or KaTeX. Its fourth step became **T-028**, which is a breaking export change.
+C-026 has since landed the other half of that overlap: `createAllPlugins()` delegates to
+`createEssentialPlugins()`, so T-028 now has exactly one place to change and no longer
+needs to be coordinated with T-017.
 
 **T-027 has landed** as **C-025** — the KaTeX stylesheet is now a generated TypeScript
 constant, so no bundler-specific specifier reaches `dist/`. It surfaced open question 17
@@ -94,9 +96,8 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 If the developer wants a single sequence rather than a set of groups:
 
-1. `T-017` — the rest of the lifecycle work; needs an API decision
-2. `T-028` — the breaking half of the bundle work, coordinated with T-017
-3. everything else, re-prioritised once the above is known
+1. `T-028` — the breaking half of the bundle work; needs an API decision
+2. everything else, re-prioritised once that is known
 
 `T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
 hard to verify by eye in the playground, and the pure layers they touch are the testable
@@ -123,6 +124,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-026` | [Plugin collections are shared singletons](./completed/C-026-plugin-instance-scoping.md) | 2026-08-18           |
 | `C-025` | [`dist/` has an unresolvable `?raw` CSS import](./completed/C-025-katex-raw-css-import.md) | 2026-08-18           |
 | `C-015` | [Redundant work in the preview renderer](./completed/C-015-preview-renderer-redundant-work.md)        | 2026-08-18           |
 | `C-014` | [Preview dispatch ignores `decorationPriority`](./completed/C-014-preview-dispatch-priority.md)       | 2026-08-18           |

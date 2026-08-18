@@ -28,12 +28,12 @@ The \`draftly()\` function returns a CodeMirror extension bundle. Drop it into a
 import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { draftly } from "draftly/editor";
-import { allPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins";
 
 const view = new EditorView({
   state: EditorState.create({
     doc: "# Hello, Draftly!",
-    extensions: [draftly({ plugins: allPlugins })],
+    extensions: [draftly({ plugins: createAllPlugins() })],
   }),
   parent: document.getElementById("editor")!,
 });
@@ -45,12 +45,12 @@ The \`draftly()\` function accepts a \`DraftlyConfig\` object. Here is a full ex
 
 \`\`\`ts title="config.ts" line-numbers {4-15}
 import { draftly } from "draftly/editor";
-import { allPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins";
 
 const extensions = draftly({
   theme: "auto",                // "auto" | "dark" | "light"
   baseStyles: true,             // Apply default styling
-  plugins: allPlugins,          // Plugins to load
+  plugins: createAllPlugins(),  // One set per editor
   defaultKeybindings: true,     // Default CodeMirror keybindings
   history: true,                // Undo / Redo
   indentWithTab: true,          // Tab indentation
@@ -70,7 +70,7 @@ Draftly ships three entry points so you can import only what you need:
 | Entry Point        | What it provides |
 |--------------------|-----------------|
 | \`draftly/editor\`   | Core \`draftly()\` function, \`DraftlyPlugin\` base class, utilities |
-| \`draftly/plugins\`  | All built-in plugins + \`essentialPlugins\` / \`allPlugins\` collections |
+| \`draftly/plugins\`  | All built-in plugins + \`createEssentialPlugins()\` / \`createAllPlugins()\` factories |
 | \`draftly/preview\`  | Server-side \`preview()\` renderer + \`generateCSS()\` |
 
 ---
@@ -319,10 +319,10 @@ Draftly's **preview** module renders Markdown to semantic HTML — perfect for s
 
 \`\`\`ts title="preview-example.ts" line-numbers caption="Render Markdown to HTML on the server."
 import { preview } from "draftly/preview";
-import { allPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins";
 
 const html = await preview("# Hello World\\n\\nSome **bold** text.", {
-  plugins: allPlugins,
+  plugins: createAllPlugins(),
   wrapperClass: "draftly-preview",
   wrapperTag: "article",
   sanitize: true,
@@ -341,10 +341,10 @@ Use \`generateCSS()\` to extract all plugin styles for the preview:
 
 \`\`\`ts title="css-gen.ts" line-numbers
 import { generateCSS } from "draftly/preview";
-import { allPlugins } from "draftly/plugins";
+import { createAllPlugins } from "draftly/plugins";
 
 const css = generateCSS({
-  plugins: allPlugins,
+  plugins: createAllPlugins(),
   theme: "auto",
   wrapperClass: "draftly-preview",
   includeBase: true,

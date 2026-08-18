@@ -1,6 +1,6 @@
 # Plugin System
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-08-18 · commit `86335cd`
 > Source: `packages/draftly/src/editor/plugin.ts`
 
 The plugin contract is the single most important abstraction in Draftly. Everything a
@@ -85,6 +85,35 @@ interface DecorationContext {
 }
 ```
 
+### Instance lifetime
+
+**One plugin instance belongs to one editor.** `createEssentialPlugins()` and
+`createAllPlugins()` (`plugins/index.ts`) construct a fresh set on every call, and a
+consumer calls one of them per editor.
+
+This is not stylistic. Plugin objects carry per-editor state — `_config` and `_context` on
+the base class, `draftlyConfig` and three pending-view re-entrancy locks on `TablePlugin` —
+and before C-026 the exported `essentialPlugins` / `allPlugins` arrays were module-level
+singletons shared by every importer. Two editors on one page therefore:
+
+1. **overwrote each other's config.** The second `draftly()` call's `onRegister` replaced
+   the first's `_context`, so editor A rendered using editor B's configuration.
+2. **cancelled each other's scheduled work.** `scheduleNormalization` guards on a single
+   `pendingNormalizationView` field; B's schedule overwrote A's, and A's queued microtask
+   then saw a mismatch and returned silently.
+
+Those arrays still exist, still shared, marked `@deprecated`. They will go in a major.
+
+**The authoring rule that follows:** a plugin must not hold state belonging to a view.
+Anything derived from a specific `EditorView` — a pending timer, a scheduled microtask's
+target, a cached measurement, the view itself — keys off the view (a `WeakMap`, or a
+CodeMirror `StateField`) or is released in `onViewDestroy`. `_config`/`_context` are the
+sanctioned exception, and only because they are written once at composition time.
+
+Note that per-editor instances fix the *sharing* half of the problem, not the *retention*
+half: an instance that holds a destroyed view still pins it. `onViewDestroy` remains
+mandatory.
+
 ### Lifecycle hooks
 
 | Hook                    | When                                    | Base behaviour    |
@@ -95,20 +124,21 @@ interface DecorationContext {
 | `onViewDestroy(view)`   | `ViewPlugin.destroy()`                  | No-op             |
 | ~~`onUnregister()`~~    | **Never — deprecated**                  | Clears `_context` |
 
-**Release view-scoped state in `onViewDestroy`.** Plugin instances are module-level
-singletons that outlive every view, so a retained `EditorView` retains its DOM, its state
-and the whole document for the lifetime of the page. Added in C-018, along with the view
-plugin's `destroy()` — before that the library had no teardown path at all. It fires on
-every reconfigure as well as on a real teardown, because a host that rebuilds its
-extension array destroys and recreates the view.
+**Release view-scoped state in `onViewDestroy`.** A plugin instance outlives the view that
+used it, so a retained `EditorView` retains its DOM, its state and the whole document for
+the lifetime of the page. Added in C-018, along with the view plugin's `destroy()` — before
+that the library had no teardown path at all. It fires on every reconfigure as well as on a
+real teardown, because a host that rebuilds its extension array destroys and recreates the
+view.
 
 `EditorView` has **no public "destroyed" flag**, so async work already in flight cannot
 ask the view whether it is still alive. `TablePlugin` keeps a `WeakSet` of torn-down views
 and checks it before dispatching; copy that pattern rather than inventing another.
 
-`onUnregister` is **deprecated and never called.** It cannot be wired to view destruction
-while plugin instances are shared: clearing `_context` for one editor would break every
-other editor on the page. Its fate is tied to T-017.
+`onUnregister` is **deprecated and never called.** C-026 removed one of the two reasons —
+with per-editor instances, clearing `_context` no longer breaks other editors — but the
+other stands: plugin registration is not scoped to a view, so there is no event to fire it
+on. It is kept because it is public API.
 
 **Always call `super.onRegister(context)` when overriding it** — otherwise `this.context`
 stays `null` and anything reading plugin config breaks. `TablePlugin.onRegister` is the
@@ -215,7 +245,7 @@ const theme = createTheme({
 6. **Keep the theme at the bottom of the file** as a `createTheme()` call. Split into
    `*-plugin.theme.ts` when it dominates the file (precedent: `code-plugin.theme.ts`).
 7. **Register in `plugins/index.ts`** — both the named export and the
-   `essentialPlugins` array.
+   `createEssentialPlugins()` factory.
 8. **Escape attribute values; sanitize fragments.** These are different operations and
    `ctx.sanitize()` only does the second one. An attribute value or a run of text goes
    through `escapeHtml` from `draftly/lib`; a blob of HTML that is *meant* to stay markup

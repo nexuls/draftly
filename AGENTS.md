@@ -180,10 +180,13 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
   and nothing was logged, nothing threw — the bug is in the logic.
 - **`Decoration.replace` must never span a newline.** Clamp to `line.to`. Canonical
   example: `heading-plugin.ts:104`.
-- **Release view-scoped state in `onViewDestroy`.** Plugin instances are singletons that
-  outlive every view; `EditorView` has no public "destroyed" flag, so guard in-flight
-  async work with a `WeakSet` as `table-plugin.ts` does. `onUnregister` is deprecated and
-  never called.
+- **Release view-scoped state in `onViewDestroy`.** A plugin instance outlives the view
+  that used it; `EditorView` has no public "destroyed" flag, so guard in-flight async work
+  with a `WeakSet` as `table-plugin.ts` does. `onUnregister` is deprecated and never called.
+- **Build plugins with `createEssentialPlugins()` / `createAllPlugins()`, one set per
+  editor.** The `essentialPlugins` / `allPlugins` arrays are deprecated shared singletons —
+  two editors holding them overwrite each other's config and cancel each other's table
+  normalization (T-017).
 - **A widget's `eq()` must compare content only.** Comparing `from`/`to` means it is never
   reused; use `resolveWidgetRange()` when a handler needs the range.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
@@ -228,11 +231,17 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
    `ctx.sanitize()` is for a blob of HTML that stays markup; anything going into a quoted
    attribute or rendered as text gets `escapeHtml` from `draftly/lib`. Apply `safeUrl()`
    on both surfaces, not just preview.
-9. Put the theme at the bottom of the file via `createTheme()`.
-10. Register in `plugins/index.ts` — named export **and** `essentialPlugins`.
-11. Add a row to `artifacts/architecture/plugins-catalog.md`.
-12. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
-13. Verify both surfaces in the playground.
+9. **Do not hold view-scoped state on the plugin.** Anything derived from a specific
+   `EditorView` — a pending timer, a scheduled microtask's target, the view itself — keys
+   off the view (a `WeakMap` or a `StateField`) or is released in `onViewDestroy`. One
+   instance belongs to one editor, and a retained view retains its whole document.
+   `_config`/`_context` are the sanctioned exception: written once at composition time.
+10. Put the theme at the bottom of the file via `createTheme()`.
+11. Register in `plugins/index.ts` — named export **and** the `createEssentialPlugins()`
+    factory.
+12. Add a row to `artifacts/architecture/plugins-catalog.md`.
+13. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
+14. Verify both surfaces in the playground.
 
 ### Change the editor core
 
@@ -257,7 +266,7 @@ CodeMirror internals.
 - **Do not** change the public API surface without flagging it — `draftly` is published
   and consumers depend on it.
 - **Do not** add a runtime dependency to `packages/draftly` without asking; bundle size is
-  a design constraint (it is why `allPlugins` is opt-in).
+  a design constraint (it is why `createAllPlugins()` is opt-in).
 - **Do not** move CodeMirror packages out of peer/external.
 - **Do not** put library features in `apps/web`. The playground is a consumer, exactly
   like an external user's app. Shared helpers belong in `packages/draftly/src/lib/`.

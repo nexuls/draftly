@@ -1,9 +1,9 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@workspace/ui/components/accordion";
 import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
-import { allPlugins, type DraftlyNode } from "draftly/src";
+import type { DraftlyNode } from "draftly/src";
 import React from "react";
-import type { PlaygroundConfig } from "./page";
+import { type PlaygroundConfig, playgroundPlugins } from "./page";
 
 type Props = {
   setShowNodes: (show: boolean) => void;
@@ -154,7 +154,7 @@ export default function Devbar({ setShowNodes, nodes, config, setConfig, outputT
               Plugins
             </AccordionTrigger>
             <AccordionContent className="p-3 space-y-3">
-              {allPlugins.map((plugin) => {
+              {playgroundPlugins.map((plugin) => {
                 const key = plugin.name.toLowerCase();
                 return (
                   <ConfigSwitch

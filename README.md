@@ -97,7 +97,7 @@ Here's a complete example using `@uiw/react-codemirror`:
 
 ```tsx
 import CodeMirror from "@uiw/react-codemirror";
-import { draftly, allPlugins, ThemeEnum } from "draftly";
+import { draftly, createAllPlugins, ThemeEnum } from "draftly";
 import { githubDark } from "@uiw/codemirror-theme-github";
 
 function MarkdownEditor() {
@@ -109,7 +109,7 @@ function MarkdownEditor() {
         draftly({
           theme: ThemeEnum.DARK,
           themeStyle: githubDark,
-          plugins: allPlugins,
+          plugins: createAllPlugins(),
           lineWrapping: true,
           history: true,
           indentWithTab: true,
@@ -147,7 +147,9 @@ function MarkdownEditor() {
 Render markdown to semantic HTML for server-side rendering, static site generation, or read-only views.
 
 ```tsx
-import { preview, generateCSS, allPlugins, ThemeEnum } from "draftly";
+import { preview, generateCSS, createAllPlugins, ThemeEnum } from "draftly";
+
+const plugins = createAllPlugins();
 
 const markdown = `
 # Hello World
@@ -162,7 +164,7 @@ This is a **bold** statement with some \`inline code\`.
 // Generate HTML
 const html = preview(markdown, {
   theme: ThemeEnum.LIGHT,
-  plugins: allPlugins,
+  plugins,
   sanitize: true,
   wrapperClass: "prose",
 });
@@ -170,7 +172,7 @@ const html = preview(markdown, {
 // Generate matching CSS
 const css = generateCSS({
   theme: ThemeEnum.LIGHT,
-  plugins: allPlugins,
+  plugins,
   wrapperClass: "prose",
   includeBase: true,
 });
@@ -209,7 +211,7 @@ function ArticlePreview() {
 > import DOMPurify from "isomorphic-dompurify";
 >
 > preview(markdown, {
->   plugins: allPlugins,
+>   plugins: createAllPlugins(),
 >   sanitizer: (html) => DOMPurify.sanitize(html),
 > });
 > ```
@@ -313,7 +315,7 @@ Import only what you need to minimize bundle size:
 
 ```typescript
 // Full package
-import { draftly, preview, allPlugins } from "draftly";
+import { draftly, preview, createAllPlugins } from "draftly";
 
 // Editor only
 import { draftly, DraftlyPlugin } from "draftly/editor";
@@ -339,7 +341,9 @@ import { HeadingPlugin, ListPlugin } from "draftly/plugins";
 | `DraftlyNode`   | `draftly/editor`  | Type for AST nodes.                             |
 | `preview`       | `draftly/preview` | Function to render markdown to HTML.            |
 | `generateCSS`   | `draftly/preview` | Function to generate CSS for preview styling.   |
-| `allPlugins`    | `draftly/plugins` | Array of all built-in plugins.                  |
+| `createEssentialPlugins()` | `draftly/plugins` | Builds a fresh set of the essential plugins. Call once per editor. |
+| `createAllPlugins()`       | `draftly/plugins` | Builds a fresh set of every built-in plugin. Call once per editor. |
+| ~~`allPlugins`~~           | `draftly/plugins` | **Deprecated** — shared array of all built-in plugins. Use `createAllPlugins()`. |
 
 ---
 

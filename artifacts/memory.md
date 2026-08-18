@@ -93,16 +93,25 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   widgets as both a `replace` over the construct (position = start) and a `widget` with
   `side: 1` at its end (position = end).
 - **Release view-scoped state in `onViewDestroy`.** Added in C-018, called from the view
-  plugin's `destroy()`. Plugin instances are module-level singletons, so anything a plugin
-  holds outlives every view. `EditorView` has **no public "destroyed" flag** — a queued
-  microtask cannot ask the view whether it is still alive, so `TablePlugin` keeps a
-  `WeakSet` of torn-down views and checks it before dispatching.
-- **`onUnregister` is deprecated and still never called.** It cannot be wired to view
-  destruction while plugin instances are shared singletons — clearing `_context` for one
-  editor would break the others. Its fate is tied to T-017; do not "fix" it in isolation.
-- **Plugin instances are module-level singletons with mutable per-view state.**
-  `allPlugins` is `[...essentialPlugins]` — the same objects. Two editors on one page
-  overwrite each other's `_context` and cancel each other's table normalization. See T-017.
+  plugin's `destroy()`. A plugin instance outlives the view that used it — per-editor
+  instances (C-026) changed who shares state, not how long it lives. `EditorView` has **no
+  public "destroyed" flag** — a queued microtask cannot ask the view whether it is still
+  alive, so `TablePlugin` keeps a `WeakSet` of torn-down views and checks it before
+  dispatching.
+- **`onUnregister` is deprecated and still never called.** C-026 removed half its
+  rationale — with per-editor instances, clearing `_context` no longer breaks other
+  editors — but plugin registration is still not scoped to a view, so there is no event to
+  fire it on. Do not "fix" it by calling it from view destruction.
+- **Build plugins with `createEssentialPlugins()` / `createAllPlugins()`, one set per
+  editor** (C-026). The `essentialPlugins` / `allPlugins` arrays are the old shared
+  singletons, kept `@deprecated` and **behaviourally unchanged** for one cycle — a consumer
+  who only recompiles keeps the bug, which is the point of the deprecation. Removing them
+  is a major and is still open.
+- **A plugin must not hold view-scoped state.** Anything derived from a specific
+  `EditorView` keys off the view (`WeakMap`/`StateField`) or is released in
+  `onViewDestroy`. `_config`/`_context` are the sanctioned exception, written once at
+  composition time. Per-editor instances fix *sharing*, not *retention* — a plugin holding
+  a destroyed view still pins it.
 - **`wrapperClass` must match between `preview()` and `generateCSS()`** or preview output
   is completely unstyled. Most common integration mistake.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
@@ -204,7 +213,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
 | 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins and newly-gained a11y findings in `packages/ui`'s vendored shadcn components. Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
-| 9   | `essentialPlugins` / `allPlugins` export shared mutable instances, so two editors on one page cross-talk. Fix by exporting factories (breaking) or by moving view-scoped state into a `WeakMap`/`StateField` (non-breaking, larger refactor)? | `plugins/index.ts:38`; T-017 | 2026-08-18 |
+| 9   | ~~`essentialPlugins` / `allPlugins` export shared mutable instances.~~ **Answered 2026-08-18: option A, factories.** Shipped in C-026 as a *minor* — factories added, arrays deprecated but behaviourally unchanged. Removing the arrays is a separate major and still needs a call. | `plugins/index.ts`; C-026 | 2026-08-18 |
 | 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
 | 11  | ~~With `sanitize: false`, should `HTMLPlugin` emit raw HTML or escape it?~~ **Answered provisionally in C-012: honour the flag literally** — raw HTML with `sanitize: false`, sanitized with the default `true`. Confirm or overturn. | `plugins/html-plugin.ts`; C-012 | 2026-08-18 |
 | 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |
