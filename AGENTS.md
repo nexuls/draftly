@@ -184,9 +184,9 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
   that used it; `EditorView` has no public "destroyed" flag, so guard in-flight async work
   with a `WeakSet` as `table-plugin.ts` does. `onUnregister` is deprecated and never called.
 - **Build plugins with `createEssentialPlugins()` / `createAllPlugins()`, one set per
-  editor.** The `essentialPlugins` / `allPlugins` arrays are deprecated shared singletons —
-  two editors holding them overwrite each other's config and cancel each other's table
-  normalization (C-026).
+  editor.** Sharing one set across two editors makes them overwrite each other's config and
+  cancel each other's table normalization (C-026). The old shared-singleton
+  `essentialPlugins` / `allPlugins` arrays were removed in C-028.
 - **Never import a heavy plugin from the `plugins` barrel.** `MermaidPlugin`,
   `MathPlugin` and `EmojiPlugin` live at `draftly/plugins/{mermaid,math,emoji}`, and
   `createAllPlugins()` lives at `draftly/plugins/all`. tsup concatenates everything

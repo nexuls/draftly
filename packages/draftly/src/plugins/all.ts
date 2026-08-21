@@ -11,7 +11,7 @@
  * back in the light chunk and undo the split entirely.
  */
 import type { DraftlyPlugin } from "../editor/plugin";
-import { createEssentialPlugins, essentialPlugins } from "./index";
+import { createEssentialPlugins } from "./index";
 import { MermaidPlugin } from "./mermaid-plugin";
 import { MathPlugin } from "./math-plugin";
 import { EmojiPlugin } from "./emoji-plugin";
@@ -42,17 +42,3 @@ export { EmojiPlugin } from "./emoji-plugin";
 export function createAllPlugins(): DraftlyPlugin[] {
   return [...createEssentialPlugins(), new MathPlugin(), new MermaidPlugin(), new EmojiPlugin()];
 }
-
-/**
- * Every plugin Draftly ships, as a single shared array.
- *
- * @deprecated Use {@link createAllPlugins} instead. These are module-level singletons
- * holding per-view state, so two editors sharing them overwrite each other's config and
- * cancel each other's table normalization.
- *
- * The light plugins here are the *same instances* as `essentialPlugins` from
- * `draftly/plugins`, as they have always been; only the three heavy ones are additional.
- */
-const allPlugins: DraftlyPlugin[] = [...essentialPlugins, new MathPlugin(), new MermaidPlugin(), new EmojiPlugin()];
-
-export { allPlugins };

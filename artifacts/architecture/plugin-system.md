@@ -102,7 +102,7 @@ singletons shared by every importer. Two editors on one page therefore:
    `pendingNormalizationView` field; B's schedule overwrote A's, and A's queued microtask
    then saw a mismatch and returned silently.
 
-Those arrays still exist, still shared, marked `@deprecated`. They will go in a major.
+Those arrays were removed in C-028; the factories are the only way to build a plugin set.
 
 **The authoring rule that follows:** a plugin must not hold state belonging to a view.
 Anything derived from a specific `EditorView` — a pending timer, a scheduled microtask's

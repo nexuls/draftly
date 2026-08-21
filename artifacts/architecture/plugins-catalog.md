@@ -7,9 +7,7 @@
 14 built-in plugins. All are exported individually from `draftly/plugins` and bundled
 via `createEssentialPlugins()` (`draftly/plugins` — the 11 light plugins) and
 `createAllPlugins()` (`draftly/plugins/all` — those plus `MathPlugin`, `MermaidPlugin` and
-`EmojiPlugin`, which sit behind their own entry points because of their dependencies). The
-`essentialPlugins` / `allPlugins` arrays are the deprecated shared-singleton form of the
-same two sets.
+`EmojiPlugin`, which sit behind their own entry points because of their dependencies).
 
 ---
 

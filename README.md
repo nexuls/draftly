@@ -379,8 +379,6 @@ const extensions = draftly({ plugins: createAllPlugins() });
 | `MermaidPlugin`            | `draftly/plugins/mermaid` | Mermaid diagrams. Opt-in — pulls `mermaid`. |
 | `MathPlugin`               | `draftly/plugins/math` | LaTeX via KaTeX. Opt-in — pulls `katex`. |
 | `EmojiPlugin`              | `draftly/plugins/emoji` | `:shortcode:` emoji. Opt-in — pulls `node-emoji`. |
-| ~~`essentialPlugins`~~     | `draftly/plugins` | **Deprecated** — shared array. Use `createEssentialPlugins()`. |
-| ~~`allPlugins`~~           | `draftly/plugins/all` | **Deprecated** — shared array. Use `createAllPlugins()`. |
 
 ---
 

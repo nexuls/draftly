@@ -1,6 +1,7 @@
 {
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
+    "types": ["node"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {

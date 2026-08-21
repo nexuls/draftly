@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-19 · commit `fa72daf`
+> Last updated: 2026-08-21 · commit `cafc3cc`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -50,8 +50,7 @@ _Nothing outstanding._
 `DraftlyPlugin.onViewDestroy` exists, the view plugin implements `destroy()`, the async
 widget paths are guarded, and plugin instances are now per-editor via
 `createEssentialPlugins()` / `createAllPlugins()`. The deprecated `essentialPlugins` /
-`allPlugins` arrays remain, unchanged, for one cycle — **removing them is a major and is
-still open.**
+`allPlugins` arrays were removed in **C-028**, a major.
 
 ### Bundle size
 
@@ -69,8 +68,7 @@ three. It is now **2.5 MB** with none of them. C-024's `sideEffects: false` coul
 caught this: a bundler cannot drop a third-party package it cannot prove pure, and CJS has
 no tree-shaking at all.
 
-**Still open:** removing the deprecated `essentialPlugins` / `allPlugins` arrays. C-026
-promised them one deprecation cycle and C-027 deliberately did not cut it short.
+C-026's deprecation cycle is over: the arrays were removed in **C-028**.
 
 **T-027 has landed** as **C-025** — the KaTeX stylesheet is now a generated TypeScript
 constant, so no bundler-specific specifier reaches `dist/`. It surfaced open question 17
@@ -134,6 +132,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-028` | [Remove the deprecated plugin arrays](./completed/C-028-remove-deprecated-plugin-arrays.md) | 2026-08-21 |
 | `C-027` | [Split heavy plugins behind entry points](./completed/C-027-heavy-plugin-entry-points.md) | 2026-08-19           |
 | `C-026` | [Plugin collections are shared singletons](./completed/C-026-plugin-instance-scoping.md) | 2026-08-18           |
 | `C-025` | [`dist/` has an unresolvable `?raw` CSS import](./completed/C-025-katex-raw-css-import.md) | 2026-08-18           |

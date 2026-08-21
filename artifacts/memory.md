@@ -103,11 +103,9 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   editors — but plugin registration is still not scoped to a view, so there is no event to
   fire it on. Do not "fix" it by calling it from view destruction.
 - **Build plugins with `createEssentialPlugins()` (`draftly/plugins`) or
-  `createAllPlugins()` (`draftly/plugins/all`), one set per editor** (C-026). The
-  `essentialPlugins` / `allPlugins` arrays are the old shared singletons, kept
-  `@deprecated` and **behaviourally unchanged** for one cycle — a consumer who only
-  recompiles keeps the bug, which is the point of the deprecation. Removing them is a major
-  and is still open.
+  `createAllPlugins()` (`draftly/plugins/all`), one set per editor** (C-026). The old
+  shared-singleton `essentialPlugins` / `allPlugins` arrays were removed in C-028; the
+  factories are now the only way to build a set.
 - **A tsup entry point is a bundling boundary, and the only one that works for a heavy
   dependency.** Everything reachable from an entry is concatenated into one chunk, and that
   chunk's *top-level* `import mermaid from "mermaid"` is evaluated whenever any binding in
@@ -226,7 +224,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
 | 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins and newly-gained a11y findings in `packages/ui`'s vendored shadcn components. Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
-| 9   | ~~`essentialPlugins` / `allPlugins` export shared mutable instances.~~ **Answered 2026-08-18: option A, factories.** Shipped in C-026 as a *minor* — factories added, arrays deprecated but behaviourally unchanged. Removing the arrays is a separate major and still needs a call. | `plugins/index.ts`; C-026 | 2026-08-18 |
+| 9   | ~~`essentialPlugins` / `allPlugins` export shared mutable instances.~~ **Answered 2026-08-18: option A, factories.** Shipped in C-026 as a *minor* — factories added, arrays deprecated but behaviourally unchanged. **Fully answered 2026-08-21: remove.** Shipped in C-028 as a major. | `plugins/index.ts`; C-026 | 2026-08-18 |
 | 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
 | 11  | ~~With `sanitize: false`, should `HTMLPlugin` emit raw HTML or escape it?~~ **Answered provisionally in C-012: honour the flag literally** — raw HTML with `sanitize: false`, sanitized with the default `true`. Confirm or overturn. | `plugins/html-plugin.ts`; C-012 | 2026-08-18 |
 | 12  | `onNodesChange` is public API and eagerly builds a full node tree on every update. Change the signature to a lazy getter (breaking), add a parallel option, or accept the cost? | `editor/view-plugin.ts:124`; T-013 | 2026-08-18 |

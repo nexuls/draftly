@@ -130,8 +130,7 @@ export interface DecorationContext {
  *
  * **One plugin instance belongs to one editor.** `createEssentialPlugins()` and
  * `createAllPlugins()` construct a fresh set per call precisely so that a consumer cannot
- * accidentally share one; the deprecated `essentialPlugins` / `allPlugins` arrays predate
- * that and do share.
+ * accidentally share one.
  *
  * **A plugin must not hold state that belongs to a view.** Anything derived from a
  * specific `EditorView` — a pending timer, a scheduled microtask's target, a cached

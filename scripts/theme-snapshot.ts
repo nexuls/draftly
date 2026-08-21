@@ -20,7 +20,7 @@ mkdirSync(outDir, { recursive: true });
 function collectTokens(css: string): Map<string, string> {
   const tokens = new Map<string, string>();
   for (const match of css.matchAll(/(--draftly-[\w-]+):\s*([^;}]+)/g)) {
-    tokens.set(match[1], match[2].trim());
+    tokens.set(match[1] as string, (match[2] as string).trim());
   }
   return tokens;
 }

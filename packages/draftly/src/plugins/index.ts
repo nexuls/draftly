@@ -84,18 +84,3 @@ export function createEssentialPlugins(): DraftlyPlugin[] {
     new HRPlugin(),
   ];
 }
-
-/**
- * The essential plugins, as a single shared array.
- *
- * @deprecated Use {@link createEssentialPlugins} instead. These instances are module-level
- * singletons shared by every importer, and they hold per-view state — so two editors on
- * one page overwrite each other's config and cancel each other's table normalization.
- * A one-line migration: `plugins: essentialPlugins` -> `plugins: createEssentialPlugins()`.
- *
- * Retained unchanged for one deprecation cycle, including the shared-instance behaviour;
- * upgrading is what fixes the cross-talk, not merely recompiling.
- */
-const essentialPlugins: DraftlyPlugin[] = createEssentialPlugins();
-
-export { essentialPlugins };
