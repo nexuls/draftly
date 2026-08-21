@@ -28,7 +28,6 @@ no-sanitizer fallback should escape rather than pass through.
 | ID      | Task                                                                                     | Priority | Status   | Blocked on                    |
 | ------- | ----------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------- |
 | `T-013` | [Stop building the debug node tree eagerly](./ongoing/T-013-lazy-node-tree.md)           | Medium   | Proposed | API decision (see task)         |
-| `T-015` | [Share in-flight Mermaid renders](./ongoing/T-015-memoize-expensive-renders.md)          | Low      | Proposed | —                               |
 
 **T-011 and T-012 have both landed** (C-016, C-017): 39.2 ms → 0.40 ms per decoration
 build on a 5,000-line document. Its one open acceptance criterion is the playground
@@ -38,9 +37,8 @@ checklist, which needs a browser.
 `emoji.emojify` costs 0.36 µs, so even 100 visible shortcodes add 0.036 ms to a 0.40 ms
 decoration build, and `renderMath` no longer runs per keystroke now that widgets are
 reused. Both caches are dropped as not worth the code, along with the proposed `lib/lru.ts`.
-The task is rescoped to the one part that was never a caching argument — two mermaid
-widgets with the same definition should share one in-flight render. Left unimplemented
-because its failure modes cannot be checked without a browser.
+It was rescoped to the one part that was never a caching argument — two mermaid widgets
+with the same definition sharing one in-flight render — and landed as **C-030**.
 
 ### Lifecycle & memory
 
@@ -99,18 +97,20 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
 ### Suggested order
 
-Every task with an unblocked path has now landed. What remains is the nine tasks whose
-_Blocked on_ column names a developer decision, plus these two follow-ups created by
-completed work:
+Both follow-ups created by completed work have now landed — C-026's deprecation cycle
+closed in **C-028**, and open question 17 in **C-029** — along with the last unblocked
+ongoing task, **C-030**.
 
-1. **Remove the deprecated plugin arrays** — a major; C-026's deprecation cycle.
-2. **Open question 17** — KaTeX's font URLs, from C-025.
+What remains is entirely tasks whose _Blocked on_ column names a developer decision:
+`T-001`, `T-002`, `T-005`, `T-006`, `T-007`, `T-013`, `T-024`, `T-026`. Nothing in the
+list can move without an answer to the corresponding open question in
+[`../memory.md`](../memory.md#open-questions-for-the-developer).
 
-`T-001` (a test suite) still cuts across all of it.
-
-`T-001` cuts across all of it. T-011, T-012 and T-014 are exactly the changes that are
-hard to verify by eye in the playground, and the pure layers they touch are the testable
-ones — an argument for answering memory Q5 before starting rather than after.
+`T-001` (a test suite) cuts across all of it, and is the one worth answering first.
+C-016, C-017, C-029 and C-030 are exactly the changes that are hard to verify by eye in a
+playground, and the pure layers they touch — the KaTeX generator's URL rewriting, the
+mermaid de-duplication key, `editor/utils.ts`, the table text utilities — are the testable
+ones.
 
 ### Cross-repo
 
@@ -133,6 +133,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-030` | [Share in-flight Mermaid renders](./completed/C-030-share-inflight-mermaid-renders.md) | 2026-08-21 |
 | `C-029` | [KaTeX peer dependency, inlined fonts](./completed/C-029-katex-peer-and-inlined-fonts.md) | 2026-08-21 |
 | `C-028` | [Remove the deprecated plugin arrays](./completed/C-028-remove-deprecated-plugin-arrays.md) | 2026-08-21 |
 | `C-027` | [Split heavy plugins behind entry points](./completed/C-027-heavy-plugin-entry-points.md) | 2026-08-19           |

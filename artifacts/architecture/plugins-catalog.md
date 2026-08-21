@@ -68,6 +68,10 @@ kinds of extension at once:
   `TableControlsWidget` to keep handler closures fresh) — never an accident.
 - `ignoreEvent()` decides whether the editor sees events inside the widget. Interactive
   widgets (copy buttons, table controls) return `false`.
+- `mermaid` de-duplicates concurrent renders of the same definition (C-030): a module-level
+  map holds the **in-flight** promise, retracted the moment it settles. Not a cache — no
+  settled result is ever retained, so an edited diagram cannot be served a stale SVG and a
+  failed render is retried by the next caller.
 - `math` and `mermaid` render asynchronously; both must handle the widget being destroyed
   before their render resolves.
 

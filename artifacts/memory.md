@@ -106,6 +106,12 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `createAllPlugins()` (`draftly/plugins/all`), one set per editor** (C-026). The old
   shared-singleton `essentialPlugins` / `allPlugins` arrays were removed in C-028; the
   factories are now the only way to build a set.
+- **Mermaid's `renderMermaid` de-duplicates in-flight renders, and deliberately caches
+  nothing** (C-030). If you ever extend that map to hold settled results, you re-introduce
+  both failure modes the design avoids — a stale diagram after an edit, and a transient
+  failure pinned permanently — neither of which is checkable without a browser. Shared
+  renders also mean two identical SVGs with identical internal element ids; that is known,
+  harmless, and the price of sharing.
 - **A stylesheet injected as a `<style>` element loses its relative URLs.** They resolve
   against the *page* URL, not the package the CSS came from. This silently broke every
   KaTeX font for every consumer from C-025 until C-029, which inlines the woff2 faces as

@@ -32,9 +32,6 @@ function ensureMermaidInitialized(): void {
 }
 
 /**
- * Render a mermaid diagram definition to SVG
- */
-/**
  * Monotonic counter for mermaid's required per-render element id.
  *
  * Wraps, because mermaid keeps internal state keyed on these ids and the counter used to
@@ -43,7 +40,55 @@ function ensureMermaidInitialized(): void {
  */
 let mermaidCounter = 0;
 const MERMAID_ID_WINDOW = 1_000_000;
-async function renderMermaid(
+
+/**
+ * Renders currently in flight, keyed on everything that determines their output.
+ *
+ * Two widgets showing the same diagram — the split editor and preview panes, a definition
+ * repeated in a document, a widget rebuilt while its first render is still running — would
+ * otherwise each start their own `mermaid.render()`, which parses, lays out and serializes
+ * an SVG in a hidden DOM node. Sharing the promise makes the duplicates free.
+ *
+ * This is **de-duplication, not a cache**: an entry is removed the moment its render
+ * settles, so an edited diagram is never served a stale SVG, and a render that failed is
+ * retried by the next caller rather than left as a permanent error.
+ */
+const inFlightRenders = new Map<string, Promise<{ svg: string; error: string | null }>>();
+
+/**
+ * Render a mermaid diagram, sharing the work with any identical render already running.
+ *
+ * @param definition - The diagram source, without its fence
+ * @param options - Attributes parsed off the fence line, e.g. `theme`
+ * @param defaultTheme - Theme to use when the fence does not name one
+ * @returns The SVG, or an `error` message; this never rejects
+ */
+function renderMermaid(
+  definition: string,
+  options: Record<string, string> = {},
+  defaultTheme = "default"
+): Promise<{ svg: string; error: string | null }> {
+  // Object key order is insertion order, and `parseAttributes` walks the fence line
+  // left to right — so two fences with the same attributes written in a different order
+  // key differently. That costs a redundant render, never a wrong one.
+  const key = `${defaultTheme}\u0000${JSON.stringify(options)}\u0000${definition}`;
+
+  const existing = inFlightRenders.get(key);
+  if (existing) return existing;
+
+  const pending = renderMermaidUncached(definition, options, defaultTheme).finally(() => {
+    // Guard on identity: only retract our own entry, never a later render's.
+    if (inFlightRenders.get(key) === pending) inFlightRenders.delete(key);
+  });
+
+  inFlightRenders.set(key, pending);
+  return pending;
+}
+
+/**
+ * Perform one mermaid render. Call {@link renderMermaid} instead — it de-duplicates.
+ */
+async function renderMermaidUncached(
   definition: string,
   options: Record<string, string> = {},
   defaultTheme = "default"

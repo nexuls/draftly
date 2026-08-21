@@ -1,6 +1,6 @@
-# T-015 — Share in-flight Mermaid renders
+# C-030 — Share in-flight Mermaid renders
 
-**Status:** Proposed (rescoped 2026-08-18 after measurement)
+**Status:** Complete
 **Priority:** Low
 **Created:** 2026-08-18
 **Blocked on:** —
@@ -61,9 +61,10 @@ harmless in itself, but a decent proxy for how much redundant rendering is happe
 
 - [x] Measured improvement recorded in Notes, or the task is dropped with that finding —
       **measured; the emoji and math cases are dropped.**
-- [ ] Concurrent mermaid renders of the same definition share one in-flight promise
-- [ ] A failed mermaid render is retried rather than left cached as a permanent failure
-- [ ] Editing a diagram still updates it immediately (no stale hit)
+- [x] Concurrent mermaid renders of the same definition share one in-flight promise
+- [x] A failed mermaid render is retried rather than left cached as a permanent failure
+- [x] Editing a diagram still updates it immediately (no stale hit)
+- [ ] **Playground checklist — not run.** Needs a browser.
 
 Dropped from the original list, with the numbers that killed them: a bounded LRU in
 `lib/`, caching `emoji.emojify`, and caching `renderMath`.
@@ -102,7 +103,25 @@ Dropped from the original list, with the numbers that killed them: a bounded LRU
     memoization — two widgets with the same definition should share one in-flight render
     rather than starting two. That is worth doing on its own terms, and is why the task is
     rescoped rather than closed.
-- **Not implemented, deliberately.** The mermaid change is async cache logic whose failure
-  modes (a stale diagram, a permanently-cached error) are exactly what cannot be checked
-  without rendering one. Shipping it unverified would trade a measured non-problem for an
-  unmeasured risk.
+- **2026-08-18 — not implemented, deliberately.** The mermaid change is async cache logic
+  whose failure modes (a stale diagram, a permanently-cached error) are exactly what cannot
+  be checked without rendering one. Shipping it unverified would trade a measured
+  non-problem for an unmeasured risk.
+- **2026-08-21 — implemented on the developer's instruction.** The design answers that
+  objection structurally rather than by testing: the map holds only **in-flight** promises
+  and the entry is retracted in `.finally()`, so there is no state left behind for a stale
+  diagram or a stuck error to live in. Both failure modes require a settled result to be
+  retained, and none is. What remains untested is the happy path, which needs a browser.
+- **Key shape.** `defaultTheme`, the parsed fence attributes and the definition, joined by
+  NUL. Attribute order comes from the fence, so `theme="a" scale="2"` and
+  `scale="2" theme="a"` key differently — a redundant render, never a wrong one.
+- **The deletion is identity-guarded** (`if (inFlightRenders.get(key) === pending)`).
+  Without it, a render that settled after a same-key successor had been registered would
+  delete the successor's entry.
+- **Known consequence: duplicate SVG element ids.** Sharing one render means sharing one
+  SVG string, so two widgets on the same definition now insert identical internal ids
+  (mermaid's marker and gradient defs) instead of ids distinguished by `mermaidCounter`.
+  `url(#id)` resolves to the first match, and both copies are identical, so it renders
+  correctly; removing the first leaves the second's defs as the new first match, so it
+  self-heals. Invalid HTML, no visible effect. Flagged rather than worked around, because
+  the alternative is not sharing the render at all.
