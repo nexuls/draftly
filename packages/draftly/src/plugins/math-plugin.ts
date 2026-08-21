@@ -8,7 +8,6 @@ import { tags } from "@lezer/highlight";
 import type { MarkdownConfig, InlineParser, BlockParser, Line, BlockContext } from "@lezer/markdown";
 import katex from "katex";
 import { createWrapSelectionInputHandler } from "../lib";
-import { katexCss } from "./katex-css.generated";
 
 /**
  * Options for {@link MathPlugin}.
@@ -37,6 +36,27 @@ export interface MathPluginOptions {
    * ```
    */
   mathParser?: Parser;
+
+  /**
+   * Inject KaTeX's stylesheet — fonts included — into the document head.
+   *
+   * Defaults to `false`, which means Draftly ships no math CSS at all and the consumer
+   * imports `katex/dist/katex.min.css` themselves. That is the cheap path: the stylesheet
+   * plus its 20 inlined font faces is ~360 KB, and a build that already handles CSS and
+   * font assets does it better.
+   *
+   * Set it to `true` when there is no such build step — a `<script>` tag, a CDN, an
+   * embedded editor — and Draftly will inject the whole thing once per document. The
+   * fonts are `data:` URIs rather than relative `fonts/KaTeX_*` paths, which is what makes
+   * a `<style>` element viable at all: KaTeX's own rules resolve against the *page* URL
+   * and 404 for every consumer who does not happen to serve the fonts from there.
+   *
+   * The stylesheet lives behind a dynamic `import()` and tsup emits it as its own chunk on
+   * both formats, so leaving this at `false` costs nothing.
+   *
+   * @defaultValue false
+   */
+  injectStyles?: boolean;
 }
 
 /**
@@ -68,25 +88,58 @@ export const latexHighlightTags: Record<string, typeof tags.keyword> = {
 };
 
 /**
- * Inject KaTeX CSS into the document head, once.
+ * Inject KaTeX's stylesheet into the document head, at most once per document.
  *
- * Called from the widgets rather than at module scope. Module-scope DOM mutation runs on
- * `import`, which makes the module unconditionally side-effecting — a bundler must then
- * keep it even for a consumer who never writes a formula — and it touches `document`
- * during SSR module evaluation, where there is none.
+ * Called from the `MathPlugin` constructor when {@link MathPluginOptions.injectStyles} is
+ * set, rather than at module scope. Module-scope DOM mutation runs on `import`, which
+ * makes the module unconditionally side-effecting — a bundler must then keep it even for a
+ * consumer who never writes a formula — and it touches `document` during SSR module
+ * evaluation, where there is none.
  *
- * The guard is the element lookup, so this stays correct across multiple editors and
- * across hot reloads.
+ * The stylesheet is `import()`ed rather than imported so that the ~360 KB of inlined fonts
+ * lands in its own chunk and never loads on the default path. That makes injection
+ * asynchronous: a formula rendered in the same tick paints in a fallback face for a moment.
+ * Injecting from the constructor rather than from `renderMath` keeps that window as short
+ * as it can be.
+ *
+ * The guard is the element lookup plus an in-flight flag, so this stays correct across
+ * multiple editors, concurrent construction, and hot reloads.
+ *
+ * @returns Nothing; failures are reported to the console rather than thrown, because there
+ * is no caller left to catch them by the time the import settles
  */
 function injectKatexStyles(): void {
   if (typeof document === "undefined") return;
-  if (document.getElementById("draftly-katex-styles")) return;
+  if (katexStylesRequested) return;
+  if (document.getElementById(KATEX_STYLE_ID)) return;
+  katexStylesRequested = true;
 
-  const style = document.createElement("style");
-  style.id = "draftly-katex-styles";
-  style.textContent = katexCss;
-  document.head.appendChild(style);
+  import("./katex-styles.generated")
+    .then(({ katexStyles }) => {
+      if (document.getElementById(KATEX_STYLE_ID)) return;
+      const style = document.createElement("style");
+      style.id = KATEX_STYLE_ID;
+      style.textContent = katexStyles;
+      document.head.appendChild(style);
+    })
+    .catch((e: unknown) => {
+      katexStylesRequested = false;
+      console.error("[draftly] Failed to load KaTeX styles:", e);
+    });
 }
+
+/** Identifies the injected `<style>` element, so a second editor does not add another. */
+const KATEX_STYLE_ID = "draftly-katex-styles";
+
+/**
+ * Whether a stylesheet load is in flight or has completed.
+ *
+ * Deliberately module-scoped: the target is `document.head`, which is shared by every
+ * editor on the page, so "has this been injected yet" is a per-document question rather
+ * than a per-plugin one. Reset on failure so a transient network error can be retried by
+ * the next editor.
+ */
+let katexStylesRequested = false;
 
 // Character codes
 const DOLLAR = 36; // '$'
@@ -110,8 +163,6 @@ const mathMarkDecorations = {
  * MathML with a flat string and make accessibility worse, not better.
  */
 function renderMath(latex: string, displayMode: boolean): { html: string; error: string | null } {
-  injectKatexStyles();
-
   try {
     const html = katex.renderToString(latex, {
       displayMode,
@@ -375,11 +426,13 @@ export class MathPlugin extends DecorationPlugin {
   private readonly mathParser: Parser | undefined;
 
   /**
-   * @param options - Optional LaTeX parser for highlighting raw math source
+   * @param options - LaTeX parser for highlighting raw math source, and whether to inject
+   * KaTeX's stylesheet; see {@link MathPluginOptions}
    */
   constructor(options: MathPluginOptions = {}) {
     super();
     this.mathParser = options.mathParser;
+    if (options.injectStyles) injectKatexStyles();
   }
 
   /**

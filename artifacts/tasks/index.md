@@ -72,8 +72,9 @@ C-026's deprecation cycle is over: the arrays were removed in **C-028**.
 
 **T-027 has landed** as **C-025** — the KaTeX stylesheet is now a generated TypeScript
 constant, so no bundler-specific specifier reaches `dist/`. It surfaced open question 17
-(KaTeX's font URLs are relative and have never resolved for consumers), which is a
-separate defect.
+(KaTeX's font URLs are relative and have never resolved for consumers), which landed
+separately as **C-029**: `katex` is now an optional peer dependency, and the stylesheet —
+fonts inlined as `data:` URIs — is injected only behind `MathPluginOptions.injectStyles`.
 
 ### UX & accessibility
 
@@ -132,6 +133,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-029` | [KaTeX peer dependency, inlined fonts](./completed/C-029-katex-peer-and-inlined-fonts.md) | 2026-08-21 |
 | `C-028` | [Remove the deprecated plugin arrays](./completed/C-028-remove-deprecated-plugin-arrays.md) | 2026-08-21 |
 | `C-027` | [Split heavy plugins behind entry points](./completed/C-027-heavy-plugin-entry-points.md) | 2026-08-19           |
 | `C-026` | [Plugin collections are shared singletons](./completed/C-026-plugin-instance-scoping.md) | 2026-08-18           |

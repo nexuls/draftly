@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "generate:katex-css": "bun scripts/generate-katex-css.ts",
+    "generate:katex-styles": "bun scripts/generate-katex-styles.ts",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
@@ -28,6 +28,7 @@
     "@types/node": "^25.0.10",
     "@workspace/biome-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "katex": "^0.16.28",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
@@ -36,7 +37,6 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/markdown": "^1.6.3",
     "dompurify": "^3.3.1",
-    "katex": "^0.16.28",
     "mermaid": "^11.12.2",
     "node-emoji": "^2.2.0",
     "style-mod": "^4.1.3"
@@ -117,6 +117,12 @@
     "@codemirror/language": "^6.12.1",
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/state": "^6.5.4",
-    "@codemirror/view": "^6.39.11"
+    "@codemirror/view": "^6.39.11",
+    "katex": "^0.16.28"
+  },
+  "peerDependenciesMeta": {
+    "katex": {
+      "optional": true
+    }
   }
 }

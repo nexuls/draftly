@@ -22,6 +22,11 @@ import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { createAllPlugins } from "draftly/src/plugins/all";
+
+// `MathPlugin` ships no CSS unless it is asked to (`injectStyles: true`), so a consumer
+// with a build step imports KaTeX's own stylesheet — fonts and all — and lets the bundler
+// handle it. This is that path; `injectStyles` exists for pages that have no build step.
+import "katex/dist/katex.min.css";
 import { generateCSS, preview } from "draftly/src";
 import { draftly, type DraftlyNode, type DraftlyPlugin, ThemeEnum } from "draftly/src";
 

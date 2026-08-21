@@ -31,5 +31,8 @@ export default defineConfig({
     "@lezer/markdown",
     "@lezer/common",
     "@lezer/highlight",
+    // A peer dependency since C-029 — bundling it would ship a second copy alongside the
+    // consumer's own, and the `katex/dist/katex.min.css` they are told to import.
+    "katex",
   ],
 });

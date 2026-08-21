@@ -112,7 +112,7 @@ which the contract guarantees by having both call `getMarkdownConfig()`.
 
 | Plugin    | Dependency   | Weight     | Notes                                      |
 | --------- | ------------ | ---------- | ------------------------------------------ |
-| `math`    | `katex`      | large      | Injects KaTeX's CSS itself (`katex-css.generated.ts`); the host must still serve KaTeX's **fonts** — see memory Q17 |
+| `math`    | `katex` (optional **peer**) | not bundled | Ships no CSS by default; the host imports `katex/dist/katex.min.css`. `injectStyles: true` injects `katex-styles.generated.ts` instead — KaTeX's CSS with all 20 faces as `data:` URIs, behind a dynamic `import()` (C-029) |
 | `mermaid` | `mermaid`    | very large | Async render; dominates bundle size        |
 | `html`    | `dompurify`  | medium     | Browser-only effectiveness                 |
 | `emoji`   | `node-emoji` | small      |                                            |

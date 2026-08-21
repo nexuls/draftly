@@ -106,6 +106,16 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `createAllPlugins()` (`draftly/plugins/all`), one set per editor** (C-026). The old
   shared-singleton `essentialPlugins` / `allPlugins` arrays were removed in C-028; the
   factories are now the only way to build a set.
+- **A stylesheet injected as a `<style>` element loses its relative URLs.** They resolve
+  against the *page* URL, not the package the CSS came from. This silently broke every
+  KaTeX font for every consumer from C-025 until C-029, which inlines the woff2 faces as
+  `data:` URIs (359 KB; the woff and ttf fallbacks are dropped rather than tripling that).
+  The same applies to any future vendored CSS with `url()` in it.
+- **`katex` is an optional peer dependency and `external` in tsup**, and `MathPlugin`
+  injects no CSS unless `injectStyles: true`. The generated stylesheet is reached only
+  through a dynamic `import()` so the default path does not pay for it — **a static import
+  of `katex-styles.generated.ts` puts 359 KB back into the math chunk** and nothing will
+  fail visibly. tsup splits it out on both ESM and CJS; verified in `dist/` at C-029.
 - **A tsup entry point is a bundling boundary, and the only one that works for a heavy
   dependency.** Everything reachable from an entry is concatenated into one chunk, and that
   chunk's *top-level* `import mermaid from "mermaid"` is evaluated whenever any binding in
@@ -231,7 +241,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 14  | With `sanitize: true` and no DOM and no `sanitizer`, preview passes HTML through (now with a warning). Should it instead **escape** the HTML, so the default is safe everywhere? That is a behaviour change for existing SSR consumers, whose HTML blocks would start rendering as visible source. | `preview/context.ts`; C-013 | 2026-08-18 |
 | 15  | `codemirror-lang-latex` is **AGPL-3.0-or-later** and `draftly` is MIT. Taking it as a dependency — even lazily imported — would push copyleft terms onto every consumer, so `MathPlugin` accepts an injected parser instead. Confirm that injection is the intended long-term shape, or is a differently-licensed LaTeX parser worth vendoring? | `plugins/math-plugin.ts`; the fork this came from is an app, where the licence question does not arise the same way. | 2026-08-18 |
 | 16  | Plugin themes emit their editor-only rules into preview CSS and vice versa — e.g. `.cm-draftly-list-line-ul`'s flex layout is in the generated preview stylesheet, matching nothing. Split each plugin theme into editor/preview/shared halves, as `editor/theme.ts` now does? | `editor/plugin.ts` `getPreviewStyles`; noticed while fixing the list-class leak. | 2026-08-18 |
-| 17  | KaTeX's bundled CSS references its fonts relatively (`url(fonts/KaTeX_AMS-Regular.woff2)`), so injecting it as a `<style>` element resolves them against the consumer's page URL and they 404. Ship the fonts, base64-inline them (~1 MB), or document that consumers must import `katex/dist/katex.min.css` themselves — which is option 1 of C-025 after all? | `plugins/math-plugin.ts`, `plugins/katex-css.generated.ts`; C-025 | 2026-08-18 |
+| 17  | ~~KaTeX's bundled CSS references its fonts relatively, so injecting it as a `<style>` element 404s them.~~ **Answered 2026-08-21.** `katex` became an optional peer dependency; `MathPlugin` ships no CSS unless `injectStyles: true`, which injects the stylesheet with all 20 faces base64-inlined, behind a dynamic `import()`. Shipped as C-029. | `plugins/math-plugin.ts`, `plugins/katex-styles.generated.ts`; C-025, C-029 | 2026-08-18 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---

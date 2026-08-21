@@ -349,7 +349,7 @@ so that nothing importing `draftly/plugins` pays for them:
 | Entry point               | Plugin          | Dependency   | Approx. bundled cost |
 | ------------------------- | --------------- | ------------ | -------------------- |
 | `draftly/plugins/mermaid` | `MermaidPlugin` | `mermaid`    | 5.3 MB               |
-| `draftly/plugins/math`    | `MathPlugin`    | `katex`      | 475 KB               |
+| `draftly/plugins/math`    | `MathPlugin`    | `katex` (peer) | 0 — you install it   |
 | `draftly/plugins/emoji`   | `EmojiPlugin`   | `node-emoji` | 312 KB               |
 
 Compose the set you actually want:
@@ -363,6 +363,34 @@ const extensions = draftly({
   plugins: [...createEssentialPlugins(), new MathPlugin()],
 });
 ```
+
+##### KaTeX is a peer dependency, and its CSS is yours to bring
+
+`katex` is a **peer dependency**, marked optional — install it yourself if you use
+`MathPlugin`, and skip it otherwise. It is not bundled into `dist/`, so you get exactly one
+copy of it.
+
+Rendered math is unstyled without KaTeX's stylesheet, and Draftly does not inject it by
+default. If you have a build step, import it — this is the cheap path, and your bundler
+handles the fonts:
+
+```typescript
+import "katex/dist/katex.min.css";
+```
+
+If you have no build step — a `<script>` tag, a CDN, an embedded editor — let the plugin
+inject the stylesheet instead:
+
+```typescript
+new MathPlugin({ injectStyles: true });
+```
+
+That injects KaTeX's CSS with all 20 font faces inlined as `data:` URIs, once per document,
+and costs about 360 KB. The fonts are inlined rather than referenced because KaTeX's own
+`@font-face` rules use relative `fonts/KaTeX_*` paths, which a `<style>` element resolves
+against your page URL rather than the package — so they 404 unless you happen to serve them
+from there. The stylesheet sits behind a dynamic `import()` and ships as its own chunk, so
+leaving `injectStyles` at its default of `false` costs nothing.
 
 Or take everything from `draftly/plugins/all`, which pulls all three by design:
 
@@ -389,7 +417,7 @@ const extensions = draftly({ plugins: createAllPlugins() });
 | `createEssentialPlugins()` | `draftly/plugins` | Builds a fresh set of the essential plugins. Call once per editor. |
 | `createAllPlugins()`       | `draftly/plugins/all` | Builds a fresh set of every built-in plugin, heavy ones included. Call once per editor. |
 | `MermaidPlugin`            | `draftly/plugins/mermaid` | Mermaid diagrams. Opt-in — pulls `mermaid`. |
-| `MathPlugin`               | `draftly/plugins/math` | LaTeX via KaTeX. Opt-in — pulls `katex`. |
+| `MathPlugin`               | `draftly/plugins/math` | LaTeX via KaTeX. Opt-in — `katex` is an optional peer dependency. |
 | `EmojiPlugin`              | `draftly/plugins/emoji` | `:shortcode:` emoji. Opt-in — pulls `node-emoji`. |
 
 ---
