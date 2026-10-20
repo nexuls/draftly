@@ -103,8 +103,35 @@ with no change to `useEditorExtensions` or `EditorPane`.
 gate.** The flag enumerates the modes worth paying for a render on; a mode left out of it
 shows an empty preview and nothing fails — the hook simply never runs.
 
-The two columns do **not** share a scroll position. `preview()` output carries no mapping
-back to source lines, so correlating them would mean guessing from heading order.
+#### Linked scrolling
+
+The two columns follow each other, through `use-linked-scroll.ts` and the pure helpers in
+`lib/scroll-sync.ts`. Three things about it are not obvious:
+
+**Headings are the correspondence, not percentages.** The columns differ in total height by
+about a third on the walkthrough — the editor shows a table as pipes and block math as
+LaTeX, the preview shows both rendered — so matching `scrollTop` or matching percentages
+both drift badly. The nth heading on one side is paired with the nth on the other and
+positions between them are interpolated, which pins every heading and bounds the error in
+between. If the two sides report different heading counts the anchors are discarded
+wholesale and the two sentinels left behind degrade it to proportional scrolling.
+
+**Headings are found by scanning the text, not by reading the syntax tree.** Walking the
+tree would mean a runtime import of `@codemirror/language` into the app, and a second copy
+of a CodeMirror package alongside the library's own is the facet-identity break the repo
+keeps those dependencies external to avoid. The scan tracks fenced blocks so a `#` comment
+inside one is not taken for a heading. Setext headings are not recognised; the counts then
+disagree and it falls back, which is why the fallback exists.
+
+**The mapping is re-measured, repeatedly, because the heights move under it.** CodeMirror
+estimates the height of every line it has not drawn and replaces each estimate as the line
+scrolls into view, so the editor's total height creeps as the reader travels. The hook
+re-measures whenever either column's `scrollHeight` changes, and runs a short series of
+correction passes after the gesture stops, with the delay doubling each time — the early
+passes catch layout, the late ones catch `MermaidPlugin` and `MathPlugin`, which render
+asynchronously and move the heights again well after the first correction.
+
+Measured on the walkthrough: 22 of 23 sampled headings land within 1px.
 
 ### Plugin toggles are derived, not hardcoded
 

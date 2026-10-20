@@ -101,6 +101,11 @@ in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 two columns so editor/preview parity can be read off one screen instead of remembered
 across a mode switch. Developer-requested; no library code touched.
 
+`C-033` linked the two columns' scrolling, using headings as correspondence points rather
+than matching percentages. It raised open question 19: the helper is the kind of thing
+`AGENTS.md` says belongs in `packages/draftly/src/lib/`, and moving it there is a public
+API addition.
+
 `C-031` replaced the Next.js playground with a Vite + React app, deleted `@workspace/ui`,
 and rebuilt both surfaces. It was developer-requested rather than from the audit backlog,
 and it touched no library code. Two ongoing tasks had their playground references updated
@@ -145,6 +150,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-033` | [Linked scrolling in the split view](./completed/C-033-split-view-linked-scroll.md) | 2026-10-21 |
 | `C-032` | [Playground split view](./completed/C-032-playground-split-view.md) | 2026-10-21 |
 | `C-031` | [Replace Next.js with Vite and rebuild the playground](./completed/C-031-vite-playground-rebuild.md) | 2026-10-21 |
 | `C-030` | [Share in-flight Mermaid renders](./completed/C-030-share-inflight-mermaid-renders.md) | 2026-08-21 |

@@ -178,6 +178,13 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   playground checklist *can* be run and screenshotted by script even with no browser tool.
   The segmented rails are visually hidden radio inputs: drive them with
   `.check({ force: true })`, not `.click()`.
+- **CodeMirror's line heights are estimates until the line has been drawn**, and the
+  estimate is replaced on render — so the editor's `scrollHeight` creeps as the reader
+  travels, and anything measured from the height map (`lineBlockAt().top`) for an off-screen
+  line is provisional. Anything that positions against it has to re-measure rather than
+  compute once. `MermaidPlugin` and `MathPlugin` widen the window: they render
+  asynchronously, so the heights move again a second or so after the scroll that revealed
+  them. Cost three rounds of measurement bugs in C-033.
 - **Asserting on `.cm-line` by index is a test that passes without testing anything.**
   CodeMirror virtualizes the document, so the first rendered `.cm-line` is whichever line
   the viewport starts at, not line 1 — after a `Control+End` it is near the bottom. A
@@ -286,11 +293,36 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 16  | Plugin themes emit their editor-only rules into preview CSS and vice versa — e.g. `.cm-draftly-list-line-ul`'s flex layout is in the generated preview stylesheet, matching nothing. Split each plugin theme into editor/preview/shared halves, as `editor/theme.ts` now does? | `editor/plugin.ts` `getPreviewStyles`; noticed while fixing the list-class leak. | 2026-08-18 |
 | 17  | ~~KaTeX's bundled CSS references its fonts relatively, so injecting it as a `<style>` element 404s them.~~ **Answered 2026-08-21.** `katex` became an optional peer dependency; `MathPlugin` ships no CSS unless `injectStyles: true`, which injects the stylesheet with all 20 faces base64-inlined, behind a dynamic `import()`. Shipped as C-029. | `plugins/math-plugin.ts`, `plugins/katex-styles.generated.ts`; C-025, C-029 | 2026-08-18 |
 | 18  | `heading-plugin.ts` hardcodes `fontFamily: "sans-serif"` on all six heading levels, bypassing the `--draftly-font-sans` token that `editor/theme.ts` defines and that the base theme uses. A host that sets `--font-sans` gets its face everywhere *except* headings, on both surfaces. Deliberate (headings should always be sans) or an oversight from before the token layer? | `plugins/heading-plugin.ts:140-175` vs `editor/theme.ts:21,136`; surfaced while theming `apps/web` in C-031 | 2026-10-21 |
+| 19  | The split view's scroll-sync helper (`apps/web/src/lib/scroll-sync.ts`) is exactly what `AGENTS.md` describes as belonging in `packages/draftly/src/lib/` — any consumer showing an editor beside a preview wants it. It is in the app because moving it is a public API addition. Promote it, or is pane-layout glue out of scope for the library? | `apps/web/src/lib/scroll-sync.ts`, `routes/playground/use-linked-scroll.ts`; C-033 | 2026-10-21 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---
 
 ## Session log
+
+### Session 2026-10-21 — linked scrolling in the split view
+
+Developer asked for the scroll sync C-032 had declined to build. Shipped as C-033.
+
+**The declining was half right and worth re-reading.** C-032 said a shared scroll position
+"could only be guessed from heading order". That was true of the solution it had in mind —
+proportional scrolling — and false of the one that works. Headings used as explicit
+correspondence points are exact *at* every heading and interpolated between, which is a
+different thing from guessing the documents are the same shape. Measuring first settled it:
+the two columns differ in total height by 36% on the walkthrough, so proportional really
+would have been wrong, and anchors really are needed.
+
+**Everything hard about it was measurement, not mapping.** The piecewise-linear math was
+right the first time and never changed. Three separate bugs all came from *when* the
+anchors were measured — once per gesture is stale by the end of a long one; one correction
+pass is a fixed-point iteration stopped after one step; a fixed 80ms delay finishes before
+Mermaid and KaTeX have rendered. See the new trap above; it generalises past this feature.
+
+**The test lied again, the same way as last session.** A prefix match on editor line text
+reported 200–1100px of drift at three headings; they were body lines starting with the same
+words. Exact matching showed ≤1px and the implementation had been correct throughout. Two
+sessions in a row the instrument was the broken part — on this codebase, when a measurement
+disagrees with an otherwise sound mechanism, suspect the probe first.
 
 ### Session 2026-10-21 — playground split view
 

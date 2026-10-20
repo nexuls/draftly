@@ -18,6 +18,7 @@ import { TopRail } from "./top-rail";
 import type { PlaygroundConfig, PlaygroundMode } from "./types";
 import { useDocuments } from "./use-documents";
 import { useEditorExtensions } from "./use-editor-extensions";
+import { useLinkedScroll } from "./use-linked-scroll";
 import { usePreview } from "./use-preview";
 
 /** Width in pixels at which all three columns fit side by side. Matches Tailwind's `lg`. */
@@ -115,6 +116,17 @@ export function PlaygroundRoute() {
   }, []);
 
   const editorRef = useRef<ReactCodeMirrorRef>(null);
+  const editorScrollRef = useRef<HTMLDivElement>(null);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
+
+  // Only the split surface has two columns to keep together.
+  useLinkedScroll({
+    editorScrollRef,
+    previewScrollRef,
+    editorRef,
+    markdown,
+    enabled: mode === "split",
+  });
 
   // Opening the syntax tree reconfigures the editor's extensions rather than remounting
   // it, so the view plugin's constructor -- the only place that reports nodes unprompted
@@ -170,9 +182,17 @@ export function PlaygroundRoute() {
         theme={cmTheme}
         mode={mode}
         editorRef={editorRef}
+        scrollRef={editorScrollRef}
       />
     );
-    const previewPane = <PreviewPane html={rendered.html} css={rendered.css} pending={rendered.elapsedMs === null} />;
+    const previewPane = (
+      <PreviewPane
+        html={rendered.html}
+        css={rendered.css}
+        pending={rendered.elapsedMs === null}
+        scrollRef={previewScrollRef}
+      />
+    );
 
     if (mode === "read") return previewPane;
     if (mode === "split") return <SplitPane editor={editorPane} preview={previewPane} />;
