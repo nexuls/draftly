@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" class="default-light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/caret.svg" />
+    <title>Draftly — a markdown editor that never hides your markdown</title>
+    <meta
+      name="description"
+      content="Draftly renders markdown in place and pulls the decoration back under your caret, so the source is always one keystroke away. Try it in the playground."
+    />
+    <meta name="theme-color" content="#f7f8fb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14161d" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Resolve the theme before first paint. Without this the document renders in the
+      // light layer for a frame and then flips, which is very visible on a dark theme.
+      (() => {
+        try {
+          const stored = localStorage.getItem("draftly-theme");
+          const system = matchMedia("(prefers-color-scheme: dark)").matches ? "default-dark" : "default-light";
+          const resolved = !stored || stored === "system" ? system : stored;
+          document.documentElement.classList.remove("default-light", "default-dark");
+          document.documentElement.classList.add(resolved);
+          document.documentElement.style.colorScheme = resolved === "default-dark" ? "dark" : "light";
+        } catch {
+          // A blocked localStorage is not worth failing the boot over; the provider
+          // re-resolves on mount.
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

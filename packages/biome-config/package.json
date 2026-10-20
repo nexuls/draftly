@@ -5,7 +5,6 @@
   "private": true,
   "exports": {
     "./base": "./base.json",
-    "./next-js": "./next.json",
     "./react-internal": "./react-internal.json"
   },
   "devDependencies": {

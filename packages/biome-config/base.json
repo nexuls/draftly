@@ -11,11 +11,9 @@
     "includes": [
       "**",
       "!**/dist",
-      "!**/.next",
       "!**/build",
       "!**/.turbo",
       "!.agents",
-      "!**/next-env.d.ts",
       "!**/*.generated.ts"
     ]
   },
