@@ -1,6 +1,6 @@
 # Web Playground
 
-> Last verified: 2026-10-21 · commit `4cf0eed`
+> Last verified: 2026-10-21 · commit `155d55c`
 > Source: `apps/web/`
 
 The Vite + React single-page app that serves as Draftly's demo site and — most
@@ -81,17 +81,30 @@ The route file is composition only. Behaviour lives in hooks and panes:
 
 ## Mechanisms worth knowing
 
-### The four modes are named for the reader, not the call
+### The five modes are named for the reader, not the call
 
 | Mode     | What it does                                                        |
 | -------- | ------------------------------------------------------------------- |
 | `write`  | The decorated editor                                                |
 | `read`   | `preview()` output, styled by `generateCSS()`                       |
+| `split`  | `write` and `read` in two columns, for comparing them directly      |
 | `source` | The same editor with `disableViewPlugin: true` and the mono face    |
 | `export` | The generated HTML and CSS, side by side in tabs                    |
 
 `source` disables the view plugin rather than emptying the plugin list, so the parser and
 the keymaps stay and only the decoration layer goes.
+
+`split` composes `EditorPane` and `PreviewPane` as nodes — `SplitPane` owns the layout and
+nothing else, so it cannot drift from either. Everything that branches on the mode asks
+whether it is `"source"` or `"export"`, so `split` falls through to the decorated editor
+with no change to `useEditorExtensions` or `EditorPane`.
+
+**A new surface that needs rendered output must be added to `usePreview`'s `enabled`
+gate.** The flag enumerates the modes worth paying for a render on; a mode left out of it
+shows an empty preview and nothing fails — the hook simply never runs.
+
+The two columns do **not** share a scroll position. `preview()` output carries no mapping
+back to source lines, so correlating them would mean guessing from heading order.
 
 ### Plugin toggles are derived, not hardcoded
 
@@ -168,12 +181,15 @@ landing page is on the entry chunk and must not reach Mermaid or KaTeX.
 2. Load **Walkthrough** — it exercises every plugin. Extend it when adding one.
 3. **Write**: correct decoration, and the syntax reveals when the caret enters the construct.
 4. **Read**: matching visual output.
-5. **Export → preview.html**: semantic, correctly escaped markup.
-6. **Export → draftly.css**: your plugin's styles present, scoped under `.draftly-preview`.
-7. Toggle your plugin **off** in the inspector and confirm graceful degradation.
-8. Toggle **light/dark** and confirm both.
+5. **Split**: the fastest check of all — editor and preview on screen together, so a
+   parity gap shows up as a difference between two columns rather than between a column
+   and your memory of the last one.
+6. **Export → preview.html**: semantic, correctly escaped markup.
+7. **Export → draftly.css**: your plugin's styles present, scoped under `.draftly-preview`.
+8. Toggle your plugin **off** in the inspector and confirm graceful degradation.
+9. Toggle **light/dark** and confirm both.
 
-Step 7 catches the common bug where a plugin's decoration is required by another plugin's
+Step 8 catches the common bug where a plugin's decoration is required by another plugin's
 assumptions.
 
 ### Screenshotting it

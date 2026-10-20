@@ -178,6 +178,11 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   playground checklist *can* be run and screenshotted by script even with no browser tool.
   The segmented rails are visually hidden radio inputs: drive them with
   `.check({ force: true })`, not `.click()`.
+- **Asserting on `.cm-line` by index is a test that passes without testing anything.**
+  CodeMirror virtualizes the document, so the first rendered `.cm-line` is whichever line
+  the viewport starts at, not line 1 — after a `Control+End` it is near the bottom. A
+  caret/retraction check must locate the line by its *text* and click it. Cost one
+  false pass in C-032.
 - **Bun only.** `pnpm-workspace.yaml` exists for tooling compatibility but running
   `pnpm install` or `npm install` creates a conflicting lockfile.
 - **CodeMirror packages must stay external/peer.** Two copies of `@codemirror/state` in
@@ -286,6 +291,30 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 ---
 
 ## Session log
+
+### Session 2026-10-21 — playground split view
+
+Developer asked for a split view so the editor and the preview can be compared directly.
+Shipped as C-032, one commit, no library code.
+
+**The architecture made this small, which is the point worth recording.** Everything that
+branches on the playground mode asks whether it is `"source"` or `"export"`, so a new
+`"split"` member fell through to the decorated editor with no change to
+`useEditorExtensions` or `EditorPane`. The new module takes both panes as `ReactNode` and
+owns only the layout, so it cannot drift from either. The one place that genuinely had to
+know about the new mode is `usePreview`'s `enabled` gate — and that one fails *silently*,
+with an empty column and no error, which is why it is now written down in
+`architecture/web-playground.md`.
+
+**Scroll sync was asked for implicitly and deliberately not built.** Correlating the two
+columns needs a source-line mapping that `preview()` does not emit. The honest version is
+`data-line` attributes from the renderer — a library change with a public output-shape
+consequence. Approximating it from heading order would have been a guess that looks like a
+feature.
+
+**A verification script can report a false pass.** The first retraction check read
+`.cm-line` by index after moving the caret with `Control+End`; CodeMirror virtualizes, so
+it was reading a line nowhere near the caret and "passing". See the new trap above.
 
 ### Session 2026-10-21 — Next.js → Vite, playground rebuilt
 

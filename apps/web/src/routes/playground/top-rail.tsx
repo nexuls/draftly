@@ -1,4 +1,4 @@
-import { Check, FileCode2, PanelLeft, PanelRight, PenLine, SlidersHorizontal, Type } from "lucide-react";
+import { Check, Columns2, FileCode2, PanelLeft, PanelRight, PenLine, SlidersHorizontal, Type } from "lucide-react";
 import { Link } from "react-router";
 import { type Segment, SegmentedRail } from "@/components/segmented-rail";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -9,12 +9,13 @@ import { DocumentTitle } from "./document-title";
 import type { PlaygroundMode, SaveStatus } from "./types";
 
 /**
- * The four surfaces, named for what the reader is doing rather than for the library call
+ * The five surfaces, named for what the reader is doing rather than for the library call
  * behind each one.
  */
 const MODES: readonly Segment<PlaygroundMode>[] = [
   { value: "write", label: "Write", icon: PenLine, hint: "The editor, with decorations live" },
   { value: "read", label: "Read", icon: Type, hint: "The rendered preview" },
+  { value: "split", label: "Split", icon: Columns2, hint: "Editor and preview side by side" },
   { value: "source", label: "Source", icon: FileCode2, hint: "Plain markdown, decorations off" },
   { value: "export", label: "Export", icon: SlidersHorizontal, hint: "The generated HTML and CSS" },
 ];

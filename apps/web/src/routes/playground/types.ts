@@ -17,9 +17,9 @@ export type PlaygroundDocument = {
  *
  * Named for what the reader is doing rather than for the library call behind it —
  * `"source"` disables the decoration layer, `"export"` runs `preview()` and
- * `generateCSS()`.
+ * `generateCSS()`, and `"split"` is `"write"` and `"read"` at once.
  */
-export type PlaygroundMode = "write" | "read" | "source" | "export";
+export type PlaygroundMode = "write" | "read" | "split" | "source" | "export";
 
 /** Per-plugin on/off state, keyed by the plugin's lowercased `name`. */
 export type PluginConfig = Record<string, boolean>;

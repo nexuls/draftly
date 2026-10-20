@@ -10,6 +10,7 @@ import { Inspector } from "./inspector/inspector";
 import { EditorPane } from "./panes/editor-pane";
 import { ExportPane } from "./panes/export-pane";
 import { PreviewPane } from "./panes/preview-pane";
+import { SplitPane } from "./panes/split-pane";
 import { defaultPlaygroundConfig, selectActivePlugins } from "./plugins";
 import { SidePanel } from "./side-panel";
 import { StatusRail } from "./status-rail";
@@ -26,6 +27,7 @@ const THREE_COLUMN_WIDTH = 1024;
 const MODE_NOTES: Record<PlaygroundMode, string> = {
   write: "Move the caret into a heading or a link to see its markdown come back.",
   read: "Static HTML from preview(), styled by generateCSS().",
+  split: "The same document twice: the source being decorated, and the HTML it serves.",
   source: "The decoration layer is off. This is the text the document has always been.",
   export: "Exactly what a static build would emit.",
 };
@@ -97,7 +99,7 @@ export function PlaygroundRoute() {
   const markdown = documents.current?.content ?? "";
   const rendered = usePreview({
     markdown,
-    enabled: documents.current !== undefined && (mode === "read" || mode === "export"),
+    enabled: documents.current !== undefined && (mode === "read" || mode === "split" || mode === "export"),
     plugins: activePlugins,
     theme,
     syntaxTheme: cmTheme,
@@ -146,6 +148,37 @@ export function PlaygroundRoute() {
 
   const currentDocument = documents.current;
 
+  /**
+   * Pick the surface for the current mode.
+   *
+   * A function rather than a ternary chain because `"split"` makes five outcomes, and
+   * rather than a child component because it would otherwise take a dozen props that it
+   * only forwards. The editor and preview elements are built once and reused, so the split
+   * layout composes exactly the panes the single-surface modes render.
+   *
+   * @returns The element for the centre pane
+   */
+  function renderSurface() {
+    if (currentDocument === undefined) return <NoDocument onCreate={documents.create} />;
+    if (mode === "export") return <ExportPane html={rendered.html} css={rendered.css} theme={cmTheme} />;
+
+    const editorPane = (
+      <EditorPane
+        value={currentDocument.content}
+        onChange={(value) => documents.edit(currentDocument.id, value)}
+        extensions={extensions}
+        theme={cmTheme}
+        mode={mode}
+        editorRef={editorRef}
+      />
+    );
+    const previewPane = <PreviewPane html={rendered.html} css={rendered.css} pending={rendered.elapsedMs === null} />;
+
+    if (mode === "read") return previewPane;
+    if (mode === "split") return <SplitPane editor={editorPane} preview={previewPane} />;
+    return editorPane;
+  }
+
   return (
     <div className="bg-desk flex h-svh flex-col overflow-hidden">
       <TopRail
@@ -182,24 +215,7 @@ export function PlaygroundRoute() {
           />
         </SidePanel>
 
-        <main className="min-w-0 flex-1 overflow-hidden">
-          {currentDocument === undefined ? (
-            <NoDocument onCreate={documents.create} />
-          ) : mode === "read" ? (
-            <PreviewPane html={rendered.html} css={rendered.css} pending={rendered.elapsedMs === null} />
-          ) : mode === "export" ? (
-            <ExportPane html={rendered.html} css={rendered.css} theme={cmTheme} />
-          ) : (
-            <EditorPane
-              value={currentDocument.content}
-              onChange={(value) => documents.edit(currentDocument.id, value)}
-              extensions={extensions}
-              theme={cmTheme}
-              mode={mode}
-              editorRef={editorRef}
-            />
-          )}
-        </main>
+        <main className="min-w-0 flex-1 overflow-hidden">{renderSurface()}</main>
 
         <SidePanel side="right" open={inspectorOpen} width="w-80">
           <Inspector
