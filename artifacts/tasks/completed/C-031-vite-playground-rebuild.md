@@ -33,10 +33,10 @@ Retraction — source that is always really there and decoration that pulls back
 caret — is a *proofreading* idea, so the surface is a proof sheet: cool paper, ink-blue
 text, blue pencil for anything actionable, red pencil reserved for destructive actions.
 
-Two families and no sans at all: Newsreader for the interface *and* the prose, IBM Plex
-Mono for text that is genuinely source or a measurement. Setting UI chrome in a serif is
-the deliberate risk; it is the main thing keeping the result from reading as a shadcn
-demo.
+Two families: Inter for the interface *and* the prose, JetBrains Mono for text that is
+genuinely source or a measurement. The rebuild first shipped a serif (Newsreader) in both
+roles; that was reverted to Inter on request. The editorial read now comes from the
+palette, the hairlines and the single raised page rather than from the face.
 
 The generic-AI-design defaults were avoided on purpose: not the cream-paper/terracotta
 palette, not zero-radius broadsheet rules, not a grid of identical rounded cards. One

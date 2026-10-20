@@ -134,45 +134,52 @@
   --radius-xl: calc(var(--radius) + 6px);
 
   /*
-   * Two families, no sans. The interface is set in the same serif as the prose because
-   * this is a writing tool, and the mono face is reserved for text that is actually
-   * source or a measurement.
+   * Two families: Inter for everything, JetBrains Mono for text that is actually source
+   * or a measurement.
    *
-   * `--font-sans` is deliberately aimed at the serif: Tailwind's `font-sans` utility and
-   * Draftly's `--draftly-font-sans` token both read it, so pointing it here is what makes
-   * the editor chrome match the app in one place.
+   * `--font-sans` carries both Tailwind's `font-sans` utility and Draftly's
+   * `--draftly-font-sans` token, so setting it here is what makes the editor's own chrome
+   * match the app. `--font-serif` is aimed at the same stack rather than left to
+   * Tailwind's default, so a stray `font-serif` cannot introduce a third face.
    */
-  --font-sans: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: var(--font-sans);
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
   /*
    * Type scale, roughly a 1.25 ratio above the body size and tightened below it, with
-   * line-heights set per step — a serif at reading size wants more leading than the same
-   * family does at display size.
+   * line-heights set per step. Inter's large x-height does more of the work at reading
+   * size than a serif would, so the body steps carry slightly less leading, and the
+   * display steps are tracked in rather than out.
    */
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1.45;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.5;
   --text-sm: 0.8125rem;
-  --text-sm--line-height: 1.6;
+  --text-sm--line-height: 1.55;
   --text-base: 0.9375rem;
-  --text-base--line-height: 1.7;
+  --text-base--line-height: 1.62;
   --text-lg: 1.125rem;
-  --text-lg--line-height: 1.6;
+  --text-lg--line-height: 1.55;
   --text-xl: 1.375rem;
   --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.011em;
   --text-2xl: 1.75rem;
   --text-2xl--line-height: 1.25;
+  --text-2xl--letter-spacing: -0.016em;
   --text-3xl: 2.25rem;
   --text-3xl--line-height: 1.15;
+  --text-3xl--letter-spacing: -0.02em;
   --text-4xl: 3rem;
   --text-4xl--line-height: 1.08;
+  --text-4xl--letter-spacing: -0.024em;
   --text-5xl: 4rem;
   --text-5xl--line-height: 1.02;
+  --text-5xl--letter-spacing: -0.028em;
   --text-6xl: 5.25rem;
   --text-6xl--line-height: 0.98;
+  --text-6xl--letter-spacing: -0.03em;
 }
 
 /* ==========================================================================
@@ -275,7 +282,7 @@
   padding-bottom: 0.12em;
 }
 
-/* A measure that keeps prose under ~70 characters, which a serif can carry. */
+/* A measure that keeps prose around 65 characters. */
 @utility measure {
   max-width: 34rem;
 }

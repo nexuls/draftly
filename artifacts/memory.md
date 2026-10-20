@@ -300,9 +300,16 @@ work: delete `packages/ui` outright; keep both a landing page and a playground o
 **Where the design came from.** Grounding it in the library's actual mechanic rather than
 in "writing app" generally is what made it specific. Retraction is a proofreading idea, so
 the whole surface is a proof sheet — cool paper, ink blue, a blue pencil for anything
-actionable. Setting the *interface* in the same serif as the prose was the deliberate risk.
-The generic-AI-design cluster was avoided by name: no cream-and-terracotta, no zero-radius
-broadsheet, no grid of identical cards.
+actionable. The generic-AI-design cluster was avoided by name: no cream-and-terracotta, no
+zero-radius broadsheet, no grid of identical cards.
+
+**The serif did not survive.** Setting the *interface* in the same serif as the prose
+(Newsreader) was the deliberate risk of the first pass, and the developer rejected it the
+same day: Inter everywhere, JetBrains Mono for code. Worth remembering as a preference —
+the editorial read here has to come from the palette, the hairlines and the single raised
+page, not from the face. The swap itself was four files (`fonts.css`, the `@theme` stacks,
+two comments) plus a retune of the body line-heights, because Inter's x-height needs less
+leading than the serif did.
 
 **Verification was better than expected.** There is no browser tool here, but Playwright's
 Chromium is on the machine, so the 8-step playground checklist ran as a script against the
@@ -319,7 +326,8 @@ order, which is to say it was not a fix. Winning on specificity (`&.cm-editor .c
 is the version that holds.
 
 **Found and did not touch:** `heading-plugin.ts` hardcodes `fontFamily: "sans-serif"`,
-which is why headings ignore the host's font on both surfaces. It contradicts the token
+which is why headings ignore the host's font on both surfaces (with Inter now set on
+`--draftly-font-sans`, headings render in the browser's generic sans instead). It contradicts the token
 layer rather than merely predating it, and it is library code outside this task — logged as
 open question 18 instead of being "fixed".
 

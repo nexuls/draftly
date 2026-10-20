@@ -120,7 +120,7 @@ apps/web/
     ├── main.tsx / app.tsx          # Mount, providers, routes
     ├── styles/
     │   ├── globals.css             # Palette, @theme (also themes the library), base layer
-    │   └── fonts.css               # Self-hosted Newsreader + IBM Plex Mono
+    │   └── fonts.css               # Self-hosted Inter + JetBrains Mono
     ├── lib/
     │   ├── utils.ts                # cn()
     │   └── codemirror-theme.ts     # App CodeMirror theme + ThemeEnum mapping

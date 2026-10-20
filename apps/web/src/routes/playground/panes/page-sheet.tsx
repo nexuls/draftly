@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
  * the only thing with a background of its own and the only thing that casts a shadow.
  * That is what makes it read as the document rather than as another panel.
  *
- * The measure is capped in `ch` so it tracks the font, not the viewport — a serif column
- * stays readable at about seventy characters however wide the window gets.
+ * The measure is capped in `ch` so it tracks the font, not the viewport: the column stays
+ * at a readable width however wide the window gets.
  *
  * @param props.children - The editor or the rendered preview
  * @param props.className - Extra classes for the sheet

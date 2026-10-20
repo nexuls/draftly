@@ -51,7 +51,7 @@ apps/web/
     ├── app.tsx                 # Providers + routes
     ├── styles/
     │   ├── globals.css         # Palette, @theme, base layer, utilities
-    │   └── fonts.css           # Self-hosted Newsreader + IBM Plex Mono
+    │   └── fonts.css           # Self-hosted Inter + JetBrains Mono
     ├── lib/
     │   ├── utils.ts            # cn()
     │   └── codemirror-theme.ts # The app's CodeMirror theme + ThemeEnum mapping
@@ -144,6 +144,14 @@ reintroduces the flash.
 `--color-background`, `--color-foreground`, `--color-primary`, `--color-border`,
 `--color-muted-foreground` and `--color-destructive` off the host page, and
 `--font-jetbrains-mono` is pointed at the app's mono stack in the base layer.
+
+Two faces, both self-hosted from Fontsource as variable fonts (`styles/fonts.css`): **Inter**
+for the interface and the prose, **JetBrains Mono** for anything that is source or a
+measurement — code, the Source and Export panes, the node tree, the status rail. Inter's
+italic is a second import because the variable font carries no slant axis. `--font-serif`
+is aimed at the sans stack rather than left at Tailwind's default, so a stray `font-serif`
+cannot introduce a third face, and the type scale's body steps are set tighter than a serif
+would want because Inter's x-height is doing more of the work at reading size.
 
 ### Two plugin sets, never shared
 

@@ -1,18 +1,17 @@
 /*
  * Self-hosted faces, kept apart from `globals.css` so the Tailwind entry stays readable.
  *
- * Every Fontsource file is split by `unicode-range`, so importing a whole weight does not
+ * Every Fontsource file is split by `unicode-range`, so importing a whole family does not
  * mean downloading every script in it — the browser fetches only the subsets the page
- * actually uses.
+ * actually uses. Both families are variable, which is one file per style rather than one
+ * per weight.
  *
- * Newsreader carries the interface and the prose; its italic is a separate file because
- * the variable font has no slant axis, and the italic is doing real work here (the
- * wordmark, pull quotes, the empty states).
+ * Inter carries the interface and the prose; its italic is a separate file because the
+ * variable font has no slant axis, and the italic is doing real work here (the wordmark
+ * and the empty states).
  */
-@import "@fontsource-variable/newsreader";
-@import "@fontsource-variable/newsreader/wght-italic.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/inter/wght-italic.css";
 
-/* IBM Plex Mono covers source text, numeric readouts and keyboard hints. */
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/ibm-plex-mono/600.css";
+/* JetBrains Mono covers code, source panes and numeric readouts. */
+@import "@fontsource-variable/jetbrains-mono";

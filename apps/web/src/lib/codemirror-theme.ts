@@ -152,7 +152,7 @@ function buildChromeTheme(resolved: ResolvedTheme): Extension {
 /**
  * Override the editor face with the mono stack.
  *
- * Both this app's theme and Draftly's base theme put the prose serif on `.cm-content`,
+ * Both this app's theme and Draftly's base theme put the interface sans on `.cm-content`,
  * which is right for the markdown surface and wrong wherever the text on screen *is*
  * source — Source mode and the two export panes.
  *
