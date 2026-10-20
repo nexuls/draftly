@@ -89,7 +89,7 @@ This is a monorepo managed with [Turborepo](https://turbo.build/repo).
 ```
 draftly/
 ├── apps/
-│   └── web/              # Next.js web application (playground)
+│   └── web/              # Vite + React application (playground + landing)
 ├── packages/
 │   └── draftly/          # Core library (published to npm)
 │       ├── src/

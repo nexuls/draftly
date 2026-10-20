@@ -15,14 +15,20 @@ It runs on every document change **and every selection change** (`view-plugin.ts
 and it runs whenever the callback is merely *provided*. There is no way to have the
 callback available but not pay for it.
 
-The playground shows the cost precisely. It always passes the callback, then throws the
-result away unless a panel is open (`apps/web/app/playground/page.tsx:317`):
+The playground shows the cost precisely. Since the Vite rewrite it passes the callback
+only while the inspector is showing the tree
+(`apps/web/src/routes/playground/use-editor-extensions.ts`):
 
 ```ts
-onNodesChange: (nodes) => {
-  if (showNodes) setNodes(nodes);
-},
+onNodesChange: nodesVisible ? onNodesChange : undefined,
 ```
+
+That is strictly better than the old "always provide, throw the result away" gate, but it
+makes the underlying problem *more* visible rather than less: because providing the
+callback is the thing that costs, toggling it has to reconfigure the editor's extensions,
+and the route then has to re-dispatch the selection by hand to get an initial tree (the
+view plugin reports nodes unprompted only from its constructor). A lazy getter would make
+both the gate and the nudge unnecessary.
 
 So a full-document tree is allocated on every keystroke and every cursor move, to be
 discarded. The type's own JSDoc calls it "useful for debugging and development"
@@ -56,7 +62,8 @@ playground's actual pattern, which is the realistic one — a consumer who wants
 
 - `editor/view-plugin.ts` — `buildNodes`, `update`, constructor
 - `editor/draftly.ts` — `DraftlyConfig.onNodesChange` signature, `DraftlyNode` docs
-- `apps/web/app/playground/page.tsx` — the gate
+- `apps/web/src/routes/playground/use-editor-extensions.ts` — the gate
+- `apps/web/src/routes/playground/playground-route.tsx` — the selection re-dispatch
 - `README.md` — if `onNodesChange` is documented
 - `artifacts/architecture/editor-core.md`
 

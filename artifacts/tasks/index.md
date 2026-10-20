@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-08-21 · commit `cafc3cc`
+> Last updated: 2026-10-21 · commit `4cf0eed`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -95,6 +95,14 @@ to work the ongoing list. Rows still marked `Proposed` with a "Developer decisio
 _Blocked on_ column are untouched and stay that way until answered — see the open questions
 in [`../memory.md`](../memory.md#open-questions-for-the-developer).
 
+### Tooling
+
+`C-031` replaced the Next.js playground with a Vite + React app, deleted `@workspace/ui`,
+and rebuilt both surfaces. It was developer-requested rather than from the audit backlog,
+and it touched no library code. Two ongoing tasks had their playground references updated
+by it: `T-013` (the `onNodesChange` gate moved and got sharper) and `T-026` (the
+`ThemeEnum.AUTO` workaround now has one home, `draftlyTheme()`).
+
 ### Suggested order
 
 Both follow-ups created by completed work have now landed — C-026's deprecation cycle
@@ -133,6 +141,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-031` | [Replace Next.js with Vite and rebuild the playground](./completed/C-031-vite-playground-rebuild.md) | 2026-10-21 |
 | `C-030` | [Share in-flight Mermaid renders](./completed/C-030-share-inflight-mermaid-renders.md) | 2026-08-21 |
 | `C-029` | [KaTeX peer dependency, inlined fonts](./completed/C-029-katex-peer-and-inlined-fonts.md) | 2026-08-21 |
 | `C-028` | [Remove the deprecated plugin arrays](./completed/C-028-remove-deprecated-plugin-arrays.md) | 2026-08-21 |

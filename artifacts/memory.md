@@ -144,8 +144,40 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
 - **Never dispatch a transaction from `buildDecorations` or `update()`.** Use the
   `schedule*` deferred pattern from `table-plugin.ts`, and annotate self-dispatches so
   they can be recognised on re-entry.
-- **Bump `VERSION` in `apps/web/app/playground/page.tsx`** after editing seed markdown in
-  `app/data/md/`, or returning users keep the cached old copy.
+- **Bump `VERSION` in `apps/web/src/routes/playground/use-documents.ts`** after editing
+  seed markdown in `src/content/`, or returning readers keep the cached old copy.
+- **`apps/web` is Vite + React, not Next.js** (C-031). It imports `draftly/src`, which is
+  why `vite.config.ts` widens `server.fs.allow` to the repo root and excludes `draftly`
+  from `optimizeDeps` — without the first the raw-TS imports 403 in dev, without the second
+  they freeze at dev-server start.
+- **`@workspace/typescript-config/vite.json` leaves `noUnusedLocals` and
+  `noUnusedParameters` off on purpose.** Type-checking `apps/web` also type-checks the
+  library source it imports, so those flags turn `packages/draftly`'s warning backlog into
+  errors in the app. Turning them on will look like a tightening and will actually just
+  break `bun run typecheck`.
+- **The app's `@theme inline` block is what themes the library.** Draftly's tokens read
+  `--color-background`, `--color-foreground`, `--color-primary`, `--color-border`,
+  `--color-muted-foreground` and `--color-destructive` off the host page, and
+  `--font-jetbrains-mono` off it too. Changing the app palette changes the editor and the
+  generated preview CSS as a side effect — that is the design, not a leak.
+- **Two `EditorView.theme()` extensions targeting the same selector are resolved by
+  `StyleModule` creation order, not extension order.** `Prec` does not help. The only
+  order-independent way to override one is to win on specificity — `apps/web`'s
+  `sourceFaceTheme` writes `&.cm-editor .cm-content` to buy a class over the base theme's
+  `.cm-content`.
+- **Providing `onNodesChange` is what costs, so gating it means reconfiguring.** The view
+  plugin reports nodes unprompted only from its *constructor*, and reconfiguration does not
+  re-run it; `update()` rebuilds the tree only on a doc, selection or viewport change. A
+  consumer that toggles the callback must re-dispatch the current selection to get an
+  initial tree. This is the concrete cost T-013 would remove.
+- **`createEssentialPlugins()` can be called for its metadata.** The landing page's plugin
+  index reads `name`, `version` and `requiredNodes` off a set it never attaches to an
+  editor, so the table cannot drift from the factory. The heavy three stay hard-coded there
+  — importing them to read their names would put mermaid and KaTeX back on the entry chunk.
+- **Playwright's Chromium is installed on this machine** (`~/.cache/ms-playwright`), so the
+  playground checklist *can* be run and screenshotted by script even with no browser tool.
+  The segmented rails are visually hidden radio inputs: drive them with
+  `.check({ force: true })`, not `.click()`.
 - **Bun only.** `pnpm-workspace.yaml` exists for tooling compatibility but running
   `pnpm install` or `npm install` creates a conflicting lockfile.
 - **CodeMirror packages must stay external/peer.** Two copies of `@codemirror/state` in
@@ -199,8 +231,8 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   `"preset": "recommended"`. `bunx biome migrate --write` converts it.
 - Ignore patterns must **not** carry a trailing `/**` (`"!**/dist"`, not `"!**/dist/**"`).
   The old form is flagged by `suspicious/useBiomeIgnoreFolder`.
-- `css.parser.tailwindDirectives: true` is required or `packages/ui/src/styles/globals.css`
-  fails to parse on `@source`. Likewise `json.parser.allowComments` +
+- `css.parser.tailwindDirectives: true` is required or `apps/web/src/styles/globals.css`
+  fails to parse on `@theme` / `@custom-variant`. Likewise `json.parser.allowComments` +
   `allowTrailingCommas` for the `tsconfig`-style files in `packages/typescript-config`.
 - **`organizeImports` is deliberately off.** Import order in `packages/draftly` is
   load-bearing in places (CodeMirror extension/facet precedence). Do not turn it on.
@@ -238,7 +270,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 4   | `turbo.json` declares a `check-types` task but the packages define `typecheck`. Nothing connects them, so `turbo run check-types` matches nothing. Which name wins? | `turbo.json` vs `packages/*/package.json`                                                                               | 2026-08-18 |
 | 5   | Should a test runner be introduced, and if so `bun test` or Vitest? The pure layers (`editor/utils.ts`, table text utilities) are trivially testable.               | No test infrastructure exists anywhere in the repo.                                                                     | 2026-08-18 |
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
-| 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins and newly-gained a11y findings in `packages/ui`'s vendored shadcn components. Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
+| 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins. (The a11y findings went away with `packages/ui`; ~70 remain, all in `packages/draftly`.) Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
 | 9   | ~~`essentialPlugins` / `allPlugins` export shared mutable instances.~~ **Answered 2026-08-18: option A, factories.** Shipped in C-026 as a *minor* — factories added, arrays deprecated but behaviourally unchanged. **Fully answered 2026-08-21: remove.** Shipped in C-028 as a major. | `plugins/index.ts`; C-026 | 2026-08-18 |
 | 10  | `ThemeEnum.AUTO` is the default and applies neither theme layer. Implement real system detection (behaviour change for every consumer) or rename it to something honest like `DEFAULT`? | `editor/utils.ts:68`; T-026 | 2026-08-18 |
@@ -248,11 +280,52 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 15  | `codemirror-lang-latex` is **AGPL-3.0-or-later** and `draftly` is MIT. Taking it as a dependency — even lazily imported — would push copyleft terms onto every consumer, so `MathPlugin` accepts an injected parser instead. Confirm that injection is the intended long-term shape, or is a differently-licensed LaTeX parser worth vendoring? | `plugins/math-plugin.ts`; the fork this came from is an app, where the licence question does not arise the same way. | 2026-08-18 |
 | 16  | Plugin themes emit their editor-only rules into preview CSS and vice versa — e.g. `.cm-draftly-list-line-ul`'s flex layout is in the generated preview stylesheet, matching nothing. Split each plugin theme into editor/preview/shared halves, as `editor/theme.ts` now does? | `editor/plugin.ts` `getPreviewStyles`; noticed while fixing the list-class leak. | 2026-08-18 |
 | 17  | ~~KaTeX's bundled CSS references its fonts relatively, so injecting it as a `<style>` element 404s them.~~ **Answered 2026-08-21.** `katex` became an optional peer dependency; `MathPlugin` ships no CSS unless `injectStyles: true`, which injects the stylesheet with all 20 faces base64-inlined, behind a dynamic `import()`. Shipped as C-029. | `plugins/math-plugin.ts`, `plugins/katex-styles.generated.ts`; C-025, C-029 | 2026-08-18 |
+| 18  | `heading-plugin.ts` hardcodes `fontFamily: "sans-serif"` on all six heading levels, bypassing the `--draftly-font-sans` token that `editor/theme.ts` defines and that the base theme uses. A host that sets `--font-sans` gets its face everywhere *except* headings, on both surfaces. Deliberate (headings should always be sans) or an oversight from before the token layer? | `plugins/heading-plugin.ts:140-175` vs `editor/theme.ts:21,136`; surfaced while theming `apps/web` in C-031 | 2026-10-21 |
 | 13  | `draftlyThemeFacet` is defined and populated but never read — the theme is baked in at extension-construction time instead. Wire the facet up (enables runtime theme switching) or delete it? | `editor/view-plugin.ts:29,185`; T-024 | 2026-08-18 |
 
 ---
 
 ## Session log
+
+### Session 2026-10-21 — Next.js → Vite, playground rebuilt
+
+Developer asked to drop Next.js from `apps/web`, scaffold Vite + React, put shadcn inside
+the app rather than the root, and rebuild the playground UI from the ground up because the
+existing one "looks too cheap". Shipped as C-031 in six commits.
+
+**Decisions taken with the developer up front**, because each changed the shape of the
+work: delete `packages/ui` outright; keep both a landing page and a playground on
+`react-router`; editorial/typographic direction.
+
+**Where the design came from.** Grounding it in the library's actual mechanic rather than
+in "writing app" generally is what made it specific. Retraction is a proofreading idea, so
+the whole surface is a proof sheet — cool paper, ink blue, a blue pencil for anything
+actionable. Setting the *interface* in the same serif as the prose was the deliberate risk.
+The generic-AI-design cluster was avoided by name: no cream-and-terracotta, no zero-radius
+broadsheet, no grid of identical cards.
+
+**Verification was better than expected.** There is no browser tool here, but Playwright's
+Chromium is on the machine, so the 8-step playground checklist ran as a script against the
+dev server with screenshots of every surface in both themes plus a 390px viewport. Reading
+those screenshots caught four things static review would not have: the copy button sitting
+on top of line 1 of the install command, the export panes inheriting the prose serif, the
+syntax tree staying empty until the next keystroke, and no theme control at all below
+`sm`. **Screenshot the thing.**
+
+**The `StyleModule` ordering trap cost the most time.** Appending a mono `EditorView.theme`
+after the base one did nothing, because competing CodeMirror themes resolve by the order
+their `StyleModule`s were *created*, not by extension order — so the fix depended on import
+order, which is to say it was not a fix. Winning on specificity (`&.cm-editor .cm-content`)
+is the version that holds.
+
+**Found and did not touch:** `heading-plugin.ts` hardcodes `fontFamily: "sans-serif"`,
+which is why headings ignore the host's font on both surfaces. It contradicts the token
+layer rather than merely predating it, and it is library code outside this task — logged as
+open question 18 instead of being "fixed".
+
+**Also removed along the way:** three shadcn primitives the CLI pulled that nothing
+imported, and the stray `cn` npm package the current registry adds (its generated
+components import `cn` from a package rather than from the local `lib/utils`).
 
 ### Session 2026-08-18 — migrating the logits fork
 

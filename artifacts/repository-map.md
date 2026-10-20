@@ -1,21 +1,20 @@
 # Repository Map
 
-> Last verified: 2026-08-18 · commit `b6ecb96`
+> Last verified: 2026-10-21 · commit `4cf0eed`
 > Update this file whenever a directory is added, removed, or its purpose changes.
 
 ## At a glance
 
 **Draftly** is a Turborepo monorepo (Bun workspaces) that publishes one public npm
-package — `draftly` — plus a Next.js documentation/playground app and shared internal
+package — `draftly` — plus a Vite + React demo/playground app and shared internal
 tooling packages.
 
 ```
 draftly/
 ├── apps/
-│   └── web/                  # Next.js 16 playground + docs site (private)
+│   └── web/                  # Vite + React playground + landing page (private)
 ├── packages/
 │   ├── draftly/              # ⭐ The published library (npm: `draftly`)
-│   ├── ui/                   # @workspace/ui — shadcn/ui component library (private)
 │   ├── biome-config/         # @workspace/biome-config — shared Biome presets (private)
 │   └── typescript-config/    # @workspace/typescript-config (private)
 ├── artifacts/                # ⭐ Agent knowledge base (this directory)
@@ -106,27 +105,32 @@ own chunks. See [`architecture/build-and-tooling.md`](./architecture/build-and-t
 
 ---
 
-## `apps/web` — playground & docs
+## `apps/web` — playground & landing page
 
-Next.js 16 (App Router, Turbopack) app. Consumes the library through `draftly/src`
-so library edits hot-reload without a rebuild.
+Vite 8 + React 19 single-page app on `react-router`. Consumes the library through
+`draftly/src` so library edits hot-reload without a rebuild. shadcn/ui is vendored into
+this app rather than shared.
 
 ```
 apps/web/
-├── app/
-│   ├── layout.tsx                  # Root layout
-│   ├── page.tsx                    # Landing page
-│   ├── data/md/                    # Seed markdown documents
-│   │   ├── what-id-draftly.ts
-│   │   └── walkthrough.ts
-│   └── playground/                 # The interactive editor playground
-│       ├── page.tsx                # State, localStorage persistence, editor+preview panes
-│       ├── header.tsx / footer.tsx / sidebar.tsx
-│       ├── devbar.tsx              # Live toggles for every DraftlyConfig / plugin flag
-│       ├── create-content-dialog.tsx
-│       └── types.d.ts
-├── components/providers.tsx        # next-themes provider
-└── hooks/use-mobile.ts
+├── index.html                      # Entry + pre-paint theme script
+├── vite.config.ts                  # fs.allow + optimizeDeps.exclude for draftly/src
+├── components.json                 # shadcn config, scoped to this app
+└── src/
+    ├── main.tsx / app.tsx          # Mount, providers, routes
+    ├── styles/
+    │   ├── globals.css             # Palette, @theme (also themes the library), base layer
+    │   └── fonts.css               # Self-hosted Newsreader + IBM Plex Mono
+    ├── lib/
+    │   ├── utils.ts                # cn()
+    │   └── codemirror-theme.ts     # App CodeMirror theme + ThemeEnum mapping
+    ├── components/                 # Theme provider, segmented rail, wordmark, copy button
+    │   └── ui/                     # 9 vendored shadcn primitives
+    ├── content/                    # Seed markdown documents
+    └── routes/
+        ├── landing/                # Front page + the live hero editor
+        ├── playground/             # Panes, inspector, hooks — see architecture/web-playground.md
+        └── not-found-route.tsx
 ```
 
 ---
@@ -135,9 +139,8 @@ apps/web/
 
 | Package                      | Name                           | Purpose                                                  |
 | ---------------------------- | ------------------------------ | -------------------------------------------------------- |
-| `packages/ui`                | `@workspace/ui`                | ~60 shadcn/ui components, Tailwind v4, consumed by `web` |
-| `packages/biome-config`      | `@workspace/biome-config`      | `base.json`, `next.json`, `react-internal.json` presets  |
-| `packages/typescript-config` | `@workspace/typescript-config` | `base.json`, `nextjs.json`, `react-library.json`         |
+| `packages/biome-config`      | `@workspace/biome-config`      | `base.json`, `react-internal.json` presets               |
+| `packages/typescript-config` | `@workspace/typescript-config` | `base.json`, `vite.json`, `react-library.json`           |
 
 ---
 
@@ -145,7 +148,7 @@ apps/web/
 
 | File                  | Role                                                                                                          |
 | --------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `turbo.json`          | Tasks: `build` (`^build`, outputs `dist/**`, `.next/**`), `lint`, `lint:fix`, `format`, `check-types`, `dev` |
+| `turbo.json`          | Tasks: `build` (`^build`, outputs `dist/**`), `lint`, `lint:fix`, `format`, `check-types`, `dev`              |
 | `package.json`        | Bun 1.3.5 as `packageManager`; Node >= 20; scripts `build`/`dev`/`lint`/`format`/`check`/`changeset`/`release` |
 | `.changeset/`         | Release flow — `baseBranch: master`, `access: public`, auto-commit on                                         |
 | `biome.json`          | **`root: true`** — lint + format. 2 spaces, double quotes, semicolons, **lineWidth 120**, ES5 trailing commas, LF |
@@ -165,5 +168,5 @@ apps/web/
 | Add a plugin capability (new hook)       | `packages/draftly/src/editor/plugin.ts`                                      |
 | Change static HTML output                | `plugins/*.ts` → `renderToHTML()`, or `preview/renderer.ts` for the walk     |
 | Change generated preview CSS             | Plugin `theme` getter, or `preview/css-generator.ts`                         |
-| Try something interactively              | `apps/web/app/playground/`                                                   |
+| Try something interactively              | `apps/web/src/routes/playground/`                                            |
 | Ship a release                           | `bun changeset` → `bun run version-packages` → `bun run release`             |

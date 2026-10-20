@@ -208,8 +208,8 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
 - **Bun only.** `pnpm install` or `npm install` creates a conflicting lockfile.
 - **CodeMirror packages stay external/peer.** Two copies of `@codemirror/state` breaks
   facet identity.
-- **Bump `VERSION`** in `apps/web/app/playground/page.tsx` after editing seed markdown in
-  `app/data/md/`, or returning users keep the cached copy.
+- **Bump `VERSION`** in `apps/web/src/routes/playground/use-documents.ts` after editing
+  seed markdown in `src/content/`, or returning readers keep the cached copy.
 
 ---
 
@@ -250,7 +250,7 @@ The full list is in [`artifacts/memory.md`](artifacts/memory.md). The ones that 
     `exports` map) and is added to `createAllPlugins()` in `plugins/all.ts` — never to the
     barrel.
 12. Add a row to `artifacts/architecture/plugins-catalog.md`.
-13. Extend `apps/web/app/data/md/walkthrough.ts` and bump `VERSION`.
+13. Extend `apps/web/src/content/walkthrough.ts` and bump `VERSION`.
 14. Verify both surfaces in the playground.
 
 ### Change the editor core

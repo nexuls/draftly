@@ -1,6 +1,6 @@
 # Build & Tooling
 
-> Last verified: 2026-08-19 · commit `fa72daf`
+> Last verified: 2026-10-21 · commit `4cf0eed`
 
 ---
 
@@ -11,7 +11,7 @@
 | Package manager | **Bun 1.3.5**          | Pinned via `packageManager`; `bun.lock` is committed |
 | Task runner     | **Turborepo 2.6.3**    | `turbo.json` at root                                 |
 | Library bundler | **tsup 8.5**           | esbuild-based; emits ESM + CJS + `.d.ts`             |
-| App framework   | **Next.js 16**         | App Router, Turbopack dev                            |
+| App bundler     | **Vite 8**             | `apps/web`; React plugin + `@tailwindcss/vite`       |
 | Language        | **TypeScript 5.7/5.9** | Root pins 5.7.3; `packages/draftly` uses ^5.9.3      |
 | Lint + format   | **Biome 2.5.8**        | One tool for both; `biome.json` per workspace        |
 | Releases        | **Changesets**         | `baseBranch: master`, auto-commit on                 |
@@ -51,7 +51,7 @@ bun run release             # build draftly, then changeset publish
 
 | Task          | `dependsOn`    | Outputs                             | Cached             |
 | ------------- | -------------- | ----------------------------------- | ------------------ |
-| `build`       | `^build`       | `.next/**` (minus cache), `dist/**` | yes                |
+| `build`       | `^build`       | `dist/**`                           | yes                |
 | `lint`        | `^lint`        | —                                   | yes                |
 | `lint:fix`    | —              | —                                   | **no** (writes)    |
 | `format`      | —              | —                                   | **no** (writes)    |
@@ -146,7 +146,7 @@ different resolvers — bundled `dist/`, and raw TypeScript via `./src`, which i
   and the specifier ended in `?raw`, so it never applied — `dist/` shipped an unresolvable
   `import katexCss from 'katex/dist/katex.min.css?raw'` and `MathPlugin` could not be
   bundled by anything that does not implement `?raw` (C-025).
-- a bare `.css` import would fix `dist/` via that loader, but Next.js resolves it in
+- a bare `.css` import would fix `dist/` via that loader, but a bundler resolves it in
   `apps/web` as a stylesheet side effect rather than as text, breaking the playground.
 
 A generated `export const katexCss = "…"` is bundler-agnostic by construction, so the
@@ -189,10 +189,10 @@ shared presets from `packages/biome-config`:
 | Workspace          | Extends                        |
 | ------------------ | ------------------------------ |
 | `packages/draftly` | `base`                         |
-| `packages/ui`      | `base` + `react-internal`      |
-| `apps/web`         | `base` + `next-js`             |
+| `apps/web`         | `base` + `react-internal`      |
 
-`base` is **not** implied by `react-internal` or `next-js`; a workspace lists both.
+`base` is **not** implied by `react-internal`; a workspace lists both. The `next-js` preset
+was removed with Next.js itself.
 The root config duplicates `base`'s formatter settings rather than extending it, because a
 root config cannot depend on a workspace package that may not be installed yet.
 
@@ -207,8 +207,8 @@ before committing rather than hand-wrapping.
 
 ### Parser options that are not defaults
 
-- `css.parser.tailwindDirectives: true` — `packages/ui/src/styles/globals.css` uses
-  `@source`, which Biome rejects as a parse error otherwise.
+- `css.parser.tailwindDirectives: true` — `apps/web/src/styles/globals.css` uses
+  `@theme` and `@custom-variant`, which Biome rejects as parse errors otherwise.
 - `json.parser.allowComments` / `allowTrailingCommas` — the `tsconfig`-style files in
   `packages/typescript-config` are JSONC.
 

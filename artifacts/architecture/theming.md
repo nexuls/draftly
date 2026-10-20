@@ -46,7 +46,7 @@ rather than assumed.
 
 Theme resolution happens **once, at composition time** in `draftly()`. Changing themes at
 runtime requires reconstructing the extension bundle (which is what the playground does
-via `next-themes` + a new `draftly()` call).
+via the app's `ThemeProvider` + a new `draftly()` call).
 
 ---
 

@@ -77,7 +77,8 @@ existed, which is how this trap survives rediscovery.
 ## Notes
 
 - The playground currently sidesteps this by resolving `system` itself before calling
-  `draftly()` (`apps/web/app/playground/page.tsx:299-300`, and again at `:325`). That
-  workaround is evidence the gap is real and that consumers hit it — and it is duplicated
-  three times in one file, which is what working around a library gap looks like.
-- Once fixed, simplify the playground to just pass `AUTO`. That is the acceptance test.
+  `draftly()`. The Vite rewrite at least gave the workaround one home — `draftlyTheme()` in
+  `apps/web/src/lib/codemirror-theme.ts`, which maps the app's resolved theme to
+  `ThemeEnum.DARK` or `ThemeEnum.LIGHT` and never returns `AUTO`. That a consumer needs
+  such a helper at all is the evidence the gap is real.
+- Once fixed, delete `draftlyTheme()` and pass `AUTO`. That is the acceptance test.
