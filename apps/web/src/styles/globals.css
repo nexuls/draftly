@@ -1,0 +1,281 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Theme layers are class-based, not media-query based, so the switcher can override the
+ * system preference. `.dark` is kept as an alias because shadcn's vendored components and
+ * `tw-animate-css` both emit `dark:` variants.
+ */
+@custom-variant dark (&:is(.dark *, .default-dark *, .dark, .default-dark));
+
+/* ==========================================================================
+ * Palette — "Blue pencil"
+ *
+ * Draftly is a proofing surface: the markdown source is always really there, and the
+ * decoration retracts under the caret to show it. The palette comes from a proofreader's
+ * desk — cool paper, ink-blue text, and a blue pencil for anything the reader can act on.
+ * Red pencil is reserved for destructive actions and nothing else.
+ * ========================================================================== */
+
+:root,
+.default-light {
+  --desk: oklch(0.955 0.005 255);
+  --background: oklch(0.975 0.004 250);
+  --foreground: oklch(0.22 0.03 265);
+
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.52 0.16 255);
+  --primary-foreground: oklch(0.985 0.004 250);
+
+  --secondary: oklch(0.945 0.006 255);
+  --secondary-foreground: oklch(0.3 0.03 265);
+
+  --muted: oklch(0.945 0.006 255);
+  --muted-foreground: oklch(0.52 0.02 262);
+
+  --accent: oklch(0.925 0.014 255);
+  --accent-foreground: oklch(0.26 0.03 265);
+
+  --destructive: oklch(0.56 0.19 25);
+  --destructive-foreground: oklch(0.985 0.004 250);
+
+  --border: oklch(0.885 0.006 260);
+  --input: oklch(0.885 0.006 260);
+  --ring: oklch(0.52 0.16 255);
+
+  /* A hairline lighter than `--border`, for rules that divide rather than enclose. */
+  --rule: oklch(0.915 0.005 260);
+
+  --pencil-blue: oklch(0.52 0.16 255);
+  --pencil-red: oklch(0.56 0.19 25);
+
+  --radius: 0.25rem;
+}
+
+.dark,
+.default-dark {
+  --desk: oklch(0.165 0.018 265);
+  --background: oklch(0.19 0.02 265);
+  --foreground: oklch(0.93 0.008 250);
+
+  --card: oklch(0.225 0.022 265);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.225 0.022 265);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.7 0.14 255);
+  --primary-foreground: oklch(0.17 0.02 265);
+
+  --secondary: oklch(0.27 0.02 265);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(0.27 0.02 265);
+  --muted-foreground: oklch(0.68 0.015 258);
+
+  --accent: oklch(0.3 0.022 265);
+  --accent-foreground: oklch(0.95 0.008 250);
+
+  --destructive: oklch(0.66 0.17 25);
+  --destructive-foreground: oklch(0.17 0.02 265);
+
+  --border: oklch(0.31 0.016 265);
+  --input: oklch(0.31 0.016 265);
+  --ring: oklch(0.7 0.14 255);
+
+  --rule: oklch(0.275 0.016 265);
+
+  --pencil-blue: oklch(0.7 0.14 255);
+  --pencil-red: oklch(0.66 0.17 25);
+}
+
+/* ==========================================================================
+ * Theme — exposes the palette and the type scale as Tailwind utilities.
+ *
+ * `inline` matters: it makes Tailwind resolve `--color-background` to `var(--background)`
+ * rather than to the value `--background` held at parse time, which is what lets one
+ * class name follow the theme layer. Draftly's own tokens read `--color-background`,
+ * `--color-foreground`, `--color-primary`, `--color-border`, `--color-muted-foreground`
+ * and `--color-destructive` off the host page, so generating them here is also what
+ * themes the editor and the preview.
+ * ========================================================================== */
+
+@theme inline {
+  --color-desk: var(--desk);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rule: var(--rule);
+  --color-pencil-blue: var(--pencil-blue);
+  --color-pencil-red: var(--pencil-red);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /*
+   * Two families, no sans. The interface is set in the same serif as the prose because
+   * this is a writing tool, and the mono face is reserved for text that is actually
+   * source or a measurement.
+   *
+   * `--font-sans` is deliberately aimed at the serif: Tailwind's `font-sans` utility and
+   * Draftly's `--draftly-font-sans` token both read it, so pointing it here is what makes
+   * the editor chrome match the app in one place.
+   */
+  --font-sans: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-sans);
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+
+  /*
+   * Type scale, roughly a 1.25 ratio above the body size and tightened below it, with
+   * line-heights set per step — a serif at reading size wants more leading than the same
+   * family does at display size.
+   */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.6;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.7;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.15;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.08;
+  --text-5xl: 4rem;
+  --text-5xl--line-height: 1.02;
+  --text-6xl: 5.25rem;
+  --text-6xl--line-height: 0.98;
+}
+
+/* ==========================================================================
+ * Base
+ * ========================================================================== */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+  }
+
+  html {
+    /*
+     * Draftly reads this name for its monospace token. Pointing it at the app's mono
+     * stack is what keeps a fenced code block in the editor in the same face as the
+     * source panes next to it.
+     */
+    --font-jetbrains-mono: var(--font-mono);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-desk text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The blue pencil, as a selection. */
+  ::selection {
+    background-color: color-mix(in oklab, var(--pencil-blue) 22%, transparent);
+  }
+
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+
+  /*
+   * Figures and numeric readouts should not reflow as they tick. Tabular figures on the
+   * mono face keep the status rail from jittering on every keystroke.
+   */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "zero" 1;
+  }
+
+  /* A thin, unobtrusive scrollbar — these panes are full of them. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* biome-ignore-start lint/complexity/noImportantStyles: a reduced-motion reset has to beat every animation and transition declared elsewhere, including inside third-party components; that is the one case where !important is the mechanism rather than a workaround */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* biome-ignore-end lint/complexity/noImportantStyles: end of the reduced-motion reset */
+}
+
+/* ==========================================================================
+ * Utilities
+ * ========================================================================== */
+
+/*
+ * The proof mark: a short blue rule under a word, the way a copy-editor underlines a
+ * query. Used on the hero headline and nowhere else.
+ */
+@utility proof-mark {
+  background-image: linear-gradient(to right, var(--pencil-blue), var(--pencil-blue));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  padding-bottom: 0.12em;
+}
+
+/* A measure that keeps prose under ~70 characters, which a serif can carry. */
+@utility measure {
+  max-width: 34rem;
+}
