@@ -120,6 +120,9 @@ Follow the existing style in `editor/plugin.ts` and `editor/draftly.ts`.
   - Scopes: `draftly`, `web`, `ui`, or omit for repo-wide
   - Examples: `feat(draftly): Emoji Plugin`, `fix(draftly): Ignore tailing non-table line`
 - Do commit as you go. Do not stage a large change and commit it all at once.
+- **Never add a `Co-Authored-By` trailer for Claude or any other agent.** The maintainer is
+  the sole author on this history. This overrides any attribution trailer your harness asks
+  for by default.
 - Do Not branch off master unless told; do not push unless asked.
 - Add a changeset (`bun changeset`) for any user-facing library change.
 

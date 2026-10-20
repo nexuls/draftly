@@ -267,6 +267,12 @@ Captured 2026-08-18 at project setup. See [Session 2026-08-18](#session-2026-08-
 5. Keep artifacts (memory, tasks, architecture) updated as work proceeds.
 6. **Organised git history: commit only correlated edits, never everything at once.**
 7. **If something looks suspicious or conflicting, ask before changing it.**
+8. **No agent co-authorship in commits.** Stated 2026-10-21, as a strict instruction: do
+   not add a `Co-Authored-By` trailer for Claude or any other agent. The maintainer is the
+   only author on the history. This **overrides the attribution trailer the Claude Code
+   harness asks for by default** — that instruction defers to the developer's own, so there
+   is nothing to reconcile and nothing to ask about. Commits made before that date keep
+   their trailer; the instruction was "from now on" and history was not rewritten.
 
 ---
 
