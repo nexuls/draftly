@@ -44,10 +44,10 @@ export function LandingRoute() {
         </div>
       </header>
 
-      <Section className="pt-14 sm:pt-20">
+      <Section className="pt-14 sm:pt-20 max-w-6xl">
         <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-16">
           <div>
-            <h1 className="text-foreground text-4xl sm:text-4xl">Markdown that stays markdown.</h1>
+            <h1 className="text-foreground text-4xl sm:text-4xl font-bold">Markdown that stays markdown.</h1>
             <p className="text-muted-foreground mt-6 text-lg">
               A CodeMirror 6 editor that decorates your source instead of replacing it. Move the caret into a heading
               and the hashes come back.

@@ -201,6 +201,7 @@
      */
     --font-jetbrains-mono: var(--font-mono);
     -webkit-text-size-adjust: 100%;
+    font-size: 1.15rem;
   }
 
   body {

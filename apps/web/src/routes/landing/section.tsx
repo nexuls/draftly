@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  */
 export function Section({ id, className, children }: { id?: string; className?: string; children: React.ReactNode }) {
   return (
-    <section id={id} className={cn("mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24", className)}>
+    <section id={id} className={cn("mx-auto w-full max-w-5xl px-5 py-16 sm:px-8 sm:py-24", className)}>
       {children}
     </section>
   );
@@ -30,8 +30,8 @@ export function Section({ id, className, children }: { id?: string; className?: 
 export function SectionHeading({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("mb-8", className)}>
-      <span aria-hidden="true" className="bg-pencil-blue mb-5 block h-[2px] w-8 rounded-full" />
-      <h2 className="text-foreground text-2xl sm:text-3xl">{children}</h2>
+      <span aria-hidden="true" className="bg-pencil-blue mb-5 block h-1 w-12 rounded-full" />
+      <h2 className="text-foreground text-2xl sm:text-3xl font-bold">{children}</h2>
     </div>
   );
 }

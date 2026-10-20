@@ -18,7 +18,7 @@ export function Wordmark({ className, blink = false }: { className?: string; bli
       <span
         aria-hidden="true"
         className={cn(
-          "bg-pencil-blue inline-block h-[0.82em] w-[0.07em] translate-y-[0.04em] rounded-full",
+          "bg-pencil-blue inline-block h-[0.95em] w-[0.15em] translate-y-[0.1em] ml-0.5 rounded-full",
           blink && "motion-safe:animate-pulse"
         )}
       />
