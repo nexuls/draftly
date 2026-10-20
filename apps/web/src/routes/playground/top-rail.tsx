@@ -67,13 +67,12 @@ export function TopRail({
       {title !== undefined && (
         <>
           <span aria-hidden="true" className="bg-rule mx-1 h-4 w-px" />
-          <DocumentTitle title={title} onRename={onRename} className="max-w-[12rem] md:max-w-xs" />
+          <DocumentTitle title={title} onRename={onRename} className="max-w-48 md:max-w-xs" />
         </>
       )}
 
-      <SaveIndicator status={saveStatus} />
-
       <div className="ml-auto flex items-center gap-2">
+        <SaveIndicator status={saveStatus} />
         <SegmentedRail label="Surface" segments={MODES} value={mode} onChange={onModeChange} showLabels />
         <ThemeSwitcher className="max-sm:hidden" />
         <PanelToggle
