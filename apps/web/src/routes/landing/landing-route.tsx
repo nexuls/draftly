@@ -9,7 +9,7 @@ import { LiveDemo } from "./live-demo";
 import { PluginIndex } from "./plugin-index";
 import { Section } from "./section";
 
-const REPOSITORY_URL = "https://github.com/neuronexul/draftly";
+const REPOSITORY_URL = "https://github.com/nexuls/draftly";
 const PACKAGE_URL = "https://www.npmjs.com/package/draftly";
 
 /**

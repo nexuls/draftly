@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neuronexul/draftly.git",
+    "url": "https://github.com/nexuls/draftly.git",
     "directory": "packages/draftly"
   },
   "type": "module",

@@ -155,7 +155,7 @@ Full [link](https://draftly.dev) support with interactive hover tooltips and sma
 - **Ctrl+Click** a link to open it in a new tab
 - **\`Ctrl/Cmd + K\`** to insert/toggle a link
 
-[Visit Draftly](https://github.com/neuronexul/draftly)
+[Visit Draftly](https://github.com/nexuls/draftly)
 
 ---
 ### 5.5 ListPlugin

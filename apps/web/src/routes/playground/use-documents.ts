@@ -16,7 +16,7 @@ const STORAGE_VERSION_KEY = "draftly-playground-version";
  * mismatch is the only thing that refreshes it. Forgetting means the new demo content is
  * invisible to everyone who has visited before, including you.
  */
-const VERSION = 3;
+const VERSION = 4;
 
 /** How long after the last keystroke the document is written to storage. */
 const SAVE_DEBOUNCE_MS = 500;
