@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { PageSheet } from "./page-sheet";
 
 /**
@@ -13,19 +14,30 @@ import { PageSheet } from "./page-sheet";
  * @param props.html - Output of `preview()`
  * @param props.css - Output of `generateCSS()`
  * @param props.pending - True before the first render has completed
+ * @param props.scrollRef - Handle on the scroll container, for the split view's linked scroll
  * @returns The preview element
  */
-export function PreviewPane({ html, css, pending }: { html: string; css: string; pending: boolean }) {
+export function PreviewPane({
+  html,
+  css,
+  pending,
+  scrollRef,
+}: {
+  html: string;
+  css: string;
+  pending: boolean;
+  scrollRef?: RefObject<HTMLDivElement | null>;
+}) {
   if (pending) {
     return (
-      <PageSheet>
+      <PageSheet scrollRef={scrollRef}>
         <p className="text-muted-foreground font-mono text-xs">Rendering…</p>
       </PageSheet>
     );
   }
 
   return (
-    <PageSheet>
+    <PageSheet scrollRef={scrollRef}>
       {/* Injecting generated markup is the entire job of this pane. */}
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div dangerouslySetInnerHTML={{ __html: html }} />

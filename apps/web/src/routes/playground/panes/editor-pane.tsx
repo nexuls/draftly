@@ -15,6 +15,8 @@ type EditorPaneProps = {
   mode: PlaygroundMode;
   /** Gives the route access to the live `EditorView`. */
   editorRef: RefObject<ReactCodeMirrorRef | null>;
+  /** Handle on the scroll container, so the split view can link it to the preview. */
+  scrollRef?: RefObject<HTMLDivElement | null>;
 };
 
 /**
@@ -28,14 +30,14 @@ type EditorPaneProps = {
  * and the `basicSetup` flags are both extension-shape changes, and remounting is cheaper
  * to reason about than reconfiguring.
  *
- * @param props - Document text, extensions, theme, the current mode, and the view ref
+ * @param props - Document text, extensions, theme, the current mode, and the refs
  * @returns The editor element
  */
-export function EditorPane({ value, onChange, extensions, theme, mode, editorRef }: EditorPaneProps) {
+export function EditorPane({ value, onChange, extensions, theme, mode, editorRef, scrollRef }: EditorPaneProps) {
   const sourceMode = mode === "source";
 
   return (
-    <PageSheet>
+    <PageSheet scrollRef={scrollRef}>
       <CodeMirror
         key={`draftly-editor-${mode}`}
         ref={editorRef}
