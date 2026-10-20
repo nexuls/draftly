@@ -26,7 +26,7 @@ export function LandingRoute() {
   return (
     <div className="bg-background min-h-svh">
       <header className="border-rule border-b">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-4 px-5 sm:px-8">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 sm:px-8">
           <Wordmark className="text-lg" />
           <nav className="text-muted-foreground ml-auto flex items-center gap-5 text-sm">
             <a href="#plugins" className="hover:text-foreground transition-colors max-sm:hidden">
@@ -45,9 +45,9 @@ export function LandingRoute() {
       </header>
 
       <Section className="pt-14 sm:pt-20">
-        <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-16">
+        <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-16">
           <div>
-            <h1 className="text-foreground text-4xl sm:text-5xl">Markdown that stays markdown.</h1>
+            <h1 className="text-foreground text-4xl sm:text-4xl">Markdown that stays markdown.</h1>
             <p className="text-muted-foreground mt-6 text-lg">
               A CodeMirror 6 editor that decorates your source instead of replacing it. Move the caret into a heading
               and the hashes come back.
@@ -84,7 +84,7 @@ export function LandingRoute() {
       </div>
 
       <footer className="border-rule border-t">
-        <div className="text-muted-foreground mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-8 text-sm sm:px-8">
+        <div className="text-muted-foreground mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-8 text-sm sm:px-8">
           <Wordmark className="text-base" />
           <span>MIT licensed. Built on CodeMirror 6.</span>
           <div className="ml-auto flex items-center gap-5">

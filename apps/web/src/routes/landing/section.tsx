@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  */
 export function Section({ id, className, children }: { id?: string; className?: string; children: React.ReactNode }) {
   return (
-    <section id={id} className={cn("mx-auto w-full max-w-5xl px-5 py-16 sm:px-8 sm:py-24", className)}>
+    <section id={id} className={cn("mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24", className)}>
       {children}
     </section>
   );
