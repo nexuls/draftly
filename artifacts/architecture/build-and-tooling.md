@@ -1,6 +1,6 @@
 # Build & Tooling
 
-> Last verified: 2026-10-21 · commit `4cf0eed`
+> Last verified: 2026-10-21 · commit `39a2dd9`
 
 ---
 
@@ -14,7 +14,7 @@
 | App bundler     | **Vite 8**             | `apps/web`; React plugin + `@tailwindcss/vite`       |
 | Language        | **TypeScript 5.7/5.9** | Root pins 5.7.3; `packages/draftly` uses ^5.9.3      |
 | Lint + format   | **Biome 2.5.8**        | One tool for both; `biome.json` per workspace        |
-| Releases        | **Changesets**         | `baseBranch: master`, auto-commit on                 |
+| Releases        | **GitHub Actions**     | `.github/workflows/release.yml`, `workflow_dispatch` |
 
 > `pnpm-workspace.yaml` exists for tooling that reads it, but **Bun is the package
 > manager**. Never run `pnpm install` or `npm install` — it will produce a second,
@@ -41,10 +41,8 @@ bun run check:fix           # biome check --write across the whole repo
 cd packages/draftly && bun run typecheck
 cd apps/web        && bun run typecheck
 
-# Release
-bun changeset               # describe the change + pick a bump
-bun run version-packages    # apply bumps, write CHANGELOG.md
-bun run release             # build draftly, then changeset publish
+# Release — there is no local release command; see "Release flow" below
+bun .github/scripts/release-notes.ts 3.0.1 v3.0.0   # preview the generated notes
 ```
 
 ### Task graph (`turbo.json`)
@@ -243,16 +241,76 @@ dependency array. A misplaced suppression is reported as `suppressions/unused`.
 
 ## Release flow
 
-1. Make changes on a branch off `master`.
-2. `bun changeset` — pick affected packages and bump level, write a user-facing summary.
-   The generated markdown file is committed with the change.
-3. Merge to `master`.
-4. `bun run version-packages` — consumes changesets, bumps `package.json` versions,
-   prepends to `CHANGELOG.md`.
-5. `bun run release` — `turbo run build --filter=draftly`, then `changeset publish`.
+Releasing is a manual run of the **Release** workflow
+(`.github/workflows/release.yml`), from the Actions tab or
+`gh workflow run release.yml`. There is no local release command and no bot that opens a
+version PR — the operator chooses when and what to publish.
 
-`access: "public"` and `commit: true` are set, so changesets creates its own commits.
-`apps/web` is `private: true` and never published, though it is versioned (`0.0.9`).
+### Inputs
+
+| Input        | Meaning                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `bump`       | `patch`/`minor`/`major`/`pre*`, or `none` to publish the version already in `package.json` |
+| `version`    | An exact version; overrides `bump` when set                                               |
+| `preid`      | Prerelease identifier for the `pre*` bumps (default `next`)                               |
+| `npm_tag`    | npm dist-tag. Anything other than `latest` also marks the GitHub release a prerelease      |
+| `notes_from` | Ref the notes start after; defaults to the previous `v*` tag                               |
+| `provenance` | Publish with npm provenance. Needs a public repository                                     |
+| `dry_run`    | Verify, version, build and print the notes; publish and push nothing                       |
+
+The branch or tag the workflow runs against is chosen in the dispatch itself, so the
+workflow has no ref input of its own.
+
+### What a run does
+
+1. **Verifies** — `bun run lint`, then `typecheck` in `packages/draftly` and `apps/web`,
+   then the test step. Tests are detected via `git ls-files '*.test.ts' …` and skipped
+   while none exist, so T-001 landing activates them with no workflow change.
+2. **Resolves the version** with `npm version --no-git-tag-version`, and **refuses** to
+   continue if that version is already on npm or the tag already exists. This is the guard
+   that makes a mis-set input safe.
+3. **Builds** `turbo run build --filter=draftly`.
+4. **Generates the notes** with `.github/scripts/release-notes.ts` and writes them to the
+   run summary — visible on a dry run too.
+5. **Commits** `chore(release): draftly vX.Y.Z` and tags `vX.Y.Z` locally.
+6. **Publishes** to npm with `NPM_TOKEN`, under the chosen dist-tag.
+7. **Pushes** the commit and tag, then **creates the GitHub release**.
+
+The order of 5–7 is deliberate: npm is the irreversible step, so nothing is pushed until
+it succeeds. A failed publish leaves the remote untouched and the run can simply be
+repeated.
+
+### Release notes
+
+`.github/scripts/release-notes.ts` reads `git log <from>..<to>` and groups the commits by
+their conventional-commit type into Breaking / Features / Fixes / Performance /
+Refactoring / Documentation / Chores. It relies on the `type(scope): Description` format
+that AGENTS.md rule 5 already requires; an unprefixed subject lands under "Other changes"
+rather than being dropped. `chore(release):` commits are filtered out, as are merges. A
+commit is breaking if its type carries `!` or its body has a `BREAKING CHANGE:` footer.
+
+Run it directly to preview what a release would say — it needs only a git checkout.
+
+### Secrets and permissions
+
+| Needs                    | For                                                           |
+| ------------------------ | ------------------------------------------------------------- |
+| `secrets.NPM_TOKEN`      | `npm publish`. An automation token, so 2FA does not block it  |
+| `permissions: contents: write` | Pushing the release commit and tag, creating the release |
+| `permissions: id-token: write` | npm provenance attestation                              |
+
+`apps/web` is `private: true` and is never published or versioned by a release.
+
+### Why not Changesets
+
+Changesets was removed on 2026-10-21. It carried a per-change markdown file plus a
+versioning step, and the repository had accumulated **30 unconsumed changeset files** —
+every release note written since 2.1.0 sat unpublished, because the `version`/`publish`
+steps were manual anyway. The commit history already carries the same information in a
+format the project enforces, so the notes are now derived from it. The final
+`changeset version` run folded those 30 files into the `## 3.0.0` section of
+`packages/draftly/CHANGELOG.md`, which from here on is a frozen record of the Changesets
+era; current notes live on the GitHub releases.
 
 ### Plugin versions vs package version
 
@@ -267,6 +325,11 @@ when its behaviour or public shape changes in a way plugin-aware consumers would
 **There is no test suite.** No test runner is configured in any package, and no `test`
 task exists in `turbo.json`. Verification today is: type check, lint, and manual
 exercise in the playground.
+
+The release workflow has a test step already, gated on a `git ls-files` probe for
+`*.test.ts(x)` / `*.spec.ts(x)`. It runs `bun test` the moment such a file is committed,
+which makes a runner choice of `bun test` slightly cheaper than Vitest — but that choice is
+still the developer's (T-001).
 
 This is the single largest gap in the project's tooling. The pure utility layers —
 `editor/utils.ts` theme flattening, and the whole text-utility layer of

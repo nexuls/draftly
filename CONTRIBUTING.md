@@ -127,15 +127,13 @@ refactor: simplify plugin registration
 chore: update dependencies
 ```
 
-### Changesets
+### Why the commit format matters
 
-We use [Changesets](https://github.com/changesets/changesets) for versioning. If your change affects the public API or fixes a bug, add a changeset:
+Release notes are generated from the commit history, so the `type(scope): Description` subject above is what ends up in the GitHub release. Write the subject for someone reading the release page, not for the diff.
 
-```bash
-bun run changeset
-```
+Mark a breaking change either by adding `!` after the type — `feat(draftly)!: ...` — or with a `BREAKING CHANGE:` paragraph in the commit body. Either one promotes the entry to the release's breaking-changes section.
 
-Follow the prompts to describe your changes. This creates a file in `.changeset/` that will be used to generate the changelog.
+There is nothing else to add to a pull request: no changeset file, no changelog edit, no version bump. A maintainer publishes by running the **Release** workflow.
 
 ---
 

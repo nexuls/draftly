@@ -19,7 +19,7 @@ draftly/
 │   └── typescript-config/    # @workspace/typescript-config (private)
 ├── artifacts/                # ⭐ Agent knowledge base (this directory)
 ├── .agents/skills/           # Vendored agent skills (codemirror, turborepo)
-├── .changeset/               # Changesets release configuration
+├── .github/                  # Release workflow + the release-notes generator
 ├── AGENTS.md                 # Agent instruction set (CLAUDE.md is a symlink to it)
 ├── turbo.json                # Task pipeline
 └── package.json              # Workspace root
@@ -149,8 +149,8 @@ apps/web/
 | File                  | Role                                                                                                          |
 | --------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `turbo.json`          | Tasks: `build` (`^build`, outputs `dist/**`), `lint`, `lint:fix`, `format`, `check-types`, `dev`              |
-| `package.json`        | Bun 1.3.5 as `packageManager`; Node >= 20; scripts `build`/`dev`/`lint`/`format`/`check`/`changeset`/`release` |
-| `.changeset/`         | Release flow — `baseBranch: master`, `access: public`, auto-commit on                                         |
+| `package.json`        | Bun 1.3.5 as `packageManager`; Node >= 20; scripts `build`/`dev`/`lint`/`format`/`check`                      |
+| `.github/`            | `workflows/release.yml` (manual publish) and `scripts/release-notes.ts`                                      |
 | `biome.json`          | **`root: true`** — lint + format. 2 spaces, double quotes, semicolons, **lineWidth 120**, ES5 trailing commas, LF |
 | `pnpm-workspace.yaml` | Present for tooling compatibility; **Bun is the actual package manager**                                      |
 | `skills-lock.json`    | Pins the vendored `.agents/skills` (codemirror, turborepo) by hash                                            |
@@ -169,4 +169,4 @@ apps/web/
 | Change static HTML output                | `plugins/*.ts` → `renderToHTML()`, or `preview/renderer.ts` for the walk     |
 | Change generated preview CSS             | Plugin `theme` getter, or `preview/css-generator.ts`                         |
 | Try something interactively              | `apps/web/src/routes/playground/`                                            |
-| Ship a release                           | `bun changeset` → `bun run version-packages` → `bun run release`             |
+| Ship a release                           | Run the **Release** workflow (`gh workflow run release.yml`)                 |

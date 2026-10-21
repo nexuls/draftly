@@ -1,0 +1,253 @@
+name: Release
+
+# Manually triggered publishing. The operator picks the bump (or an exact version), the
+# workflow verifies the tree, versions and tags it, publishes to npm, and files a GitHub
+# release whose notes are derived from the commits since the previous tag.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Semver bump to apply to packages/draftly (ignored when `version` is set)"
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+          - none
+      version:
+        description: "Exact version to publish, e.g. 3.0.0. Overrides `bump` when set."
+        type: string
+        required: false
+      preid:
+        description: "Prerelease identifier for the pre* bumps, e.g. next, beta, rc"
+        type: string
+        required: false
+        default: next
+      npm_tag:
+        description: "npm dist-tag to publish under. Use something other than `latest` for a prerelease."
+        type: choice
+        required: true
+        default: latest
+        options:
+          - latest
+          - next
+          - beta
+          - alpha
+      notes_from:
+        description: "Ref the release notes start after. Defaults to the previous v* tag, else the first commit."
+        type: string
+        required: false
+      provenance:
+        description: "Publish with npm provenance (needs a public repository)"
+        type: boolean
+        required: true
+        default: true
+      dry_run:
+        description: "Verify, version and build, print the notes, but publish and push nothing"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write # push the release commit and tag, and create the release
+  id-token: write # npm provenance
+
+# Two releases at once would race on the tag and the version commit.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the full history
+        uses: actions/checkout@v4
+        with:
+          # The release notes diff against an earlier tag, so a shallow clone will not do.
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      # npm does the publishing: Bun's own publish does not support provenance.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      # turbo.json has no typecheck task yet (tracked as T-007), so the scripts are called
+      # directly rather than inventing a task name here.
+      - name: Typecheck the library
+        run: cd packages/draftly && bun run typecheck
+
+      - name: Typecheck the playground
+        run: cd apps/web && bun run typecheck
+
+      # There is no test suite yet (tracked as T-001). This step runs the moment one lands
+      # and stays quiet until then, rather than failing every release in the meantime.
+      - name: Test
+        run: |
+          if [ -n "$(git ls-files '*.test.ts' '*.test.tsx' '*.spec.ts' '*.spec.tsx')" ]; then
+            bun test
+          else
+            echo "No test files tracked in git — skipping. See artifacts/tasks (T-001)."
+          fi
+
+      - name: Resolve the version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          EXPLICIT: ${{ inputs.version }}
+          PREID: ${{ inputs.preid }}
+        run: |
+          set -euo pipefail
+          cd packages/draftly
+          previous="$(npm pkg get version | tr -d '"')"
+
+          if [ -n "$EXPLICIT" ]; then
+            npm version --no-git-tag-version --no-workspaces --ignore-scripts --allow-same-version "$EXPLICIT" > /dev/null
+          elif [ "$BUMP" = "none" ]; then
+            echo "Publishing the version already in package.json."
+          elif [ "${BUMP#pre}" != "$BUMP" ]; then
+            npm version --no-git-tag-version --no-workspaces --ignore-scripts --preid "$PREID" "$BUMP" > /dev/null
+          else
+            npm version --no-git-tag-version --no-workspaces --ignore-scripts "$BUMP" > /dev/null
+          fi
+
+          version="$(npm pkg get version | tr -d '"')"
+          echo "Resolved $previous -> $version"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse to republish an existing version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if npm view "draftly@$VERSION" version > /dev/null 2>&1; then
+            echo "::error::draftly@$VERSION is already on npm. Pick a different bump or version."
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error::Tag v$VERSION already exists."
+            exit 1
+          fi
+
+      - name: Build the library
+        run: bunx turbo run build --filter=draftly
+
+      - name: Generate the release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NOTES_FROM: ${{ inputs.notes_from }}
+        run: |
+          set -euo pipefail
+          from="$NOTES_FROM"
+          if [ -z "$from" ]; then
+            from="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+          fi
+          if [ -z "$from" ]; then
+            from="$(git rev-list --max-parents=0 HEAD | tail -1)"
+            echo "::notice::No v* tag found; generating notes from the first commit ($from). Pass notes_from to narrow this."
+          fi
+          echo "from=$from" >> "$GITHUB_OUTPUT"
+          bun .github/scripts/release-notes.ts "$VERSION" "$from" HEAD > "$RUNNER_TEMP/release-notes.md"
+          {
+            echo "## Release notes for v$VERSION (since $from)"
+            echo
+            cat "$RUNNER_TEMP/release-notes.md"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit and tag
+        if: ${{ !inputs.dry_run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- packages/draftly/package.json; then
+            echo "Version unchanged; tagging the current commit."
+          else
+            git add packages/draftly/package.json
+            git commit -m "chore(release): draftly v$VERSION"
+          fi
+          git tag -a "$TAG" -m "draftly v$VERSION"
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry_run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+          PROVENANCE: ${{ inputs.provenance }}
+        run: |
+          set -euo pipefail
+          cd packages/draftly
+          args=(--access public --tag "$NPM_TAG")
+          if [ "$PROVENANCE" = "true" ]; then
+            args+=(--provenance)
+          fi
+          npm publish "${args[@]}"
+
+      # Pushed only once npm has accepted the publish, so a failed publish leaves no
+      # release commit behind to unpick.
+      - name: Push the release commit and tag
+        if: ${{ !inputs.dry_run }}
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: git push origin "HEAD:${GITHUB_REF_NAME}" "refs/tags/$TAG"
+
+      - name: Create the GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+        run: |
+          set -euo pipefail
+          args=(--title "draftly v$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md" --verify-tag)
+          if [ "$NPM_TAG" != "latest" ]; then
+            args+=(--prerelease)
+          fi
+          gh release create "$TAG" "${args[@]}"
+
+      - name: Summarise
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PREVIOUS: ${{ steps.version.outputs.previous }}
+          FROM: ${{ steps.notes.outputs.from }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          {
+            echo
+            echo "---"
+            echo
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "**Dry run.** Nothing was published, pushed or tagged."
+            else
+              echo "Published \`draftly@$VERSION\` (was \`$PREVIOUS\`), notes from \`$FROM\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

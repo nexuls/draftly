@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-10-21 · commit `155d55c`
+> Last updated: 2026-10-21 · commit `39a2dd9`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -106,6 +106,14 @@ than matching percentages. It raised open question 19: the helper is the kind of
 `AGENTS.md` says belongs in `packages/draftly/src/lib/`, and moving it there is a public
 API addition.
 
+`C-034` removed Changesets and replaced it with a manually-dispatched **Release** GitHub
+Actions workflow that verifies, versions, tags, publishes and writes its own release notes
+from the commit history. Developer-requested; no library code touched. It also reconciled a
+version drift — npm served 2.1.0 while the repo said 2.0.0, because a second checkout holds
+that release's unpushed bookkeeping commits (see `memory.md`) — and folded 30 unconsumed
+changesets into `CHANGELOG.md` as `## 3.0.0`, which is now staged but unpublished. Its one
+open acceptance criterion is a real dispatch, which needs `NPM_TOKEN` on the repository.
+
 `C-031` replaced the Next.js playground with a Vite + React app, deleted `@workspace/ui`,
 and rebuilt both surfaces. It was developer-requested rather than from the audit backlog,
 and it touched no library code. Two ongoing tasks had their playground references updated
@@ -150,6 +158,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-034` | [Changesets → a manual GitHub Actions release](./completed/C-034-github-actions-release.md) | 2026-10-21 |
 | `C-033` | [Linked scrolling in the split view](./completed/C-033-split-view-linked-scroll.md) | 2026-10-21 |
 | `C-032` | [Playground split view](./completed/C-032-playground-split-view.md) | 2026-10-21 |
 | `C-031` | [Replace Next.js with Vite and rebuild the playground](./completed/C-031-vite-playground-rebuild.md) | 2026-10-21 |

@@ -124,7 +124,9 @@ Follow the existing style in `editor/plugin.ts` and `editor/draftly.ts`.
   the sole author on this history. This overrides any attribution trailer your harness asks
   for by default.
 - Do Not branch off master unless told; do not push unless asked.
-- Add a changeset (`bun changeset`) for any user-facing library change.
+- Releases are the **Release** GitHub Actions workflow, triggered manually — never a
+  local `npm publish`. Release notes are generated from the commit subjects, which is the
+  second reason the format above is not optional. Changesets was removed in C-034.
 
 ### 6. Keep artifacts current
 

@@ -63,7 +63,6 @@ existed, which is how this trap survives rediscovery.
 - `preview/css-generator.ts` — media-query output
 - `README.md` — the theme option's documented behaviour
 - `artifacts/memory.md` — remove the trap once resolved
-- `.changeset/` — behaviour change
 
 ## Acceptance
 

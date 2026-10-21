@@ -234,6 +234,19 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
 - **`preview/syntax-theme.ts` depends on undocumented CodeMirror internals.** A
   `@codemirror/language` upgrade can silently drop preview syntax colours with no type
   error. Re-test preview code blocks after any CodeMirror bump.
+- **A second checkout exists at `/media/D/projects/draftly`, and it is ahead of `origin`.**
+  It is the pre-Vite generation of this repo and holds two commits that were never pushed:
+  the changeset for 2.1.0 and its `RELEASING:` version bump. That is why npm served
+  `draftly@2.1.0` while this repo's `package.json` said `2.0.0` and its `CHANGELOG.md`
+  stopped at 2.0.0 — the *code* for 2.1.0 is here (shared history up to `e5dc598`), only the
+  bookkeeping was missing. Re-imported by hand in C-034. **Before trusting the repo's
+  version field against npm, check that checkout.** Anything else released from there has the
+  same shape of divergence.
+- **Releasing no longer touches the working tree.** There is no `bun run release`: the
+  **Release** workflow is dispatched manually and does the versioning, tagging and
+  publishing itself. Running `npm publish` locally would skip the already-published and
+  already-tagged guards, which are the only thing standing between a mistyped input and a
+  wasted version number.
 
 ### Biome facts worth not re-deriving
 
@@ -286,7 +299,7 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 | 2   | The README shows `preview()` used synchronously (`const html = preview(...)`), but it returns a `Promise<string>`. Fix the docs, or was a sync path intended?       | `README.md` preview example vs `preview/preview.ts:24`. Following the README renders `[object Promise]`.                | 2026-08-18 |
 | 3   | `DraftlyPlugin.dependencies` is declared but nothing reads it — no topological sort, no validation. Finish it or remove it?                                         | `editor/plugin.ts:61`                                                                                                   | 2026-08-18 |
 | 4   | `turbo.json` declares a `check-types` task but the packages define `typecheck`. Nothing connects them, so `turbo run check-types` matches nothing. Which name wins? | `turbo.json` vs `packages/*/package.json`                                                                               | 2026-08-18 |
-| 5   | Should a test runner be introduced, and if so `bun test` or Vitest? The pure layers (`editor/utils.ts`, table text utilities) are trivially testable.               | No test infrastructure exists anywhere in the repo.                                                                     | 2026-08-18 |
+| 5   | Should a test runner be introduced, and if so `bun test` or Vitest? The pure layers (`editor/utils.ts`, table text utilities) are trivially testable.               | No test infrastructure exists anywhere in the repo. Since C-034 the release workflow has a test step that probes for `*.test.ts(x)`/`*.spec.ts(x)` and runs `bun test` if any exist — so `bun test` needs no CI change, Vitest needs one line. | 2026-08-18 |
 | 6   | Split `table-plugin.ts` (1759 LOC) and `code-plugin.ts` (1368 LOC) into directories? Both are far past the ~500 LOC ceiling other plugins respect.                  | The table plugin was reworked very recently (`e5dc598`); a large move would obscure that history.                       | 2026-08-18 |
 | 7   | 91 Biome warnings are outstanding after the ESLint→Biome migration — mostly `noNonNullAssertion` (34) in the plugins. (The a11y findings went away with `packages/ui`; ~70 remain, all in `packages/draftly`.) Burn them down, or pin the rules off permanently? | `packages/biome-config/base.json` severity table; see `artifacts/architecture/build-and-tooling.md`. | 2026-08-18 |
 | 8   | `PreviewRenderer`'s `theme` and `sanitizeHtml` private fields are assigned in the constructor but never read (`noUnusedPrivateClassMembers`). Dead state, or a wiring bug in the preview pipeline? | `preview/renderer.ts:18,21`. Left in place rather than deleted, per the "ask, don't resolve unilaterally" rule. | 2026-08-18 |
@@ -305,6 +318,34 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 ---
 
 ## Session log
+
+### Session 2026-10-21 — Changesets out, a manual release workflow in
+
+Developer asked for Changesets to be removed and publishing moved to a manually-triggered
+GitHub Actions workflow. Shipped as C-034.
+
+**The repo had 30 unconsumed changeset files.** Every user-facing note written since 2.1.0
+was sitting in `.changeset/`, unpublished, because `version` and `publish` were always
+manual steps nobody ran. That is the real argument against the tool here, and worth
+remembering before proposing a ceremony-per-change workflow to this project again: a
+process that needs a second manual step to pay off will not pay off. They were folded into
+one last `## 3.0.0` section — six majors among them, which is where 3.0.0 came from — and
+`CHANGELOG.md` is now a closed record of that era.
+
+**The version drift was a second checkout, not a mystery.** npm said 2.1.0, the repo said
+2.0.0. Asking rather than guessing produced the answer in one turn; see the new trap above.
+The lesson generalises: a version that disagrees with npm is a missing commit somewhere
+before it is a bad release.
+
+**`apps/web` gets versioned by `changeset version` even though it is private.** It bumped
+to 0.1.1 with a changelog of bare "Updated dependencies" hashes. Reverted — a private
+playground has no version anyone can consume. Irrelevant now the tool is gone, but it
+explains the `0.1.x` history in `apps/web/CHANGELOG.md`.
+
+**The release notes generator is the reason the commit format is now load-bearing twice
+over.** `.github/scripts/release-notes.ts` groups `git log` by conventional-commit type. An
+unprefixed subject does not fail — it lands under "Other changes", which is visible enough
+to be fixed next time but never drops a commit.
 
 ### Session 2026-10-21 — linked scrolling in the split view
 
