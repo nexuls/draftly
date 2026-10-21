@@ -242,6 +242,13 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   bookkeeping was missing. Re-imported by hand in C-034. **Before trusting the repo's
   version field against npm, check that checkout.** Anything else released from there has the
   same shape of divergence.
+- **`npm pkg get <field>` inside a workspace member answers with a package-keyed JSON
+  object**, not a bare value — npm resolves up to the workspace root even when run from
+  `packages/draftly`. So `npm pkg get version` prints `{\n  "draftly": "3.0.0"\n}`, and
+  piping that into `$GITHUB_OUTPUT` fails with `Invalid format`. `--no-workspaces` fixes it,
+  but `node -p "require('./package.json').version"` is what the release workflow uses: no
+  npm semantics to get wrong. `npm version --no-workspaces` *is* correct in the same
+  directory, which is what made the asymmetry easy to miss. Cost one failed dry run (C-034).
 - **Releasing no longer touches the working tree.** There is no `bun run release`: the
   **Release** workflow is dispatched manually and does the versioning, tagging and
   publishing itself. Running `npm publish` locally would skip the already-published and

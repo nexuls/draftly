@@ -71,7 +71,7 @@ jobs:
 
     steps:
       - name: Check out the full history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # The release notes diff against an earlier tag, so a shallow clone will not do.
           fetch-depth: 0
@@ -83,9 +83,9 @@ jobs:
 
       # npm does the publishing: Bun's own publish does not support provenance.
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
@@ -112,6 +112,9 @@ jobs:
             echo "No test files tracked in git — skipping. See artifacts/tasks (T-001)."
           fi
 
+      # The version is read with `node -p`, not `npm pkg get`: inside a workspace member npm
+      # resolves the workspace root and answers with a package-keyed JSON object, which is
+      # multi-line and rejected by $GITHUB_OUTPUT.
       - name: Resolve the version
         id: version
         env:
@@ -121,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           cd packages/draftly
-          previous="$(npm pkg get version | tr -d '"')"
+          previous="$(node -p "require('./package.json').version")"
 
           if [ -n "$EXPLICIT" ]; then
             npm version --no-git-tag-version --no-workspaces --ignore-scripts --allow-same-version "$EXPLICIT" > /dev/null
@@ -133,7 +136,7 @@ jobs:
             npm version --no-git-tag-version --no-workspaces --ignore-scripts "$BUMP" > /dev/null
           fi
 
-          version="$(npm pkg get version | tr -d '"')"
+          version="$(node -p "require('./package.json').version")"
           echo "Resolved $previous -> $version"
           echo "previous=$previous" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"

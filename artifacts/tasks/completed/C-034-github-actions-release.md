@@ -92,11 +92,25 @@ file lands — without failing every release in between.
       locally — the exact commands the workflow runs
 - [x] The notes generator produces correct grouped output against real history
 - [x] Workflow YAML parses
-- [ ] **A real dispatch has not been run.** Needs `secrets.NPM_TOKEN` in the repository and
-      a push of this branch before it can be. First run should be `dry_run: true`.
+- [x] A dry run reaches the publish guard. First dispatch
+      ([run 39524198525](https://github.com/nexuls/draftly/actions/runs/39524198525)) failed
+      in "Resolve the version"; fixed and re-verified locally across all five input branches.
+- [ ] **A dry run has not yet completed end to end**, so the notes, build and guard steps
+      past version resolution are still unexercised on CI.
 
 ## Notes
 
+- **The first dry run failed in "Resolve the version."** `npm pkg get version`, run from
+  `packages/draftly`, resolves up to the workspace root and answers
+  `{"draftly": "3.0.0"}` — multi-line, so `echo "version=$version" >> $GITHUB_OUTPUT` died
+  with `Invalid format '  draftly: 3.0.0'`. `--no-workspaces` was passed to `npm version`
+  but not to the two `npm pkg get` reads beside it. Both reads are now
+  `node -p "require('./package.json').version"`, which has no workspace semantics to get
+  wrong. It reproduced locally in one command; the step's shell was never run before the
+  dispatch, only lint/typecheck/build were. Recorded as a trap in `memory.md`.
+- `actions/checkout` and `actions/setup-node` went from v4 to v7, and the toolchain Node from
+  20 to 24. v4 of both pins the deprecated Node 20 action runtime, which the runner was
+  force-upgrading with an annotation on every run.
 - `notes_from` exists because the repo has **no tags at all** — nothing was ever tagged
   under Changesets. Without it the first run would generate notes from the root commit. For
   the first release, pass `e5dc598` (the 2.1.0 code point) or `v2.1.0` once a tag exists.
