@@ -13,6 +13,24 @@ import { generateSyntaxThemeCSS } from "./syntax-theme";
 const baseStyleCache = new Map<string, string>();
 
 /**
+ * Rule for the blank-line spacer the renderer emits.
+ *
+ * Preview-only, so it is written here rather than in the shared base theme: the
+ * editor needs no such element, because a blank source line already *is* a
+ * `.cm-line`. One line-height is exactly what that line occupies, which is why
+ * `--draftly-line-height` is a token.
+ *
+ * Emitted with the base chunk, so a consumer passing `includeBase: false` owns
+ * this rule along with the rest of the base styles.
+ *
+ * @param wrapperClass - Wrapper class name, without the leading dot
+ * @returns One CSS rule, scoped to the wrapper
+ */
+function generateBlankLineStyles(wrapperClass: string): string {
+  return `.${wrapperClass} .draftly-blank-line {\n  display: block;\n  height: calc(1em * var(--draftly-line-height));\n}`;
+}
+
+/**
  * Render {@link draftlyBaseStyles} for the static preview.
  *
  * The editor's selectors name two elements — the surface root (`&.cm-draftly`)
@@ -39,8 +57,9 @@ function generateBaseStyles(theme: ThemeEnum, wrapperClass: string): string {
       selector.replace(/&\.cm-draftly \.cm-content/g, wrapperSelector).replace(/&\.cm-draftly/g, wrapperSelector),
   }).getRules();
 
-  baseStyleCache.set(cacheKey, rules);
-  return rules;
+  const css = `${rules}\n${generateBlankLineStyles(wrapperClass)}`;
+  baseStyleCache.set(cacheKey, css);
+  return css;
 }
 
 /**

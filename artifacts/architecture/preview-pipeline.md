@@ -1,6 +1,6 @@
 # Preview Pipeline
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-10-21 · commit `468a588`
 > Source: `packages/draftly/src/preview/`
 
 The preview module turns a markdown string into semantic HTML plus matching CSS, with
@@ -119,11 +119,11 @@ is explicit and visible.
 ```ts
 let pos = node.from;
 for (child of node.children) {
-  if (child.from > pos) result += escapeHtml(sliceDoc(pos, child.from)); // gap before
+  if (child.from > pos) result += renderGap(pos, child.from); // gap before
   result += await renderNode(child);
   pos = child.to;
 }
-if (pos < node.to) result += escapeHtml(sliceDoc(pos, node.to)); // trailing gap
+if (pos < node.to) result += renderGap(pos, node.to); // trailing gap
 ```
 
 The gap handling is what keeps plain text between nodes intact. Lezer's markdown tree
@@ -132,6 +132,44 @@ Without this loop, preview would render a document consisting entirely of punctu
 **Gaps are always HTML-escaped, and so is the leaf fallback. A plugin's `renderToHTML`
 output is the only thing emitted unescaped** — because that is the one place where
 emitting markup is the stated intent.
+
+### `renderGap(from, to)` — blank lines
+
+A blank source line is also a gap, and emitting it as the `\n` characters it is loses it:
+HTML collapses the whitespace, while the editor draws that line as a real `.cm-line` one
+line-height tall. `renderGap` splits the gap on newlines and swaps each **wholly blank**
+line for a spacer element (C-036):
+
+```html
+<span class="draftly-blank-line" aria-hidden="true"></span>
+```
+
+Everything else is escaped as before, newlines included, so a non-blank gap — which is
+every inline gap, since a blank line terminates a paragraph — comes out byte-identical and
+pays only a `String.includes("\n")` test.
+
+> **"Wholly blank" is the load-bearing qualifier.** A gap runs from the end of one node to
+> the start of the next, so its first and last segments are normally _partial_ lines, the
+> tail and head of the neighbouring nodes' own lines — and an empty partial segment is not
+> a blank line. But a block node's `to` can sit at the start of the following line
+> (`Heading` does exactly that, and `Paragraph` can), which puts a genuine blank line in
+> segment 0. Two boundary checks against `doc` tell the cases apart. Drop them and the
+> count is short by one after every heading.
+
+Blank lines inside a fenced code block never reach here — `CodePlugin` claims `FencedCode`
+and slices the body itself, so the `<pre>` preserves them natively. An **indented** code
+block does reach here: `CodeBlock` is in no plugin's `requiredNodes`, so it falls through
+to the escaped-text fallback and its blank lines become spacers like any others.
+
+The spacer's own rule lives in `generateCSS()`'s base chunk, not the shared base theme,
+because it is preview-only — the editor has no such element to style. Its height is
+`calc(1em * var(--draftly-line-height))`, which is why `editor/theme.ts` declares the base
+line-height as a token rather than repeating `1.6`.
+
+Between two paragraphs the two surfaces now agree term by term: `0.5em` of
+`cm-draftly-paragraph` padding, one line-height of blank line, `0.5em` of padding. Before
+C-036 the preview had the padding and nothing in the middle, so **every paragraph break in
+published preview output grew by one line-height when this landed.**
 
 ---
 

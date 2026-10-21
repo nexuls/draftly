@@ -21,6 +21,11 @@ const lightTokens: Record<string, string> = {
   "--draftly-font-sans": "var(--font-sans, sans-serif)",
   "--draftly-font-mono": "var(--font-jetbrains-mono, monospace)",
 
+  // A token rather than a literal because the static preview has to express
+  // "one editor line" to size its blank-line spacers, and a second copy of the
+  // number is a second thing to forget. Unitless, so `calc(1em * ...)` works.
+  "--draftly-line-height": "1.6",
+
   // Text
   "--draftly-color-text": "var(--color-foreground, #0f172a)",
   "--draftly-color-muted": "var(--color-muted-foreground, #6a737d)",
@@ -124,7 +129,7 @@ const darkTokens: Record<string, string> = {
 const sharedStyles: ThemeStyle = {
   "&.cm-draftly": {
     fontSize: "16px",
-    lineHeight: "1.6",
+    lineHeight: "var(--draftly-line-height)",
     backgroundColor: "transparent !important",
   },
 
@@ -135,7 +140,7 @@ const sharedStyles: ThemeStyle = {
     margin: "0 auto",
     fontFamily: "var(--draftly-font-sans)",
     fontSize: "16px",
-    lineHeight: "1.6",
+    lineHeight: "var(--draftly-line-height)",
   },
 };
 

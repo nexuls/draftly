@@ -14,6 +14,21 @@ import { resolveSyntaxHighlighters } from "./syntax-theme";
 import type { NodeRendererMap, PreviewContext } from "./types";
 
 /**
+ * Stand-in for a blank source line.
+ *
+ * The editor draws a blank line as a real `.cm-line` one line-height tall; HTML
+ * collapses the same whitespace to nothing, so preview needs an element to hold
+ * the space open. A `<span>` set to `display: block` rather than a `<div>`,
+ * because a gap can in principle sit in an inline context and a block element
+ * there is invalid markup. Presentational, hence `aria-hidden`.
+ *
+ * The class is intentionally *not* `cm-`prefixed: it has no editor counterpart,
+ * and preview-only classes stay clear of the ones the editor uses for line
+ * layout. Its rule is emitted by `generateCSS()`'s base chunk.
+ */
+const BLANK_LINE_HTML = '<span class="draftly-blank-line" aria-hidden="true"></span>';
+
+/**
  * Single-entry cache for the markdown parser.
  *
  * `preview()` builds a fresh `PreviewRenderer` per call, and constructing the language
@@ -250,7 +265,7 @@ export class PreviewRenderer {
     while (child) {
       // Add any text between the last position and this child
       if (child.from > pos) {
-        result += escapeHtml(this.ctx.sliceDoc(pos, child.from));
+        result += this.renderGap(pos, child.from);
       }
 
       // Render the child node
@@ -263,9 +278,52 @@ export class PreviewRenderer {
 
     // Add any trailing text after the last child
     if (pos < node.to) {
-      result += escapeHtml(this.ctx.sliceDoc(pos, node.to));
+      result += this.renderGap(pos, node.to);
     }
 
     return result;
+  }
+
+  /**
+   * Render the text between two nodes, preserving blank source lines.
+   *
+   * Lezer's markdown tree only creates nodes for *structure*, so the words in a
+   * paragraph — and every blank line between blocks — arrive here as a gap. The
+   * text is escaped as before; the one addition is that a wholly blank line
+   * becomes {@link BLANK_LINE_HTML}, because the editor renders it as a real
+   * line of its own and collapsing it is what made the two surfaces disagree.
+   *
+   * Only a line the gap contains *in full* counts. A gap starts at the end of
+   * one node and ends at the start of the next, so its first and last segments
+   * are usually partial lines — the tail and head of the neighbouring nodes'
+   * lines — and an empty partial segment is not a blank line. The two boundary
+   * checks are what tell the cases apart, and they matter: a block node's `to`
+   * can sit at the start of the following line, which puts a genuine blank line
+   * in segment 0.
+   *
+   * Newlines themselves are preserved either way, so non-blank gaps come out
+   * byte-identical to before.
+   *
+   * @param from - Start of the gap, i.e. the end of the previous node
+   * @param to - End of the gap, i.e. the start of the next node
+   * @returns Escaped gap text with blank lines replaced by spacer elements
+   */
+  private renderGap(from: number, to: number): string {
+    const text = this.ctx.sliceDoc(from, to);
+
+    // No newline means no line can be blank -- the common case, an inline gap.
+    if (!text.includes("\n")) return escapeHtml(text);
+
+    const segments = text.split("\n");
+    const last = segments.length - 1;
+    const startsAtLineStart = from === 0 || this.doc[from - 1] === "\n";
+    const endsAtLineEnd = to >= this.doc.length || this.doc[to] === "\n";
+
+    return segments
+      .map((segment, i) => {
+        const isWholeLine = (i > 0 || startsAtLineStart) && (i < last || endsAtLineEnd);
+        return isWholeLine && segment.trim() === "" ? BLANK_LINE_HTML : escapeHtml(segment);
+      })
+      .join("\n");
   }
 }

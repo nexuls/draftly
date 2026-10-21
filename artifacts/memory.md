@@ -202,6 +202,25 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   Four of `code-plugin.theme.ts`'s dark rules were dead this way for who knows how long,
   and nothing surfaces it — the CSS is valid, it just loses. This is the strongest argument
   for the token layer: the value flips in one place instead of being re-declared.
+- **Whitespace that the editor renders as structure is lost by default in preview.** A
+  blank source line is a real `.cm-line` one line-height tall in the editor; as gap text in
+  `renderChildren` it is a `\n`, and HTML collapses it. `renderGap` now emits a
+  `.draftly-blank-line` spacer per blank line (C-036). The general shape of the bug is
+  worth keeping: parity holds for anything the tree has a *node* for, because a plugin owns
+  both surfaces, and silently fails for anything carried by the gaps between nodes — there
+  is no plugin to own it, so it is the renderer's job or nobody's.
+- **A gap's first and last segments are usually partial lines, but not always.** A gap runs
+  end-of-node to start-of-next, so segment 0 is normally the tail of the previous node's
+  line. `Heading`'s `to` sits at the start of the *following* line, though, and
+  `Paragraph`'s can — so a gap can genuinely begin at a line start, and anything reasoning
+  about lines inside a gap has to check `doc[from - 1] === "\n"` rather than assume.
+  Assuming cost one off-by-one that only showed up after headings.
+- **Do not reach for the `lh` unit in library CSS.** `height: 1lh` is exactly the right
+  thing to say for "one editor line" and lands in Chrome only from 133. An unsupported
+  declaration is *dropped*, so the fallback is a zero-height element and nothing logs —
+  the same class of silent failure as a dark rule losing on specificity. `calc(1em *
+  var(--draftly-line-height))` says it in units everything understands, which is why the
+  base line-height is a token now instead of two copies of `1.6`.
 - **`renderToHTML` must never emit a class the editor uses for *line* layout.** `ListPlugin`
   tagged preview `<ul>`s with `cm-draftly-list-line-ul`, so they inherited `display: flex`
   and a `padding-left` computed from a `--depth` property that only exists per editor line.
@@ -333,6 +352,26 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 ---
 
 ## Session log
+
+### Session 2026-10-21 — blank lines in the preview
+
+Developer reported that blank lines visible in the editor vanished from the preview, and
+asked for the preview to match the editor exactly. Shipped as C-036.
+
+**The bug had no plugin to live in, and that is the interesting part.** Every parity
+mechanism in the architecture is plugin-shaped — one class owns a node's decorations and
+its HTML — and a blank line has no node. It arrives as gap text in `renderChildren`, which
+is renderer territory, so no amount of plugin discipline would have caught it. When
+something looks like a parity bug, check whether the construct is a node at all before
+going looking for the plugin that owns it.
+
+**The developer asked to verify before any code was written, and before any commit.**
+Stated twice in one session. Worth treating as the default rhythm for rendering work:
+propose and show the output, let them look, then commit.
+
+**The fix changes published output for every consumer** — one line-height per paragraph
+break in preview. Flagged rather than buried, and accepted, because exact parity was the
+request. No API or type changed, so nothing surfaces it except the look.
 
 ### Session 2026-10-21 — Changesets out, a manual release workflow in
 

@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-10-21 · commit `a916c53`
+> Last updated: 2026-10-21 · commit `468a588`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -17,6 +17,10 @@ by theme rather than by ID, because within each group the sequencing matters.
 | ID      | Task                                                                                        | Priority | Status   | Blocked on                                             |
 | ------- | ------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------- |
 | `T-002` | [Fix README ↔ API drift](./ongoing/T-002-readme-api-drift.md)                                | High     | Proposed | Developer answers (memory Q1, Q2)                       |
+
+`C-036` fixed an editor/preview parity break that belonged to no plugin: blank source
+lines reached the renderer as gap text and HTML collapsed them, so the preview was short
+one line-height per blank line. Developer-reported, not from the audit.
 
 **T-009, T-010 and T-003 were one story, and all three have landed** (C-011, C-012,
 C-013). `sanitize: true` now means something in the browser. On the server it means
@@ -163,6 +167,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-036` | [Blank lines collapse in the static preview](./completed/C-036-preview-blank-lines.md) | 2026-10-21 |
 | `C-035` | [Flush page sheet in a narrow container](./completed/C-035-flush-page-sheet-narrow.md) | 2026-10-21 |
 | `C-034` | [Changesets → a manual GitHub Actions release](./completed/C-034-github-actions-release.md) | 2026-10-21 |
 | `C-033` | [Linked scrolling in the split view](./completed/C-033-split-view-linked-scroll.md) | 2026-10-21 |
