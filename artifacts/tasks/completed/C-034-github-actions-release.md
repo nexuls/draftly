@@ -95,8 +95,12 @@ file lands — without failing every release in between.
 - [x] A dry run reaches the publish guard. First dispatch
       ([run 39524198525](https://github.com/nexuls/draftly/actions/runs/39524198525)) failed
       in "Resolve the version"; fixed and re-verified locally across all five input branches.
-- [ ] **A dry run has not yet completed end to end**, so the notes, build and guard steps
-      past version resolution are still unexercised on CI.
+- [x] A dry run completed end to end
+      ([run 39524645275](https://github.com/nexuls/draftly/actions/runs/39524645275)).
+- [ ] **No successful publish yet.** The first real run
+      ([39524803833](https://github.com/nexuls/draftly/actions/runs/39524803833)) failed at
+      the publish step with `EOTP`; the workflow now uses trusted publishing instead, which
+      needs the trusted publisher registered on npmjs.com before it can work.
 
 ## Notes
 
@@ -116,9 +120,25 @@ file lands — without failing every release in between.
   the first release, pass `e5dc598` (the 2.1.0 code point) or `v2.1.0` once a tag exists.
 - The first real release should use `bump: none`: `package.json` already holds the
   unpublished `3.0.0` that the fold produced.
-- `provenance` is an input rather than always-on because it needs a public repository and
-  fails the publish outright otherwise.
-- npm does the publishing, not Bun — `bun publish` has no provenance support.
+- **The first real publish failed with `EOTP`**, after every verification step and the
+  local commit and tag had succeeded. The account enforces 2FA for writes, so npm asked for
+  an interactive one-time password — which no CI step can answer. Importantly the **ordering
+  held**: npm rejected the publish, so nothing was pushed and no tag or release exists, and
+  the run was repeatable rather than needing cleanup. That was the whole point of putting
+  the push after the publish.
+- **Switched to trusted publishing (OIDC) rather than fixing the token.** The classic
+  automation token that used to bypass 2FA was revoked by npm in November 2025 and can no
+  longer be generated, and write-enabled granular tokens now cap at 90 days (7 by default) —
+  a token would have put releases on a rotation timer. There is now no npm credential in the
+  repository at all. `provenance` stopped being an input because npm attests automatically
+  for a public repo and package.
+- **The trusted publisher must be registered on npmjs.com before the next run**, under
+  draftly → Settings → Trusted publishing: `nexuls` / `draftly` / `release.yml`, no
+  environment, all case-sensitive. npm validates none of it on save, so a typo appears only
+  at publish time and as an `E404`, not as an auth error. A newly created configuration also
+  expires if it has not published within two days.
+- npm does the publishing, not Bun — Bun implements neither OIDC trusted publishing nor
+  provenance.
 - The workflow calls `bun run typecheck` per workspace instead of a turbo task, because the
   `check-types`/`typecheck` naming mismatch is still open question 4. Wiring it up here
   would have resolved that unilaterally.

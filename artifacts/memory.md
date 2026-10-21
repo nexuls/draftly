@@ -249,6 +249,14 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   but `node -p "require('./package.json').version"` is what the release workflow uses: no
   npm semantics to get wrong. `npm version --no-workspaces` *is* correct in the same
   directory, which is what made the asymmetry easy to miss. Cost one failed dry run (C-034).
+- **The release publishes with no npm token — trusted publishing over OIDC.** Do not
+  "fix" an auth failure by adding an `NPM_TOKEN` secret back. A token publish fails with
+  `EOTP` because the account enforces 2FA for writes, and the classic automation token that
+  used to bypass that was revoked by npm in November 2025. If a publish fails, the cause is
+  almost certainly the trusted-publisher registration on npmjs.com (owner, repo and
+  **workflow filename**, all case-sensitive, validated only at publish time) or an npm older
+  than 11.5.1 — both of which surface as a misleading **`E404`**, not as an auth error.
+  Renaming `release.yml` breaks publishing until the registration is updated.
 - **Releasing no longer touches the working tree.** There is no `bun run release`: the
   **Release** workflow is dispatched manually and does the versioning, tagging and
   publishing itself. Running `npm publish` locally would skip the already-published and

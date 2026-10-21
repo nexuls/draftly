@@ -255,7 +255,6 @@ version PR — the operator chooses when and what to publish.
 | `preid`      | Prerelease identifier for the `pre*` bumps (default `next`)                               |
 | `npm_tag`    | npm dist-tag. Anything other than `latest` also marks the GitHub release a prerelease      |
 | `notes_from` | Ref the notes start after; defaults to the previous `v*` tag                               |
-| `provenance` | Publish with npm provenance. Needs a public repository                                     |
 | `dry_run`    | Verify, version, build and print the notes; publish and push nothing                       |
 
 The branch or tag the workflow runs against is chosen in the dispatch itself, so the
@@ -291,15 +290,43 @@ commit is breaking if its type carries `!` or its body has a `BREAKING CHANGE:` 
 
 Run it directly to preview what a release would say — it needs only a git checkout.
 
-### Secrets and permissions
+### Authentication — trusted publishing, no token
 
-| Needs                    | For                                                           |
-| ------------------------ | ------------------------------------------------------------- |
-| `secrets.NPM_TOKEN`      | `npm publish`. An automation token, so 2FA does not block it  |
-| `permissions: contents: write` | Pushing the release commit and tag, creating the release |
-| `permissions: id-token: write` | npm provenance attestation                              |
+**There is no npm token anywhere in this repository or its secrets.** The publish
+authenticates with npm over OIDC: the job's `id-token` proves to the registry that the
+caller is `release.yml` in `nexuls/draftly`, and npm checks that against a trusted publisher
+registered on the package.
+
+| Needs                          | For                                                             |
+| ------------------------------ | --------------------------------------------------------------- |
+| `permissions: id-token: write` | The OIDC exchange that authenticates the publish, and provenance |
+| `permissions: contents: write` | Pushing the release commit and tag, creating the release        |
+| npm >= 11.5.1, Node >= 22.14   | The floor for trusted publishing. `node-version: 24` clears both |
+| GitHub-hosted runner           | OIDC trusted publishing does not work on self-hosted runners    |
+
+Registered on npmjs.com under **draftly → Settings → Trusted publishing**, as organisation
+`nexuls`, repository `draftly`, workflow filename `release.yml` (filename only, no path),
+no environment. **Every field is case-sensitive, and npm does not validate them when
+saved** — a mismatch surfaces only at publish time, as a misleading `E404`. The
+`repository.url` in `packages/draftly/package.json` must also match the GitHub repository.
+
+Provenance is attested automatically because both the repository and the package are
+public, so the workflow passes no `--provenance` flag.
+
+The publish step asserts `npm --version` against 11.5.1 first. Below that floor npm does
+not attempt the OIDC exchange at all and fails with the same misleading `E404`, which is
+not a thing anyone should have to debug twice.
 
 `apps/web` is `private: true` and is never published or versioned by a release.
+
+#### Why not a token
+
+A token-based publish failed with `EOTP` — the account enforces 2FA for writes, and npm
+asks for an interactive one-time password, which a CI step with no TTY cannot supply. The
+classic "automation" token that used to bypass exactly this was **revoked and its
+generation permanently disabled by npm in November 2025**, and write-enabled granular
+tokens now expire in 90 days at most (7 by default), so a token would put the release on a
+rotation timer. Trusted publishing removes the credential instead of rotating it.
 
 ### Why not Changesets
 

@@ -43,11 +43,6 @@ on:
         description: "Ref the release notes start after. Defaults to the previous v* tag, else the first commit."
         type: string
         required: false
-      provenance:
-        description: "Publish with npm provenance (needs a public repository)"
-        type: boolean
-        required: true
-        default: true
       dry_run:
         description: "Verify, version and build, print the notes, but publish and push nothing"
         type: boolean
@@ -56,7 +51,7 @@ on:
 
 permissions:
   contents: write # push the release commit and tag, and create the release
-  id-token: write # npm provenance
+  id-token: write # authenticates the publish to npm via OIDC, and signs the provenance
 
 # Two releases at once would race on the tag and the version commit.
 concurrency:
@@ -81,7 +76,12 @@ jobs:
         with:
           bun-version: 1.3.5
 
-      # npm does the publishing: Bun's own publish does not support provenance.
+      # npm does the publishing, not Bun: the publish authenticates to npm through OIDC
+      # (trusted publishing), which Bun does not implement. `registry-url` is what points
+      # npm at the public registry; no auth token is set, deliberately — see "Publish to npm".
+      #
+      # Node 24 is also the floor for trusted publishing, which needs npm >= 11.5.1
+      # (Node 24.22 ships 11.19.1) and Node >= 22.14.
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
@@ -199,20 +199,30 @@ jobs:
           fi
           git tag -a "$TAG" -m "draftly v$VERSION"
 
+      # Authenticated by **trusted publishing**: no npm token exists anywhere in this
+      # workflow. The job's OIDC identity proves to npm that this is `release.yml` in this
+      # repository, which must be registered under the package's Settings → Trusted
+      # publishing (owner, repo and workflow filename, all case-sensitive).
+      #
+      # Provenance is attested automatically because both the repository and the package are
+      # public — passing `--provenance` is unnecessary, and a stored token is what trusted
+      # publishing exists to remove. A token-based publish on a 2FA-enforced account fails
+      # with EOTP, and npm revoked the automation tokens that used to be the way around that.
       - name: Publish to npm
         if: ${{ !inputs.dry_run }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TAG: ${{ inputs.npm_tag }}
-          PROVENANCE: ${{ inputs.provenance }}
         run: |
           set -euo pipefail
-          cd packages/draftly
-          args=(--access public --tag "$NPM_TAG")
-          if [ "$PROVENANCE" = "true" ]; then
-            args+=(--provenance)
+          # Below 11.5.1 the OIDC exchange is not attempted and npm fails with a misleading
+          # E404, so assert it rather than leave that to be debugged.
+          npm_version="$(npm --version)"
+          if [ "$(printf '%s\n11.5.1\n' "$npm_version" | sort -V | head -1)" != "11.5.1" ]; then
+            echo "::error::npm $npm_version is too old for trusted publishing; needs >= 11.5.1."
+            exit 1
           fi
-          npm publish "${args[@]}"
+          cd packages/draftly
+          npm publish --access public --tag "$NPM_TAG"
 
       # Pushed only once npm has accepted the publish, so a failed publish leaves no
       # release commit behind to unpick.
