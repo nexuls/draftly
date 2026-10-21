@@ -1,6 +1,6 @@
 # Plugin Catalog
 
-> Last verified: 2026-10-21 · commit `969c073`
+> Last verified: 2026-10-21 · commit `7a2b7f1`
 > Source: `packages/draftly/src/plugins/`
 > For the contract these all implement, see [plugin-system.md](./plugin-system.md).
 
@@ -24,7 +24,7 @@ via `createEssentialPlugins()` (`draftly/plugins` — the 11 light plugins) and
 | `table`     | 2.0.0 | 20   | 1759 | `DecorationPlugin` | GFM tables — full interactive editing           |
 | `emoji`     | 1.0.0 | 20   | 140  | `DecorationPlugin` | `:shortcode:` → emoji (custom parser node)      |
 | `link`      | 1.0.0 | 22   | 509  | `DecorationPlugin` | `Link`                                          |
-| `code`      | 1.0.0 | 25   | 1368 | `DecorationPlugin` | `InlineCode`, `FencedCode` + diff view          |
+| `code`      | 1.0.0 | 25   | 1461 | `DecorationPlugin` | `InlineCode`, `FencedCode` + diff view          |
 | `image`     | 1.0.0 | 25   | 447  | `DecorationPlugin` | `Image` — inline rendering, captions            |
 | `math`      | 1.0.0 | 25   | 526  | `DecorationPlugin` | `$…$` / `$$…$$` via KaTeX (custom parser nodes) |
 | `mermaid`   | 1.0.0 | 25   | 500  | `DecorationPlugin` | ` ```mermaid ` diagram blocks                   |
@@ -36,8 +36,12 @@ to carry a paragraph's spacing and line decorations are the only way to put it t
 row said "render-only, no decorations" until C-037; that was true before the spacing work
 arrived with the `logits` migration.
 
-`code-plugin.theme.ts` (426 LOC) holds `CodePlugin`'s styles separately — the precedent
+`code-plugin.theme.ts` (338 LOC) holds `CodePlugin`'s styles separately — the precedent
 for splitting a theme out when it dominates the plugin file.
+
+`code` and `table` are the two plugins that register an `EditorView.blockWrappers` facet.
+`code` uses it for the one thing a `.cm-line` cannot express — block-level vertical
+spacing (C-038) — because CodeMirror measures a wrapper's padding but not a line's margin.
 
 ---
 

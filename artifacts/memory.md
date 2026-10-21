@@ -81,7 +81,23 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   0.40 ms per build on a 5,000-line document. Two deliberate exceptions remain, both in
   `TablePlugin`: `computeBlockWrappers` and `computeAtomicRanges` feed **facets**, not the
   decoration set, and a wrapper or atomic range that vanished on scroll would break table
-  layout and cursor motion. `buildNodes` is also still document-wide — that is T-013.
+  layout and cursor motion. `CodePlugin.computeBlockWrappers` is a third, for the same
+  facet reason (C-038). `buildNodes` is also still document-wide — that is T-013.
+- **Block-level vertical spacing in the editor belongs on an `EditorView.blockWrappers`
+  wrapper, never on a `.cm-line`.** CodeMirror measures line heights from the DOM, so a
+  line's margin desyncs the height map — but `measureVisibleLineHeights` *does* account
+  for a wrapper's padding, via the `spaceAbove` it tracks from the wrapper's bounds. That
+  makes wrapper padding the one sanctioned way to put a gap around a block (C-038, code
+  blocks; `TablePlugin` had the first wrapper). Padding the block's own first and last
+  line is not a substitute when those lines paint the block's background and border — it
+  grows the coloured box, not the gap. A block widget spacer is not an option either:
+  CodeMirror refuses block widgets from a view plugin's decorations, which is where every
+  Draftly decoration comes from.
+- **A wrapper swallows the `cm-gap` of a partially rendered block.** When only the top of
+  a wrapped block is on screen, the placeholder element standing in for the rest of the
+  document nests inside the wrapper, so wrapper padding-bottom lands after the gap rather
+  than at the block's end. Invisible as long as the wrapper paints nothing, and it
+  self-corrects as the block renders.
 - **A paired inline HTML tag split by the viewport edge loses its preview widget** and
   renders as an orphan-tag mark instead. Known and accepted (C-016); cosmetic, and it
   self-corrects on the next viewport update.

@@ -13,6 +13,12 @@ export const codePluginTheme = createTheme({
       borderRadius: "3px",
     },
 
+    // Editor: the gap around a fenced code block. CodeMirror measures line heights, so
+    // a margin on a `.cm-line` desyncs the height map; the wrapper's padding is measured.
+    ".cm-draftly-code-block-wrapper": {
+      padding: "1rem 0",
+    },
+
     // Fenced code block lines
     ".cm-draftly-code-block-line": {
       "--radius": "0.375rem",

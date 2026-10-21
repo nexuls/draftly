@@ -1,6 +1,6 @@
-import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
-import type { Extension } from "@codemirror/state";
-import { LanguageDescription } from "@codemirror/language";
+import { BlockWrapper, Decoration, EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
+import type { Extension, Range, RangeSet } from "@codemirror/state";
+import { LanguageDescription, syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { toggleMarkdownStyle } from "../editor";
 import type { Parser, SyntaxNode } from "@lezer/common";
@@ -43,6 +43,19 @@ interface PreviewRenderContext {
 // ============================================================================
 // Decorations
 // ============================================================================
+
+/**
+ * Wraps every fenced code block in an element that can carry the vertical gap.
+ *
+ * CodeMirror measures line heights directly, so a margin on a `.cm-line` desyncs the
+ * height map. A block wrapper is a real DOM element whose padding the view measures
+ * (`measureVisibleLineHeights` accounts for the space above the first and below the
+ * last child), which makes it the only safe place to put block spacing.
+ */
+const codeBlockWrapper = BlockWrapper.create({
+  tagName: "div",
+  attributes: { class: "cm-draftly-code-block-wrapper" },
+});
 
 /** Mark and line decorations for code elements */
 const codeMarkDecorations = {
@@ -334,13 +347,41 @@ export class CodePlugin extends DecorationPlugin {
   }
 
   /**
-   * Intercepts backtick typing to wrap selected text as inline code.
+   * Intercepts backtick typing to wrap selected text as inline code, and registers the
+   * block wrappers that give fenced code blocks their vertical gap.
    *
    * If user types '`' while text is selected, wraps each selected range
    * with backticks (selected -> `selected`).
    */
   override getExtensions(): Extension[] {
-    return [createWrapSelectionInputHandler({ "`": "`" })];
+    return [
+      createWrapSelectionInputHandler({ "`": "`" }),
+      EditorView.blockWrappers.of((view) => this.computeBlockWrappers(view)),
+    ];
+  }
+
+  /**
+   * Computes the block wrapper ranges that carry each code block's vertical gap.
+   *
+   * Walks the whole document rather than `ctx.iterateVisible` — like `TablePlugin`'s
+   * wrapper computation, this feeds a facet rather than the decoration set, and a
+   * wrapper that vanished on scroll would make the block jump as it left the viewport.
+   *
+   * @param view - The editor view to scan
+   * @returns A range set with one wrapper per fenced code block
+   */
+  private computeBlockWrappers(view: EditorView): RangeSet<BlockWrapper> {
+    const wrappers: Range<BlockWrapper>[] = [];
+
+    syntaxTree(view.state).iterate({
+      enter: (node) => {
+        if (node.name === "FencedCode") {
+          wrappers.push(codeBlockWrapper.range(node.from, node.to));
+        }
+      },
+    });
+
+    return BlockWrapper.set(wrappers, true);
   }
 
   /**
