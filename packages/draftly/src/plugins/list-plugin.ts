@@ -1,4 +1,4 @@
-import { Decoration, type EditorView, type KeyBinding, WidgetType } from "@codemirror/view";
+import { Decoration, type EditorView, WidgetType } from "@codemirror/view";
 import type { syntaxTree } from "@codemirror/language";
 import { type DecorationContext, DecorationPlugin, type DescribedKeyBinding } from "../editor/plugin";
 import { createTheme } from "../editor";
