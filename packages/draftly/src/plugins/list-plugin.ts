@@ -493,7 +493,7 @@ const theme = createTheme({
     // Styled bullet for unordered lists
     ".cm-draftly-list-line-ul .cm-draftly-list-mark-ul:not(.cm-draftly-active)::after": {
       content: '"•"',
-      color: "var(--draftly-color-link)",
+      color: "currentColor",
       fontWeight: "bold",
       pointerEvents: "none",
     },

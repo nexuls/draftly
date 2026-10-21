@@ -214,6 +214,11 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   nothing to descend from and the decision has to move into `buildDecorations`. Expect the
   two surfaces to need *different mechanisms* for one rule more often than they need
   different rules — and say so in a comment, or the next reader will try to unify them.
+- **The editor's list bullet is a CSS `::after`, the preview's is a real `::marker`.** The
+  editor has no `<li>`, so `ListPlugin` draws the bullet itself and has to state a colour;
+  preview sets `list-style-type` and the browser inherits the text colour. An explicit
+  token on the editor side therefore shows up as a colour the preview does not have —
+  `currentColor` is what keeps them equal.
 - **`buildDecorations` is verifiable with no browser.** An `EditorState`, `ensureSyntaxTree`
   and a hand-rolled `DecorationContext` whose `iterateVisible` forwards to `tree.iterate`
   dump decorations per line; most plugins only touch `ctx.view.state.doc`, so `{ state }`
