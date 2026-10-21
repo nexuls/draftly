@@ -1,5 +1,14 @@
 # draftly
 
+## 2.1.0
+
+### Minor Changes
+
+- 2f5339f: - Table Feature (Reimagined with BlockWrapper)
+  - Comma separated parent selector for nested style
+  - Plugin extensions added in disabled mode
+  - Handle tailing line in table
+
 ## 2.0.0
 
 ### Major Changes
