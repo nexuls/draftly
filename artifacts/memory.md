@@ -202,6 +202,24 @@ Distilled from all sessions. Highest-value context, kept short deliberately.
   Four of `code-plugin.theme.ts`'s dark rules were dead this way for who knows how long,
   and nothing surfaces it — the CSS is valid, it just loses. This is the strongest argument
   for the token layer: the value flips in one place instead of being re-declared.
+- **Lezer wraps a list item's text in a `Paragraph`, so anything that styles paragraphs
+  styles list items too.** `ParagraphPlugin` padded every item line on both edges until
+  C-037 — 1em per item, which made every tight list read as a loose one. The same applies
+  to any future paragraph-level rule; the node is not a reliable proxy for "a paragraph of
+  prose".
+- **A preview-side CSS override has no editor counterpart when the override needs an
+  ancestor.** `ListPlugin` zeroes the padding with `.cm-draftly-list li
+  .cm-draftly-paragraph`, which works only because preview emits a real `<li>`. The
+  editor's lines are a flat sequence of `.cm-line` elements, so a descendant selector has
+  nothing to descend from and the decision has to move into `buildDecorations`. Expect the
+  two surfaces to need *different mechanisms* for one rule more often than they need
+  different rules — and say so in a comment, or the next reader will try to unify them.
+- **`buildDecorations` is verifiable with no browser.** An `EditorState`, `ensureSyntaxTree`
+  and a hand-rolled `DecorationContext` whose `iterateVisible` forwards to `tree.iterate`
+  dump decorations per line; most plugins only touch `ctx.view.state.doc`, so `{ state }`
+  stands in for the view. Diffing that against `git show HEAD:<plugin>` proves a decoration
+  change does exactly what it claims. Used in C-037, and the shape a real test suite would
+  take (T-001).
 - **Whitespace that the editor renders as structure is lost by default in preview.** A
   blank source line is a real `.cm-line` one line-height tall in the editor; as gap text in
   `renderChildren` it is a `\n`, and HTML collapses it. `renderGap` now emits a
@@ -353,10 +371,11 @@ Unresolved. Do not act on these unilaterally — raise them when the topic comes
 
 ## Session log
 
-### Session 2026-10-21 — blank lines in the preview
+### Session 2026-10-21 — editor/preview spacing parity
 
-Developer reported that blank lines visible in the editor vanished from the preview, and
-asked for the preview to match the editor exactly. Shipped as C-036.
+Developer reported two spacing mismatches between the surfaces, in opposite directions.
+Shipped as C-036 (blank lines missing from the preview) and C-037 (list items over-padded
+in the editor).
 
 **The bug had no plugin to live in, and that is the interesting part.** Every parity
 mechanism in the architecture is plugin-shaped — one class owns a node's decorations and
@@ -372,6 +391,16 @@ propose and show the output, let them look, then commit.
 **The fix changes published output for every consumer** — one line-height per paragraph
 break in preview. Flagged rather than buried, and accepted, because exact parity was the
 request. No API or type changed, so nothing surfaces it except the look.
+
+**Then the mirror image: the editor was over-padding list items** (C-037). Worth noting
+how the two were found, because neither surface is the authority. The developer named which
+side looked right each time — "preview is perfect" for the lists — and that is the fastest
+way to locate a parity bug: find the surface that already handles the case and read how,
+rather than deciding from first principles which rendering is correct. Here the answer was
+one CSS rule in `ListPlugin`'s preview theme, which pointed straight at the cause.
+
+**The parity rule can be right while the mechanism has to differ**, and that is not drift.
+See the new trap above. Both fixes this session were of that shape.
 
 ### Session 2026-10-21 — Changesets out, a manual release workflow in
 

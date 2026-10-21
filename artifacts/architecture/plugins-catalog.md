@@ -1,6 +1,6 @@
 # Plugin Catalog
 
-> Last verified: 2026-08-18 · commit `eae4434`
+> Last verified: 2026-10-21 · commit `969c073`
 > Source: `packages/draftly/src/plugins/`
 > For the contract these all implement, see [plugin-system.md](./plugin-system.md).
 
@@ -15,7 +15,7 @@ via `createEssentialPlugins()` (`draftly/plugins` — the 11 light plugins) and
 
 | Plugin      | Ver   | Prio | LOC  | Base class         | Owns                                            |
 | ----------- | ----- | ---- | ---- | ------------------ | ----------------------------------------------- |
-| `paragraph` | 1.0.0 | 100  | 38   | `DraftlyPlugin`    | `Paragraph` — render-only, no decorations       |
+| `paragraph` | 1.0.0 | 100  | 116  | `DraftlyPlugin`    | `Paragraph` — block spacing, list items aside   |
 | `heading`   | 1.0.0 | 10   | 197  | `DecorationPlugin` | `ATXHeading1–6`, `HeaderMark`                   |
 | `quote`     | 1.0.0 | 10   | 146  | `DecorationPlugin` | `Blockquote`, `QuoteMark`                       |
 | `hr`        | 1.0.0 | 10   | 102  | `DecorationPlugin` | `HorizontalRule`                                |
@@ -29,6 +29,12 @@ via `createEssentialPlugins()` (`draftly/plugins` — the 11 light plugins) and
 | `math`      | 1.0.0 | 25   | 526  | `DecorationPlugin` | `$…$` / `$$…$$` via KaTeX (custom parser nodes) |
 | `mermaid`   | 1.0.0 | 25   | 500  | `DecorationPlugin` | ` ```mermaid ` diagram blocks                   |
 | `html`      | 1.0.0 | 30   | 419  | `DecorationPlugin` | Raw HTML: blocks, tags, comments                |
+
+`paragraph` is a `DraftlyPlugin` that nonetheless builds decorations: it has no syntax to
+reveal, so it needs none of `DecorationPlugin`'s machinery, but the editor has no element
+to carry a paragraph's spacing and line decorations are the only way to put it there. Its
+row said "render-only, no decorations" until C-037; that was true before the spacing work
+arrived with the `logits` migration.
 
 `code-plugin.theme.ts` (426 LOC) holds `CodePlugin`'s styles separately — the precedent
 for splitting a theme out when it dominates the plugin file.

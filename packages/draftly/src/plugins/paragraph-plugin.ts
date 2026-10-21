@@ -1,5 +1,5 @@
 import { Decoration } from "@codemirror/view";
-import type { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import { type DecorationContext, DraftlyPlugin } from "../editor/plugin";
 import { createTheme } from "../editor";
 
@@ -12,6 +12,35 @@ import { createTheme } from "../editor";
  */
 const paragraphStart = Decoration.line({ class: "cm-draftly-paragraph-start" });
 const paragraphEnd = Decoration.line({ class: "cm-draftly-paragraph-end" });
+
+/**
+ * Is this paragraph the body of a list item?
+ *
+ * Lezer wraps every list item's text in a `Paragraph`, so without this check each
+ * item pays a full paragraph's worth of vertical padding and a tight list reads as
+ * a loose one.
+ *
+ * The preview has the same problem and solves it in CSS —
+ * `.cm-draftly-list li .cm-draftly-paragraph { padding: 0 }` in `ListPlugin`'s
+ * theme. The editor cannot: its lines are a flat sequence of `.cm-line`
+ * elements with no `<li>` ancestor to select through, so the decision has to be
+ * made while building the decoration rather than overridden afterwards. The two
+ * mechanisms differ; the rule they express is the same, and it is deliberately
+ * the same shape as the CSS — *any* ancestor list item, at any depth, so a
+ * paragraph nested inside a blockquote inside an item is also exempt.
+ *
+ * Only reached for `Paragraph` nodes, and the chain is a handful of levels, so
+ * materialising the node to walk upwards is not on the hot path.
+ *
+ * @param node - The paragraph node being considered
+ * @returns `true` if any ancestor is a `ListItem`
+ */
+function isListItemBody(node: SyntaxNodeRef): boolean {
+  for (let parent = node.node.parent; parent; parent = parent.parent) {
+    if (parent.name === "ListItem") return true;
+  }
+  return false;
+}
 
 /**
  * ParagraphPlugin - Applies paragraph spacing on both surfaces
@@ -34,7 +63,7 @@ export class ParagraphPlugin extends DraftlyPlugin {
   }
 
   /**
-   * Pad the first and last line of every visible paragraph.
+   * Pad the first and last line of every visible paragraph, list items aside.
    *
    * @param ctx - Decoration context
    * @returns Nothing; decorations are pushed into `ctx.decorations`
@@ -45,6 +74,7 @@ export class ParagraphPlugin extends DraftlyPlugin {
     ctx.iterateVisible({
       enter: (node) => {
         if (node.name !== "Paragraph") return;
+        if (isListItemBody(node)) return;
 
         // `node.to` can sit at the start of the line *after* the paragraph, so
         // step back one to avoid padding a line that is not part of it.
