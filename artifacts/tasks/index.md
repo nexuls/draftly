@@ -1,6 +1,6 @@
 # Task Index
 
-> Last updated: 2026-10-21 · commit `39a2dd9`
+> Last updated: 2026-10-21 · commit `a916c53`
 > Single source of truth for what is being worked on and what has shipped.
 
 ---
@@ -114,6 +114,11 @@ that release's unpushed bookkeeping commits (see `memory.md`) — and folded 30 
 changesets into `CHANGELOG.md` as `## 3.0.0`, which is now staged but unpublished. Its one
 open acceptance criterion is a real dispatch, which needs `NPM_TOKEN` on the repository.
 
+`C-035` made the playground's page sheet flush below `@2xl` of **container** width — no
+outer padding, border or shadow — so a narrow pane, including either column of the split
+view, is filled rather than inset. Developer-requested; no library code touched. Its one
+open acceptance criterion is the look itself, which needs a browser.
+
 `C-031` replaced the Next.js playground with a Vite + React app, deleted `@workspace/ui`,
 and rebuilt both surfaces. It was developer-requested rather than from the audit backlog,
 and it touched no library code. Two ongoing tasks had their playground references updated
@@ -158,6 +163,7 @@ bootstrap, so entries before 2026-08-18 are summaries rather than full task reco
 
 | ID      | Task                                                                                                  | Shipped              |
 | ------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| `C-035` | [Flush page sheet in a narrow container](./completed/C-035-flush-page-sheet-narrow.md) | 2026-10-21 |
 | `C-034` | [Changesets → a manual GitHub Actions release](./completed/C-034-github-actions-release.md) | 2026-10-21 |
 | `C-033` | [Linked scrolling in the split view](./completed/C-033-split-view-linked-scroll.md) | 2026-10-21 |
 | `C-032` | [Playground split view](./completed/C-032-playground-split-view.md) | 2026-10-21 |
